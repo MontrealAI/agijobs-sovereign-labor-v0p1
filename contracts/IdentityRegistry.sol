@@ -50,9 +50,6 @@ contract IdentityRegistry is Ownable2Step {
     mapping(bytes32 => bool) private clubRootNodeAliasSet;
     mapping(bytes32 => bool) private nodeRootNodeAliasSet;
 
-    // Scratch state used to avoid stack pressure (no functional persistence).
-    uint256 private _configMaskScratch;
-
     event ENSUpdated(address indexed ens);
     event NameWrapperUpdated(address indexed nameWrapper);
     event ReputationEngineUpdated(address indexed reputationEngine);
@@ -238,7 +235,7 @@ contract IdentityRegistry is Ownable2Step {
 
     /**
      * @notice Atomically apply multiple configuration updates.
-     * @dev Refactored to minimize stack usage (no viaIR): use a scratch mask + tiny helpers.
+     * @dev Split emission into a tiny helper to avoid stack pressure without viaIR.
      */
     function applyConfiguration(
         ConfigUpdate calldata config,
@@ -250,7 +247,7 @@ contract IdentityRegistry is Ownable2Step {
         RootNodeAliasConfig[] calldata nodeRootAliasUpdates,
         AgentTypeConfig[] calldata agentTypeUpdates
     ) external onlyOwner {
-        _configMaskScratch = _applyCoreConfigMask(config);
+        uint256 mask = _applyCoreConfigMask(config);
 
         _applyAdditionalAgents(agentUpdates);
         _applyAdditionalValidators(validatorUpdates);
@@ -260,24 +257,14 @@ contract IdentityRegistry is Ownable2Step {
         _applyNodeRootAliases(nodeRootAliasUpdates);
         _applyAgentTypeUpdates(agentTypeUpdates);
 
-        emit ConfigurationApplied(
+        _emitConfigurationApplied(
             msg.sender,
-            (_configMaskScratch & (1 << 0)) != 0,
-            (_configMaskScratch & (1 << 1)) != 0,
-            (_configMaskScratch & (1 << 2)) != 0,
-            (_configMaskScratch & (1 << 3)) != 0,
-            (_configMaskScratch & (1 << 4)) != 0,
-            (_configMaskScratch & (1 << 5)) != 0,
-            (_configMaskScratch & (1 << 6)) != 0,
-            (_configMaskScratch & (1 << 7)) != 0,
-            (_configMaskScratch & (1 << 8)) != 0,
+            mask,
             agentUpdates.length,
             validatorUpdates.length,
             nodeUpdates.length,
             agentTypeUpdates.length
         );
-
-        _configMaskScratch = 0;
     }
 
     function _setENS(address ensAddr) internal {
@@ -821,5 +808,32 @@ contract IdentityRegistry is Ownable2Step {
             _setAgentType(updates[i].agent, updates[i].agentType);
             unchecked { ++i; }
         }
+    }
+
+    /// @dev Emit in its own tiny frame to avoid stack blow-up in the caller.
+    function _emitConfigurationApplied(
+        address caller,
+        uint256 mask,
+        uint256 agentLen,
+        uint256 validatorLen,
+        uint256 nodeLen,
+        uint256 agentTypeLen
+    ) internal {
+        emit ConfigurationApplied(
+            caller,
+            (mask & (1 << 0)) != 0,
+            (mask & (1 << 1)) != 0,
+            (mask & (1 << 2)) != 0,
+            (mask & (1 << 3)) != 0,
+            (mask & (1 << 4)) != 0,
+            (mask & (1 << 5)) != 0,
+            (mask & (1 << 6)) != 0,
+            (mask & (1 << 7)) != 0,
+            (mask & (1 << 8)) != 0,
+            agentLen,
+            validatorLen,
+            nodeLen,
+            agentTypeLen
+        );
     }
 }
