@@ -235,7 +235,7 @@ contract IdentityRegistry is Ownable2Step {
 
     /**
      * @notice Atomically apply multiple configuration updates.
-     * @dev Split emission into a tiny helper to avoid stack pressure without viaIR.
+     * @dev Thin wrapper: no locals; work is delegated to helpers to avoid stack blowups.
      */
     function applyConfiguration(
         ConfigUpdate calldata config,
@@ -247,8 +247,7 @@ contract IdentityRegistry is Ownable2Step {
         RootNodeAliasConfig[] calldata nodeRootAliasUpdates,
         AgentTypeConfig[] calldata agentTypeUpdates
     ) external onlyOwner {
-        uint256 mask = _applyCoreConfigMask(config);
-
+        _applyCoreConfig(config);
         _applyAdditionalAgents(agentUpdates);
         _applyAdditionalValidators(validatorUpdates);
         _applyAdditionalNodes(nodeUpdates);
@@ -257,13 +256,13 @@ contract IdentityRegistry is Ownable2Step {
         _applyNodeRootAliases(nodeRootAliasUpdates);
         _applyAgentTypeUpdates(agentTypeUpdates);
 
-        _emitConfigurationApplied(
+        _emitAppliedAll(
             msg.sender,
-            mask,
-            agentUpdates.length,
-            validatorUpdates.length,
-            nodeUpdates.length,
-            agentTypeUpdates.length
+            config,
+            agentUpdates,
+            validatorUpdates,
+            nodeUpdates,
+            agentTypeUpdates
         );
     }
 
@@ -738,17 +737,17 @@ contract IdentityRegistry is Ownable2Step {
 
     // ----------------- Internal helpers to reduce stack use ----------------
 
-    /// @dev Applies core single-value config toggles and returns a bitmask of what changed.
-    function _applyCoreConfigMask(ConfigUpdate calldata config) internal returns (uint256 mask) {
-        if (config.setENS) { _setENS(config.ens); mask |= (1 << 0); }
-        if (config.setNameWrapper) { _setNameWrapper(config.nameWrapper); mask |= (1 << 1); }
-        if (config.setReputationEngine) { _setReputationEngine(config.reputationEngine); mask |= (1 << 2); }
-        if (config.setAttestationRegistry) { _setAttestationRegistry(config.attestationRegistry); mask |= (1 << 3); }
-        if (config.setAgentRootNode) { _setAgentRootNode(config.agentRootNode); mask |= (1 << 4); }
-        if (config.setClubRootNode) { _setClubRootNode(config.clubRootNode); mask |= (1 << 5); }
-        if (config.setNodeRootNode) { _setNodeRootNode(config.nodeRootNode); mask |= (1 << 6); }
-        if (config.setAgentMerkleRoot) { _setAgentMerkleRoot(config.agentMerkleRoot); mask |= (1 << 7); }
-        if (config.setValidatorMerkleRoot) { _setValidatorMerkleRoot(config.validatorMerkleRoot); mask |= (1 << 8); }
+    /// @dev Apply the single‑value config toggles; no return to avoid locals in caller.
+    function _applyCoreConfig(ConfigUpdate calldata cfg) internal {
+        if (cfg.setENS) _setENS(cfg.ens);
+        if (cfg.setNameWrapper) _setNameWrapper(cfg.nameWrapper);
+        if (cfg.setReputationEngine) _setReputationEngine(cfg.reputationEngine);
+        if (cfg.setAttestationRegistry) _setAttestationRegistry(cfg.attestationRegistry);
+        if (cfg.setAgentRootNode) _setAgentRootNode(cfg.agentRootNode);
+        if (cfg.setClubRootNode) _setClubRootNode(cfg.clubRootNode);
+        if (cfg.setNodeRootNode) _setNodeRootNode(cfg.nodeRootNode);
+        if (cfg.setAgentMerkleRoot) _setAgentMerkleRoot(cfg.agentMerkleRoot);
+        if (cfg.setValidatorMerkleRoot) _setValidatorMerkleRoot(cfg.validatorMerkleRoot);
     }
 
     function _applyAdditionalAgents(AdditionalAgentConfig[] calldata updates) internal {
@@ -810,30 +809,30 @@ contract IdentityRegistry is Ownable2Step {
         }
     }
 
-    /// @dev Emit in its own tiny frame to avoid stack blow-up in the caller.
-    function _emitConfigurationApplied(
+    /// @dev Emit in its own tiny frame to keep the external wrapper stack‑light.
+    function _emitAppliedAll(
         address caller,
-        uint256 mask,
-        uint256 agentLen,
-        uint256 validatorLen,
-        uint256 nodeLen,
-        uint256 agentTypeLen
+        ConfigUpdate calldata cfg,
+        AdditionalAgentConfig[] calldata agentUpdates,
+        AdditionalValidatorConfig[] calldata validatorUpdates,
+        AdditionalNodeOperatorConfig[] calldata nodeUpdates,
+        AgentTypeConfig[] calldata agentTypeUpdates
     ) internal {
         emit ConfigurationApplied(
             caller,
-            (mask & (1 << 0)) != 0,
-            (mask & (1 << 1)) != 0,
-            (mask & (1 << 2)) != 0,
-            (mask & (1 << 3)) != 0,
-            (mask & (1 << 4)) != 0,
-            (mask & (1 << 5)) != 0,
-            (mask & (1 << 6)) != 0,
-            (mask & (1 << 7)) != 0,
-            (mask & (1 << 8)) != 0,
-            agentLen,
-            validatorLen,
-            nodeLen,
-            agentTypeLen
+            cfg.setENS,
+            cfg.setNameWrapper,
+            cfg.setReputationEngine,
+            cfg.setAttestationRegistry,
+            cfg.setAgentRootNode,
+            cfg.setClubRootNode,
+            cfg.setNodeRootNode,
+            cfg.setAgentMerkleRoot,
+            cfg.setValidatorMerkleRoot,
+            agentUpdates.length,
+            validatorUpdates.length,
+            nodeUpdates.length,
+            agentTypeUpdates.length
         );
     }
 }
