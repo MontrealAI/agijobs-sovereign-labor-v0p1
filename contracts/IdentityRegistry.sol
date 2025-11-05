@@ -235,7 +235,7 @@ contract IdentityRegistry is Ownable2Step {
 
     /**
      * @notice Atomically apply multiple configuration updates.
-     * @dev Refactored into helpers to eliminate stack-depth issues in non-IR codegen.
+     * @dev Refactored to minimize stack usage (no viaIR): use a bitmask + tiny helpers.
      */
     function applyConfiguration(
         ConfigUpdate calldata config,
@@ -247,41 +247,31 @@ contract IdentityRegistry is Ownable2Step {
         RootNodeAliasConfig[] calldata nodeRootAliasUpdates,
         AgentTypeConfig[] calldata agentTypeUpdates
     ) external onlyOwner {
-        (
-            bool ensUpdated,
-            bool nameWrapperUpdated,
-            bool reputationUpdated,
-            bool attestationUpdated,
-            bool agentRootUpdated,
-            bool clubRootUpdated,
-            bool nodeRootUpdated,
-            bool agentMerkleUpdated,
-            bool validatorMerkleUpdated
-        ) = _applyCoreConfig(config);
+        uint256 mask = _applyCoreConfigMask(config);
 
-        uint256 agentLen     = _applyAdditionalAgents(agentUpdates);
-        uint256 validatorLen = _applyAdditionalValidators(validatorUpdates);
-        uint256 nodeLen      = _applyAdditionalNodes(nodeUpdates);
+        _applyAdditionalAgents(agentUpdates);
+        _applyAdditionalValidators(validatorUpdates);
+        _applyAdditionalNodes(nodeUpdates);
         _applyAgentRootAliases(agentRootAliasUpdates);
         _applyClubRootAliases(clubRootAliasUpdates);
         _applyNodeRootAliases(nodeRootAliasUpdates);
-        uint256 agentTypeLen = _applyAgentTypeUpdates(agentTypeUpdates);
+        _applyAgentTypeUpdates(agentTypeUpdates);
 
         emit ConfigurationApplied(
             msg.sender,
-            ensUpdated,
-            nameWrapperUpdated,
-            reputationUpdated,
-            attestationUpdated,
-            agentRootUpdated,
-            clubRootUpdated,
-            nodeRootUpdated,
-            agentMerkleUpdated,
-            validatorMerkleUpdated,
-            agentLen,
-            validatorLen,
-            nodeLen,
-            agentTypeLen
+            (mask & (1 << 0)) != 0,
+            (mask & (1 << 1)) != 0,
+            (mask & (1 << 2)) != 0,
+            (mask & (1 << 3)) != 0,
+            (mask & (1 << 4)) != 0,
+            (mask & (1 << 5)) != 0,
+            (mask & (1 << 6)) != 0,
+            (mask & (1 << 7)) != 0,
+            (mask & (1 << 8)) != 0,
+            agentUpdates.length,
+            validatorUpdates.length,
+            nodeUpdates.length,
+            agentTypeUpdates.length
         );
     }
 
@@ -412,12 +402,18 @@ contract IdentityRegistry is Ownable2Step {
     // Agent profile metadata
     // ---------------------------------------------------------------------
 
+    /// @notice Set or overwrite an agent's capability metadata URI.
+    /// @dev Restricted to governance/owner.
     function setAgentProfileURI(address agent, string calldata uri) external onlyOwner {
         if (agent == address(0)) revert ZeroAddress();
         agentProfileURI[agent] = uri;
         emit AgentProfileUpdated(agent, uri);
     }
 
+    /// @notice Allows an agent to update their own profile after proving identity.
+    /// @param subdomain ENS subdomain owned by the agent.
+    /// @param proof Merkle/ENS proof demonstrating control of the subdomain.
+    /// @param uri Metadata URI describing the agent's capabilities.
     function updateAgentProfile(
         string calldata subdomain,
         bytes32[] calldata proof,
@@ -750,54 +746,39 @@ contract IdentityRegistry is Ownable2Step {
 
     // ----------------- Internal helpers to reduce stack use ----------------
 
-    function _applyCoreConfig(ConfigUpdate calldata config)
-        internal
-        returns (
-            bool ensUpdated,
-            bool nameWrapperUpdated,
-            bool reputationUpdated,
-            bool attestationUpdated,
-            bool agentRootUpdated,
-            bool clubRootUpdated,
-            bool nodeRootUpdated,
-            bool agentMerkleUpdated,
-            bool validatorMerkleUpdated
-        )
-    {
-        if (config.setENS) { _setENS(config.ens); ensUpdated = true; }
-        if (config.setNameWrapper) { _setNameWrapper(config.nameWrapper); nameWrapperUpdated = true; }
-        if (config.setReputationEngine) { _setReputationEngine(config.reputationEngine); reputationUpdated = true; }
-        if (config.setAttestationRegistry) { _setAttestationRegistry(config.attestationRegistry); attestationUpdated = true; }
-        if (config.setAgentRootNode) { _setAgentRootNode(config.agentRootNode); agentRootUpdated = true; }
-        if (config.setClubRootNode) { _setClubRootNode(config.clubRootNode); clubRootUpdated = true; }
-        if (config.setNodeRootNode) { _setNodeRootNode(config.nodeRootNode); nodeRootUpdated = true; }
-        if (config.setAgentMerkleRoot) { _setAgentMerkleRoot(config.agentMerkleRoot); agentMerkleUpdated = true; }
-        if (config.setValidatorMerkleRoot) { _setValidatorMerkleRoot(config.validatorMerkleRoot); validatorMerkleUpdated = true; }
+    /// @dev Applies core single-value config toggles and returns a bitmask of what changed.
+    function _applyCoreConfigMask(ConfigUpdate calldata config) internal returns (uint256 mask) {
+        if (config.setENS) { _setENS(config.ens); mask |= (1 << 0); }
+        if (config.setNameWrapper) { _setNameWrapper(config.nameWrapper); mask |= (1 << 1); }
+        if (config.setReputationEngine) { _setReputationEngine(config.reputationEngine); mask |= (1 << 2); }
+        if (config.setAttestationRegistry) { _setAttestationRegistry(config.attestationRegistry); mask |= (1 << 3); }
+        if (config.setAgentRootNode) { _setAgentRootNode(config.agentRootNode); mask |= (1 << 4); }
+        if (config.setClubRootNode) { _setClubRootNode(config.clubRootNode); mask |= (1 << 5); }
+        if (config.setNodeRootNode) { _setNodeRootNode(config.nodeRootNode); mask |= (1 << 6); }
+        if (config.setAgentMerkleRoot) { _setAgentMerkleRoot(config.agentMerkleRoot); mask |= (1 << 7); }
+        if (config.setValidatorMerkleRoot) { _setValidatorMerkleRoot(config.validatorMerkleRoot); mask |= (1 << 8); }
     }
 
-    function _applyAdditionalAgents(AdditionalAgentConfig[] calldata updates) internal returns (uint256 len) {
-        len = updates.length;
+    function _applyAdditionalAgents(AdditionalAgentConfig[] calldata updates) internal {
+        uint256 len = updates.length;
         for (uint256 i; i < len; ) {
-            AdditionalAgentConfig calldata u = updates[i];
-            _setAdditionalAgent(u.agent, u.allowed);
+            _setAdditionalAgent(updates[i].agent, updates[i].allowed);
             unchecked { ++i; }
         }
     }
 
-    function _applyAdditionalValidators(AdditionalValidatorConfig[] calldata updates) internal returns (uint256 len) {
-        len = updates.length;
+    function _applyAdditionalValidators(AdditionalValidatorConfig[] calldata updates) internal {
+        uint256 len = updates.length;
         for (uint256 i; i < len; ) {
-            AdditionalValidatorConfig calldata u = updates[i];
-            _setAdditionalValidator(u.validator, u.allowed);
+            _setAdditionalValidator(updates[i].validator, updates[i].allowed);
             unchecked { ++i; }
         }
     }
 
-    function _applyAdditionalNodes(AdditionalNodeOperatorConfig[] calldata updates) internal returns (uint256 len) {
-        len = updates.length;
+    function _applyAdditionalNodes(AdditionalNodeOperatorConfig[] calldata updates) internal {
+        uint256 len = updates.length;
         for (uint256 i; i < len; ) {
-            AdditionalNodeOperatorConfig calldata u = updates[i];
-            _setAdditionalNodeOperator(u.nodeOperator, u.allowed);
+            _setAdditionalNodeOperator(updates[i].nodeOperator, updates[i].allowed);
             unchecked { ++i; }
         }
     }
@@ -829,11 +810,10 @@ contract IdentityRegistry is Ownable2Step {
         }
     }
 
-    function _applyAgentTypeUpdates(AgentTypeConfig[] calldata updates) internal returns (uint256 len) {
-        len = updates.length;
+    function _applyAgentTypeUpdates(AgentTypeConfig[] calldata updates) internal {
+        uint256 len = updates.length;
         for (uint256 i; i < len; ) {
-            AgentTypeConfig calldata u = updates[i];
-            _setAgentType(u.agent, u.agentType);
+            _setAgentType(updates[i].agent, updates[i].agentType);
             unchecked { ++i; }
         }
     }
