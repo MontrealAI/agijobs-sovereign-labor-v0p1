@@ -22,10 +22,9 @@ error EmptySubdomain();
 contract IdentityRegistry is Ownable2Step {
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
-    enum AgentType {
-        Human,
-        AI
-    }
+
+    enum AgentType { Human, AI }
+
     IENS public ens;
     INameWrapper public nameWrapper;
     IReputationEngine public reputationEngine;
@@ -350,6 +349,13 @@ contract IdentityRegistry is Ownable2Step {
         _setAgentType(agent, agentType);
     }
 
+    /**
+     * @notice Atomically apply multiple configuration updates.
+     * @dev Refactored to avoid stack-depth limits without viaIR:
+     *      - Use a bitmask to track which setters executed.
+     *      - Inline calldata element access inside loops.
+     *      - Reuse a single loop index variable.
+     */
     function applyConfiguration(
         ConfigUpdate calldata config,
         AdditionalAgentConfig[] calldata agentUpdates,
@@ -360,130 +366,76 @@ contract IdentityRegistry is Ownable2Step {
         RootNodeAliasConfig[] calldata nodeRootAliasUpdates,
         AgentTypeConfig[] calldata agentTypeUpdates
     ) external onlyOwner {
-        bool ensUpdated;
-        bool nameWrapperUpdated;
-        bool reputationUpdated;
-        bool attestationUpdated;
-        bool agentRootUpdated;
-        bool clubRootUpdated;
-        bool nodeRootUpdated;
-        bool agentMerkleUpdated;
-        bool validatorMerkleUpdated;
+        uint256 mask; // bit0..bit8 => ens, wrapper, reputation, attestation, agentRoot, clubRoot, nodeRoot, agentMerkle, validatorMerkle
 
-        if (config.setENS) {
-            _setENS(config.ens);
-            ensUpdated = true;
+        if (config.setENS)               { _setENS(config.ens);                               mask |= (1 << 0); }
+        if (config.setNameWrapper)       { _setNameWrapper(config.nameWrapper);               mask |= (1 << 1); }
+        if (config.setReputationEngine)  { _setReputationEngine(config.reputationEngine);     mask |= (1 << 2); }
+        if (config.setAttestationRegistry){ _setAttestationRegistry(config.attestationRegistry); mask |= (1 << 3); }
+        if (config.setAgentRootNode)     { _setAgentRootNode(config.agentRootNode);           mask |= (1 << 4); }
+        if (config.setClubRootNode)      { _setClubRootNode(config.clubRootNode);             mask |= (1 << 5); }
+        if (config.setNodeRootNode)      { _setNodeRootNode(config.nodeRootNode);             mask |= (1 << 6); }
+        if (config.setAgentMerkleRoot)   { _setAgentMerkleRoot(config.agentMerkleRoot);       mask |= (1 << 7); }
+        if (config.setValidatorMerkleRoot){ _setValidatorMerkleRoot(config.validatorMerkleRoot); mask |= (1 << 8); }
+
+        uint256 i;
+
+        // Additional agents
+        for (i = 0; i < agentUpdates.length; i++) {
+            _setAdditionalAgent(agentUpdates[i].agent, agentUpdates[i].allowed);
         }
-
-        if (config.setNameWrapper) {
-            _setNameWrapper(config.nameWrapper);
-            nameWrapperUpdated = true;
+        // Additional validators
+        for (i = 0; i < validatorUpdates.length; i++) {
+            _setAdditionalValidator(validatorUpdates[i].validator, validatorUpdates[i].allowed);
         }
-
-        if (config.setReputationEngine) {
-            _setReputationEngine(config.reputationEngine);
-            reputationUpdated = true;
+        // Additional node operators
+        for (i = 0; i < nodeUpdates.length; i++) {
+            _setAdditionalNodeOperator(nodeUpdates[i].nodeOperator, nodeUpdates[i].allowed);
         }
-
-        if (config.setAttestationRegistry) {
-            _setAttestationRegistry(config.attestationRegistry);
-            attestationUpdated = true;
-        }
-
-        if (config.setAgentRootNode) {
-            _setAgentRootNode(config.agentRootNode);
-            agentRootUpdated = true;
-        }
-
-        if (config.setClubRootNode) {
-            _setClubRootNode(config.clubRootNode);
-            clubRootUpdated = true;
-        }
-
-        if (config.setNodeRootNode) {
-            _setNodeRootNode(config.nodeRootNode);
-            nodeRootUpdated = true;
-        }
-
-        if (config.setAgentMerkleRoot) {
-            _setAgentMerkleRoot(config.agentMerkleRoot);
-            agentMerkleUpdated = true;
-        }
-
-        if (config.setValidatorMerkleRoot) {
-            _setValidatorMerkleRoot(config.validatorMerkleRoot);
-            validatorMerkleUpdated = true;
-        }
-
-        uint256 agentLen = agentUpdates.length;
-        for (uint256 i; i < agentLen; i++) {
-            AdditionalAgentConfig calldata update = agentUpdates[i];
-            _setAdditionalAgent(update.agent, update.allowed);
-        }
-
-        uint256 validatorLen = validatorUpdates.length;
-        for (uint256 i; i < validatorLen; i++) {
-            AdditionalValidatorConfig calldata update = validatorUpdates[i];
-            _setAdditionalValidator(update.validator, update.allowed);
-        }
-
-        uint256 nodeLen = nodeUpdates.length;
-        for (uint256 i; i < nodeLen; i++) {
-            AdditionalNodeOperatorConfig calldata nodeUpdate = nodeUpdates[i];
-            _setAdditionalNodeOperator(nodeUpdate.nodeOperator, nodeUpdate.allowed);
-        }
-
-        uint256 agentAliasLen = agentRootAliasUpdates.length;
-        for (uint256 i; i < agentAliasLen; i++) {
-            RootNodeAliasConfig calldata update = agentRootAliasUpdates[i];
-            if (update.allowed) {
-                _addAgentRootNodeAlias(update.node);
+        // Agent root aliases
+        for (i = 0; i < agentRootAliasUpdates.length; i++) {
+            if (agentRootAliasUpdates[i].allowed) {
+                _addAgentRootNodeAlias(agentRootAliasUpdates[i].node);
             } else {
-                _removeAgentRootNodeAlias(update.node);
+                _removeAgentRootNodeAlias(agentRootAliasUpdates[i].node);
             }
         }
-
-        uint256 clubAliasLen = clubRootAliasUpdates.length;
-        for (uint256 i; i < clubAliasLen; i++) {
-            RootNodeAliasConfig calldata update = clubRootAliasUpdates[i];
-            if (update.allowed) {
-                _addClubRootNodeAlias(update.node);
+        // Club root aliases
+        for (i = 0; i < clubRootAliasUpdates.length; i++) {
+            if (clubRootAliasUpdates[i].allowed) {
+                _addClubRootNodeAlias(clubRootAliasUpdates[i].node);
             } else {
-                _removeClubRootNodeAlias(update.node);
+                _removeClubRootNodeAlias(clubRootAliasUpdates[i].node);
             }
         }
-
-        uint256 nodeAliasLen = nodeRootAliasUpdates.length;
-        for (uint256 i; i < nodeAliasLen; i++) {
-            RootNodeAliasConfig calldata update = nodeRootAliasUpdates[i];
-            if (update.allowed) {
-                _addNodeRootNodeAlias(update.node);
+        // Node root aliases
+        for (i = 0; i < nodeRootAliasUpdates.length; i++) {
+            if (nodeRootAliasUpdates[i].allowed) {
+                _addNodeRootNodeAlias(nodeRootAliasUpdates[i].node);
             } else {
-                _removeNodeRootNodeAlias(update.node);
+                _removeNodeRootNodeAlias(nodeRootAliasUpdates[i].node);
             }
         }
-
-        uint256 agentTypeLen = agentTypeUpdates.length;
-        for (uint256 i; i < agentTypeLen; i++) {
-            AgentTypeConfig calldata update = agentTypeUpdates[i];
-            _setAgentType(update.agent, update.agentType);
+        // Agent type updates
+        for (i = 0; i < agentTypeUpdates.length; i++) {
+            _setAgentType(agentTypeUpdates[i].agent, agentTypeUpdates[i].agentType);
         }
 
         emit ConfigurationApplied(
             msg.sender,
-            ensUpdated,
-            nameWrapperUpdated,
-            reputationUpdated,
-            attestationUpdated,
-            agentRootUpdated,
-            clubRootUpdated,
-            nodeRootUpdated,
-            agentMerkleUpdated,
-            validatorMerkleUpdated,
-            agentLen,
-            validatorLen,
-            nodeLen,
-            agentTypeLen
+            (mask & (1 << 0)) != 0,
+            (mask & (1 << 1)) != 0,
+            (mask & (1 << 2)) != 0,
+            (mask & (1 << 3)) != 0,
+            (mask & (1 << 4)) != 0,
+            (mask & (1 << 5)) != 0,
+            (mask & (1 << 6)) != 0,
+            (mask & (1 << 7)) != 0,
+            (mask & (1 << 8)) != 0,
+            agentUpdates.length,
+            validatorUpdates.length,
+            nodeUpdates.length,
+            agentTypeUpdates.length
         );
     }
 
@@ -592,10 +544,10 @@ contract IdentityRegistry is Ownable2Step {
         }
         agentRootNodeAliasSet[node] = false;
         uint256 len = agentRootNodeAliases.length;
-        for (uint256 i; i < len; i++) {
-            if (agentRootNodeAliases[i] == node) {
-                if (i != len - 1) {
-                    agentRootNodeAliases[i] = agentRootNodeAliases[len - 1];
+        for (uint256 j; j < len; j++) {
+            if (agentRootNodeAliases[j] == node) {
+                if (j != len - 1) {
+                    agentRootNodeAliases[j] = agentRootNodeAliases[len - 1];
                 }
                 agentRootNodeAliases.pop();
                 break;
@@ -625,10 +577,10 @@ contract IdentityRegistry is Ownable2Step {
         }
         clubRootNodeAliasSet[node] = false;
         uint256 len = clubRootNodeAliases.length;
-        for (uint256 i; i < len; i++) {
-            if (clubRootNodeAliases[i] == node) {
-                if (i != len - 1) {
-                    clubRootNodeAliases[i] = clubRootNodeAliases[len - 1];
+        for (uint256 j; j < len; j++) {
+            if (clubRootNodeAliases[j] == node) {
+                if (j != len - 1) {
+                    clubRootNodeAliases[j] = clubRootNodeAliases[len - 1];
                 }
                 clubRootNodeAliases.pop();
                 break;
@@ -658,10 +610,10 @@ contract IdentityRegistry is Ownable2Step {
         }
         nodeRootNodeAliasSet[node] = false;
         uint256 len = nodeRootNodeAliases.length;
-        for (uint256 i; i < len; i++) {
-            if (nodeRootNodeAliases[i] == node) {
-                if (i != len - 1) {
-                    nodeRootNodeAliases[i] = nodeRootNodeAliases[len - 1];
+        for (uint256 j; j < len; j++) {
+            if (nodeRootNodeAliases[j] == node) {
+                if (j != len - 1) {
+                    nodeRootNodeAliases[j] = nodeRootNodeAliases[len - 1];
                 }
                 nodeRootNodeAliases.pop();
                 break;
@@ -1387,4 +1339,3 @@ contract IdentityRegistry is Ownable2Step {
         revert EtherNotAccepted();
     }
 }
-
