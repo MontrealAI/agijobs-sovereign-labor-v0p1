@@ -14,6 +14,7 @@ error UnauthorizedAgent();
 error EtherNotAccepted();
 error IncompatibleReputationEngine();
 error EmptySubdomain();
+error NotSelf();
 
 /// @title IdentityRegistry
 /// @notice Verifies ENS subdomain ownership and tracks manual allowlists
@@ -233,253 +234,135 @@ contract IdentityRegistry is Ownable2Step {
     function removeAdditionalNodeOperator(address nodeOperator) external onlyOwner { _setAdditionalNodeOperator(nodeOperator, false); }
     function setAgentType(address agent, AgentType agentType) external onlyOwner { _setAgentType(agent, agentType); }
 
-    // ---------------------------------------------------------------------
-    // Stack-safe applyConfiguration (no viaIR, no ABI change)
-    // ---------------------------------------------------------------------
+    // --------------------- stack-safe applyConfiguration --------------------
 
-    struct _Scratch {
+    modifier onlySelf() {
+        if (msg.sender != address(this)) revert NotSelf();
+        _;
+    }
+
+    struct EmitScratch {
         uint256 mask;          // bit0..bit8 => ens, wrapper, reputation, attestation, agentRoot, clubRoot, nodeRoot, agentMerkle, validatorMerkle
         uint256 agentLen;
         uint256 validatorLen;
         uint256 nodeLen;
         uint256 agentTypeLen;
     }
-    _Scratch private _emitScratch;
+    EmitScratch private _emitScratch;
 
     /**
-     * @notice Atomically apply multiple configuration updates.
-     * @dev To avoid stack-depth limits in non-IR codegen, this function does NOT
-     *      reference its parameters. It decodes directly from calldata inside
-     *      small helpers and emits once at the end.
+     * @notice Atomically apply multiple configuration updates (stack-safe, non-IR).
      */
     function applyConfiguration(
-        ConfigUpdate calldata,
-        AdditionalAgentConfig[] calldata,
-        AdditionalValidatorConfig[] calldata,
-        AdditionalNodeOperatorConfig[] calldata,
-        RootNodeAliasConfig[] calldata,
-        RootNodeAliasConfig[] calldata,
-        RootNodeAliasConfig[] calldata,
-        AgentTypeConfig[] calldata
+        ConfigUpdate calldata config,
+        AdditionalAgentConfig[] calldata agentUpdates,
+        AdditionalValidatorConfig[] calldata validatorUpdates,
+        AdditionalNodeOperatorConfig[] calldata nodeUpdates,
+        RootNodeAliasConfig[] calldata agentRootAliasUpdates,
+        RootNodeAliasConfig[] calldata clubRootAliasUpdates,
+        RootNodeAliasConfig[] calldata nodeRootAliasUpdates,
+        AgentTypeConfig[] calldata agentTypeUpdates
     ) external onlyOwner {
-        _applyCoreConfigFromCalldata();
-        _applyAdditionalAgentsFromCalldata();
-        _applyAdditionalValidatorsFromCalldata();
-        _applyAdditionalNodesFromCalldata();
-        _applyAgentRootAliasesFromCalldata();
-        _applyClubRootAliasesFromCalldata();
-        _applyNodeRootAliasesFromCalldata();
-        _applyAgentTypeUpdatesFromCalldata();
-        _emitConfigurationApplied(msg.sender);
+        delete _emitScratch;
+
+        if (config.setENS)                 { this._setENS_ext(config.ens); }
+        if (config.setNameWrapper)         { this._setNameWrapper_ext(config.nameWrapper); }
+        if (config.setReputationEngine)    { this._setReputationEngine_ext(config.reputationEngine); }
+        if (config.setAttestationRegistry) { this._setAttestationRegistry_ext(config.attestationRegistry); }
+        if (config.setAgentRootNode)       { this._setAgentRootNode_ext(config.agentRootNode); }
+        if (config.setClubRootNode)        { this._setClubRootNode_ext(config.clubRootNode); }
+        if (config.setNodeRootNode)        { this._setNodeRootNode_ext(config.nodeRootNode); }
+        if (config.setAgentMerkleRoot)     { this._setAgentMerkleRoot_ext(config.agentMerkleRoot); }
+        if (config.setValidatorMerkleRoot) { this._setValidatorMerkleRoot_ext(config.validatorMerkleRoot); }
+
+        this._applyAdditionalAgentsExt(agentUpdates);
+        this._applyAdditionalValidatorsExt(validatorUpdates);
+        this._applyAdditionalNodesExt(nodeUpdates);
+        this._applyAgentRootAliasesExt(agentRootAliasUpdates);
+        this._applyClubRootAliasesExt(clubRootAliasUpdates);
+        this._applyNodeRootAliasesExt(nodeRootAliasUpdates);
+        this._applyAgentTypeUpdatesExt(agentTypeUpdates);
+
+        this._emitAndClearConfigurationAppliedExt(msg.sender);
     }
 
-    // Offsets for decoding:
-    // First param (ConfigUpdate) occupies 18 words starting at calldata[4].
-    // Then 7 dynamic arrays have their head offsets at: 4 + 18*32 + k*32 (k=0..6).
-    uint256 private constant _CFG_BASE = 4;
-    uint256 private constant _CFG_WORDS = 18;
-    uint256 private constant _HEAD_BASE = _CFG_BASE + _CFG_WORDS * 32; // 580
+    // ---- external self-call helpers (guarded by onlySelf) ----
 
-    function _loadArrayPtr(uint256 headOffset) private pure returns (uint256 dataStart, uint256 len) {
-        // headOffset is the absolute position of the head slot in calldata
-        uint256 off;
-        assembly {
-            off := calldataload(headOffset)
-            dataStart := add(4, off)
-            len := calldataload(dataStart)
-        }
-    }
+    function _setENS_ext(address a) external onlySelf { _setENS(a); _emitScratch.mask |= (1 << 0); }
+    function _setNameWrapper_ext(address a) external onlySelf { _setNameWrapper(a); _emitScratch.mask |= (1 << 1); }
+    function _setReputationEngine_ext(address a) external onlySelf { _setReputationEngine(a); _emitScratch.mask |= (1 << 2); }
+    function _setAttestationRegistry_ext(address a) external onlySelf { _setAttestationRegistry(a); _emitScratch.mask |= (1 << 3); }
+    function _setAgentRootNode_ext(bytes32 v) external onlySelf { _setAgentRootNode(v); _emitScratch.mask |= (1 << 4); }
+    function _setClubRootNode_ext(bytes32 v) external onlySelf { _setClubRootNode(v); _emitScratch.mask |= (1 << 5); }
+    function _setNodeRootNode_ext(bytes32 v) external onlySelf { _setNodeRootNode(v); _emitScratch.mask |= (1 << 6); }
+    function _setAgentMerkleRoot_ext(bytes32 v) external onlySelf { _setAgentMerkleRoot(v); _emitScratch.mask |= (1 << 7); }
+    function _setValidatorMerkleRoot_ext(bytes32 v) external onlySelf { _setValidatorMerkleRoot(v); _emitScratch.mask |= (1 << 8); }
 
-    function _applyCoreConfigFromCalldata() private {
-        uint256 m;
-        // setENS / ens
-        {
-            uint256 set_; address a;
-            assembly {
-                set_ := calldataload(_CFG_BASE)
-                a := shr(96, calldataload(add(_CFG_BASE, 32)))
-            }
-            if (set_ != 0) { _setENS(a); m |= (1 << 0); }
-        }
-        // setNameWrapper / nameWrapper
-        {
-            uint256 set_; address a;
-            assembly {
-                set_ := calldataload(add(_CFG_BASE, 64))
-                a := shr(96, calldataload(add(_CFG_BASE, 96)))
-            }
-            if (set_ != 0) { _setNameWrapper(a); m |= (1 << 1); }
-        }
-        // setReputationEngine / reputationEngine
-        {
-            uint256 set_; address a;
-            assembly {
-                set_ := calldataload(add(_CFG_BASE, 128))
-                a := shr(96, calldataload(add(_CFG_BASE, 160)))
-            }
-            if (set_ != 0) { _setReputationEngine(a); m |= (1 << 2); }
-        }
-        // setAttestationRegistry / attestationRegistry
-        {
-            uint256 set_; address a;
-            assembly {
-                set_ := calldataload(add(_CFG_BASE, 192))
-                a := shr(96, calldataload(add(_CFG_BASE, 224)))
-            }
-            if (set_ != 0) { _setAttestationRegistry(a); m |= (1 << 3); }
-        }
-        // setAgentRootNode / agentRootNode
-        {
-            uint256 set_; bytes32 v;
-            assembly {
-                set_ := calldataload(add(_CFG_BASE, 256))
-                v := calldataload(add(_CFG_BASE, 288))
-            }
-            if (set_ != 0) { _setAgentRootNode(v); m |= (1 << 4); }
-        }
-        // setClubRootNode / clubRootNode
-        {
-            uint256 set_; bytes32 v;
-            assembly {
-                set_ := calldataload(add(_CFG_BASE, 320))
-                v := calldataload(add(_CFG_BASE, 352))
-            }
-            if (set_ != 0) { _setClubRootNode(v); m |= (1 << 5); }
-        }
-        // setNodeRootNode / nodeRootNode
-        {
-            uint256 set_; bytes32 v;
-            assembly {
-                set_ := calldataload(add(_CFG_BASE, 384))
-                v := calldataload(add(_CFG_BASE, 416))
-            }
-            if (set_ != 0) { _setNodeRootNode(v); m |= (1 << 6); }
-        }
-        // setAgentMerkleRoot / agentMerkleRoot
-        {
-            uint256 set_; bytes32 v;
-            assembly {
-                set_ := calldataload(add(_CFG_BASE, 448))
-                v := calldataload(add(_CFG_BASE, 480))
-            }
-            if (set_ != 0) { _setAgentMerkleRoot(v); m |= (1 << 7); }
-        }
-        // setValidatorMerkleRoot / validatorMerkleRoot
-        {
-            uint256 set_; bytes32 v;
-            assembly {
-                set_ := calldataload(add(_CFG_BASE, 512))
-                v := calldataload(add(_CFG_BASE, 544))
-            }
-            if (set_ != 0) { _setValidatorMerkleRoot(v); m |= (1 << 8); }
-        }
-        _emitScratch.mask = m;
-    }
-
-    function _applyAdditionalAgentsFromCalldata() private {
-        (uint256 dataStart, uint256 len) = _loadArrayPtr(_HEAD_BASE /*580*/);
+    function _applyAdditionalAgentsExt(AdditionalAgentConfig[] calldata updates) external onlySelf {
+        uint256 len = updates.length;
         for (uint256 i; i < len; ) {
-            address a; uint256 allow;
-            assembly {
-                let elem := add(add(dataStart, 32), mul(i, 64))
-                a := shr(96, calldataload(elem))
-                allow := calldataload(add(elem, 32))
-            }
-            _setAdditionalAgent(a, allow != 0);
+            _setAdditionalAgent(updates[i].agent, updates[i].allowed);
             unchecked { ++i; }
         }
         _emitScratch.agentLen = len;
     }
 
-    function _applyAdditionalValidatorsFromCalldata() private {
-        (uint256 dataStart, uint256 len) = _loadArrayPtr(_HEAD_BASE + 32 /*612*/);
+    function _applyAdditionalValidatorsExt(AdditionalValidatorConfig[] calldata updates) external onlySelf {
+        uint256 len = updates.length;
         for (uint256 i; i < len; ) {
-            address a; uint256 allow;
-            assembly {
-                let elem := add(add(dataStart, 32), mul(i, 64))
-                a := shr(96, calldataload(elem))
-                allow := calldataload(add(elem, 32))
-            }
-            _setAdditionalValidator(a, allow != 0);
+            _setAdditionalValidator(updates[i].validator, updates[i].allowed);
             unchecked { ++i; }
         }
         _emitScratch.validatorLen = len;
     }
 
-    function _applyAdditionalNodesFromCalldata() private {
-        (uint256 dataStart, uint256 len) = _loadArrayPtr(_HEAD_BASE + 64 /*644*/);
+    function _applyAdditionalNodesExt(AdditionalNodeOperatorConfig[] calldata updates) external onlySelf {
+        uint256 len = updates.length;
         for (uint256 i; i < len; ) {
-            address a; uint256 allow;
-            assembly {
-                let elem := add(add(dataStart, 32), mul(i, 64))
-                a := shr(96, calldataload(elem))
-                allow := calldataload(add(elem, 32))
-            }
-            _setAdditionalNodeOperator(a, allow != 0);
+            _setAdditionalNodeOperator(updates[i].nodeOperator, updates[i].allowed);
             unchecked { ++i; }
         }
         _emitScratch.nodeLen = len;
     }
 
-    function _applyAgentRootAliasesFromCalldata() private {
-        (uint256 dataStart, uint256 len) = _loadArrayPtr(_HEAD_BASE + 96 /*676*/);
+    function _applyAgentRootAliasesExt(RootNodeAliasConfig[] calldata updates) external onlySelf {
+        uint256 len = updates.length;
         for (uint256 i; i < len; ) {
-            bytes32 node; uint256 allow;
-            assembly {
-                let elem := add(add(dataStart, 32), mul(i, 64))
-                node := calldataload(elem)
-                allow := calldataload(add(elem, 32))
-            }
-            if (allow != 0) _addAgentRootNodeAlias(node); else _removeAgentRootNodeAlias(node);
+            RootNodeAliasConfig calldata u = updates[i];
+            if (u.allowed) _addAgentRootNodeAlias(u.node); else _removeAgentRootNodeAlias(u.node);
             unchecked { ++i; }
         }
     }
 
-    function _applyClubRootAliasesFromCalldata() private {
-        (uint256 dataStart, uint256 len) = _loadArrayPtr(_HEAD_BASE + 128 /*708*/);
+    function _applyClubRootAliasesExt(RootNodeAliasConfig[] calldata updates) external onlySelf {
+        uint256 len = updates.length;
         for (uint256 i; i < len; ) {
-            bytes32 node; uint256 allow;
-            assembly {
-                let elem := add(add(dataStart, 32), mul(i, 64))
-                node := calldataload(elem)
-                allow := calldataload(add(elem, 32))
-            }
-            if (allow != 0) _addClubRootNodeAlias(node); else _removeClubRootNodeAlias(node);
+            RootNodeAliasConfig calldata u = updates[i];
+            if (u.allowed) _addClubRootNodeAlias(u.node); else _removeClubRootNodeAlias(u.node);
             unchecked { ++i; }
         }
     }
 
-    function _applyNodeRootAliasesFromCalldata() private {
-        (uint256 dataStart, uint256 len) = _loadArrayPtr(_HEAD_BASE + 160 /*740*/);
+    function _applyNodeRootAliasesExt(RootNodeAliasConfig[] calldata updates) external onlySelf {
+        uint256 len = updates.length;
         for (uint256 i; i < len; ) {
-            bytes32 node; uint256 allow;
-            assembly {
-                let elem := add(add(dataStart, 32), mul(i, 64))
-                node := calldataload(elem)
-                allow := calldataload(add(elem, 32))
-            }
-            if (allow != 0) _addNodeRootNodeAlias(node); else _removeNodeRootNodeAlias(node);
+            RootNodeAliasConfig calldata u = updates[i];
+            if (u.allowed) _addNodeRootNodeAlias(u.node); else _removeNodeRootNodeAlias(u.node);
             unchecked { ++i; }
         }
     }
 
-    function _applyAgentTypeUpdatesFromCalldata() private {
-        (uint256 dataStart, uint256 len) = _loadArrayPtr(_HEAD_BASE + 192 /*772*/);
+    function _applyAgentTypeUpdatesExt(AgentTypeConfig[] calldata updates) external onlySelf {
+        uint256 len = updates.length;
         for (uint256 i; i < len; ) {
-            address a; uint256 t;
-            assembly {
-                let elem := add(add(dataStart, 32), mul(i, 64))
-                a := shr(96, calldataload(elem))
-                t := calldataload(add(elem, 32))
-            }
-            _setAgentType(a, AgentType(uint8(t)));
+            _setAgentType(updates[i].agent, updates[i].agentType);
             unchecked { ++i; }
         }
         _emitScratch.agentTypeLen = len;
     }
 
-    function _emitConfigurationApplied(address caller) private {
-        _Scratch memory s = _emitScratch;
+    function _emitAndClearConfigurationAppliedExt(address caller) external onlySelf {
+        EmitScratch storage s = _emitScratch;
         emit ConfigurationApplied(
             caller,
             (s.mask & (1 << 0)) != 0,
@@ -657,6 +540,30 @@ contract IdentityRegistry is Ownable2Step {
     // ---------------------------------------------------------------------
     // Authorization helpers
     // ---------------------------------------------------------------------
+
+    // Reusable, stack-light attestation helper
+    function _isAttestedForRole(
+        bytes32 primaryRoot,
+        bytes32[] storage aliases,
+        bytes32 labelHash,
+        AttestationRegistry.Role role,
+        address claimant
+    ) internal view returns (bool) {
+        if (address(attestationRegistry) == address(0)) return false;
+
+        if (primaryRoot != bytes32(0)) {
+            bytes32 node = keccak256(abi.encodePacked(primaryRoot, labelHash));
+            if (attestationRegistry.isAttested(node, role, claimant)) return true;
+        }
+
+        uint256 len = aliases.length;
+        for (uint256 i; i < len; ) {
+            bytes32 aliasNode = keccak256(abi.encodePacked(aliases[i], labelHash));
+            if (attestationRegistry.isAttested(aliasNode, role, claimant)) return true;
+            unchecked { ++i; }
+        }
+        return false;
+    }
 
     function _checkAgentENSOwnership(
         address claimant,
@@ -870,52 +777,20 @@ contract IdentityRegistry is Ownable2Step {
         );
     }
 
+    // -------------------------- Authorization (stack-safe) --------------------------
+
     function isAuthorizedAgent(
         address claimant,
         string calldata subdomain,
         bytes32[] calldata proof
     ) public view returns (bool) {
         _assertSubdomain(subdomain);
-        if (
-            address(reputationEngine) != address(0) &&
-            reputationEngine.isBlacklisted(claimant)
-        ) {
-            return false;
-        }
-        if (additionalAgents[claimant]) {
+        if (address(reputationEngine) != address(0) && reputationEngine.isBlacklisted(claimant)) return false;
+        if (additionalAgents[claimant]) return true;
+
+        bytes32 labelHash = keccak256(bytes(subdomain));
+        if (_isAttestedForRole(agentRootNode, agentRootNodeAliases, labelHash, AttestationRegistry.Role.Agent, claimant)) {
             return true;
-        }
-        if (address(attestationRegistry) != address(0)) {
-            bytes32 labelHash = keccak256(bytes(subdomain));
-            if (agentRootNode != bytes32(0)) {
-                bytes32 node = keccak256(
-                    abi.encodePacked(agentRootNode, labelHash)
-                );
-                if (
-                    attestationRegistry.isAttested(
-                        node,
-                        AttestationRegistry.Role.Agent,
-                        claimant
-                    )
-                ) {
-                    return true;
-                }
-            }
-            uint256 aliasLen = agentRootNodeAliases.length;
-            for (uint256 i; i < aliasLen; i++) {
-                bytes32 aliasNode = keccak256(
-                    abi.encodePacked(agentRootNodeAliases[i], labelHash)
-                );
-                if (
-                    attestationRegistry.isAttested(
-                        aliasNode,
-                        AttestationRegistry.Role.Agent,
-                        claimant
-                    )
-                ) {
-                    return true;
-                }
-            }
         }
         return _checkAgentENSOwnership(claimant, subdomain, proof);
     }
@@ -926,84 +801,24 @@ contract IdentityRegistry is Ownable2Step {
         bytes32[] calldata proof
     ) public view returns (bool) {
         _assertSubdomain(subdomain);
-        if (
-            address(reputationEngine) != address(0) &&
-            reputationEngine.isBlacklisted(claimant)
-        ) {
-            return false;
-        }
-        if (additionalValidators[claimant]) {
+        if (address(reputationEngine) != address(0) && reputationEngine.isBlacklisted(claimant)) return false;
+        if (additionalValidators[claimant]) return true;
+        if (additionalNodeOperators[claimant]) return true;
+
+        bytes32 labelHash = keccak256(bytes(subdomain));
+
+        if (_isAttestedForRole(clubRootNode, clubRootNodeAliases, labelHash, AttestationRegistry.Role.Validator, claimant)) {
             return true;
         }
-        if (additionalNodeOperators[claimant]) {
+        if (_isAttestedForRole(nodeRootNode, nodeRootNodeAliases, labelHash, AttestationRegistry.Role.Node, claimant)) {
             return true;
         }
-        if (address(attestationRegistry) != address(0)) {
-            bytes32 labelHash = keccak256(bytes(subdomain));
-            if (clubRootNode != bytes32(0)) {
-                bytes32 node = keccak256(
-                    abi.encodePacked(clubRootNode, labelHash)
-                );
-                if (
-                    attestationRegistry.isAttested(
-                        node,
-                        AttestationRegistry.Role.Validator,
-                        claimant
-                    )
-                ) {
-                    return true;
-                }
-            }
-            uint256 aliasLen = clubRootNodeAliases.length;
-            for (uint256 i; i < aliasLen; i++) {
-                bytes32 aliasNode = keccak256(
-                    abi.encodePacked(clubRootNodeAliases[i], labelHash)
-                );
-                if (
-                    attestationRegistry.isAttested(
-                        aliasNode,
-                        AttestationRegistry.Role.Validator,
-                        claimant
-                    )
-                ) {
-                    return true;
-                }
-            }
-            if (nodeRootNode != bytes32(0)) {
-                bytes32 node2 = keccak256(
-                    abi.encodePacked(nodeRootNode, labelHash)
-                );
-                if (
-                    attestationRegistry.isAttested(
-                        node2,
-                        AttestationRegistry.Role.Node,
-                        claimant
-                    )
-                ) {
-                    return true;
-                }
-            }
-            uint256 nodeAliasLen = nodeRootNodeAliases.length;
-            for (uint256 i; i < nodeAliasLen; i++) {
-                bytes32 aliasNode2 = keccak256(
-                    abi.encodePacked(nodeRootNodeAliases[i], labelHash)
-                );
-                if (
-                    attestationRegistry.isAttested(
-                        aliasNode2,
-                        AttestationRegistry.Role.Node,
-                        claimant
-                    )
-                ) {
-                    return true;
-                }
-            }
-        }
-        if (_checkValidatorENSOwnership(claimant, subdomain, proof)) {
-            return true;
-        }
+
+        if (_checkValidatorENSOwnership(claimant, subdomain, proof)) return true;
         return _checkNodeENSOwnership(claimant, subdomain, proof);
     }
+
+    // ----------------------------- Verify flows -----------------------------
 
     function _verifyAgent(
         address claimant,
@@ -1011,25 +826,21 @@ contract IdentityRegistry is Ownable2Step {
         bytes32[] calldata proof
     ) internal returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle) {
         _assertSubdomain(subdomain);
-        if (
-            address(reputationEngine) != address(0) &&
-            reputationEngine.isBlacklisted(claimant)
-        ) {
+        if (address(reputationEngine) != address(0) && reputationEngine.isBlacklisted(claimant))
             return (false, bytes32(0), false, false);
-        }
+
         bytes32 labelHash = keccak256(bytes(subdomain));
         if (agentRootNode != bytes32(0)) node = keccak256(abi.encodePacked(agentRootNode, labelHash));
+
         if (additionalAgents[claimant]) {
             ok = true;
         } else if (address(attestationRegistry) != address(0)) {
-            if (node != bytes32(0) &&
-                attestationRegistry.isAttested(node, AttestationRegistry.Role.Agent, claimant)) {
+            if (node != bytes32(0) && attestationRegistry.isAttested(node, AttestationRegistry.Role.Agent, claimant)) {
                 ok = true;
             } else {
                 uint256 aliasLen = agentRootNodeAliases.length;
                 for (uint256 i; i < aliasLen; i++) {
-                    bytes32 aliasRoot = agentRootNodeAliases[i];
-                    bytes32 aliasNode = keccak256(abi.encodePacked(aliasRoot, labelHash));
+                    bytes32 aliasNode = keccak256(abi.encodePacked(agentRootNodeAliases[i], labelHash));
                     if (attestationRegistry.isAttested(aliasNode, AttestationRegistry.Role.Agent, claimant)) {
                         node = aliasNode; ok = true; break;
                     }
@@ -1086,8 +897,7 @@ contract IdentityRegistry is Ownable2Step {
             }
             uint256 aliasLen = nodeRootNodeAliases.length;
             for (uint256 i; i < aliasLen; i++) {
-                bytes32 aliasRoot = nodeRootNodeAliases[i];
-                bytes32 aliasNode = keccak256(abi.encodePacked(aliasRoot, labelHash));
+                bytes32 aliasNode = keccak256(abi.encodePacked(nodeRootNodeAliases[i], labelHash));
                 if (attestationRegistry.isAttested(aliasNode, AttestationRegistry.Role.Node, claimant)) {
                     emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
                     return (true, aliasNode, false, false);
@@ -1101,28 +911,32 @@ contract IdentityRegistry is Ownable2Step {
     }
 
     function verifyValidator(
-        address claimant, string calldata subdomain, bytes32[] calldata proof
+        address claimant,
+        string calldata subdomain,
+        bytes32[] calldata proof
     ) external returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle) {
         _assertSubdomain(subdomain);
         if (address(reputationEngine) != address(0) && reputationEngine.isBlacklisted(claimant))
             return (false, bytes32(0), false, false);
+
         bytes32 labelHash = keccak256(bytes(subdomain));
         bytes32 validatorNode = _deriveNodeFromLabel(clubRootNode, clubRootNodeAliases, labelHash);
         node = validatorNode;
+
         if (additionalValidators[claimant]) {
             emit AdditionalValidatorUsed(claimant, subdomain);
             emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
             ok = true;
         } else if (address(attestationRegistry) != address(0)) {
+            // Try club/validator attestation
             if (validatorNode != bytes32(0) &&
                 attestationRegistry.isAttested(validatorNode, AttestationRegistry.Role.Validator, claimant)) {
                 emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
-                node = validatorNode; ok = true;
+                ok = true;
             } else {
                 uint256 aliasLen = clubRootNodeAliases.length;
                 for (uint256 i; i < aliasLen; i++) {
-                    bytes32 aliasRoot = clubRootNodeAliases[i];
-                    bytes32 aliasNode = keccak256(abi.encodePacked(aliasRoot, labelHash));
+                    bytes32 aliasNode = keccak256(abi.encodePacked(clubRootNodeAliases[i], labelHash));
                     if (attestationRegistry.isAttested(aliasNode, AttestationRegistry.Role.Validator, claimant)) {
                         emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
                         node = aliasNode; ok = true; break;
@@ -1130,10 +944,12 @@ contract IdentityRegistry is Ownable2Step {
                 }
             }
         }
+
         if (!ok) {
             (ok, node, viaWrapper, viaMerkle) = _verifyValidatorENSOwnership(claimant, subdomain, proof);
             if (!ok) (ok, node, viaWrapper, viaMerkle) = _verifyNode(claimant, subdomain, proof);
         }
+
         if (ok) {
             emit IdentityVerified(claimant, AttestationRegistry.Role.Validator, node, subdomain);
             emit ENSVerified(claimant, node, subdomain, viaWrapper, viaMerkle);
@@ -1143,7 +959,9 @@ contract IdentityRegistry is Ownable2Step {
     }
 
     function verifyNode(
-        address claimant, string calldata subdomain, bytes32[] calldata proof
+        address claimant,
+        string calldata subdomain,
+        bytes32[] calldata proof
     ) external returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle) {
         (ok, node, viaWrapper, viaMerkle) = _verifyNode(claimant, subdomain, proof);
         if (ok) {
@@ -1162,6 +980,9 @@ contract IdentityRegistry is Ownable2Step {
     // Ether rejection
     // ---------------------------------------------------------------
 
+    /// @dev Reject direct ETH transfers to keep the contract tax neutral.
     receive() external payable { revert EtherNotAccepted(); }
+
+    /// @dev Reject calls with unexpected calldata or funds.
     fallback() external payable { revert EtherNotAccepted(); }
 }
