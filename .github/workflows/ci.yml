@@ -9,8 +9,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: '20'   # no cache key needed without a lockfile
 
       - run: npm install --no-audit --no-fund
       - run: npx truffle compile
