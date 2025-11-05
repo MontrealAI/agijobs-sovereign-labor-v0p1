@@ -235,7 +235,7 @@ contract IdentityRegistry is Ownable2Step {
 
     /**
      * @notice Atomically apply multiple configuration updates.
-     * @dev Thin wrapper: no locals; work is delegated to helpers to avoid stack blowups.
+     * @dev Keep this wrapper stack-light; do the work in small helpers and emit via a compact mask.
      */
     function applyConfiguration(
         ConfigUpdate calldata config,
@@ -256,13 +256,25 @@ contract IdentityRegistry is Ownable2Step {
         _applyNodeRootAliases(nodeRootAliasUpdates);
         _applyAgentTypeUpdates(agentTypeUpdates);
 
-        _emitAppliedAll(
+        // Build a small bitmask for boolean flags to avoid passing large structs.
+        uint256 mask;
+        if (config.setENS) mask |= (1 << 0);
+        if (config.setNameWrapper) mask |= (1 << 1);
+        if (config.setReputationEngine) mask |= (1 << 2);
+        if (config.setAttestationRegistry) mask |= (1 << 3);
+        if (config.setAgentRootNode) mask |= (1 << 4);
+        if (config.setClubRootNode) mask |= (1 << 5);
+        if (config.setNodeRootNode) mask |= (1 << 6);
+        if (config.setAgentMerkleRoot) mask |= (1 << 7);
+        if (config.setValidatorMerkleRoot) mask |= (1 << 8);
+
+        _emitAppliedFromMask(
             msg.sender,
-            config,
-            agentUpdates,
-            validatorUpdates,
-            nodeUpdates,
-            agentTypeUpdates
+            mask,
+            agentUpdates.length,
+            validatorUpdates.length,
+            nodeUpdates.length,
+            agentTypeUpdates.length
         );
     }
 
@@ -737,7 +749,7 @@ contract IdentityRegistry is Ownable2Step {
 
     // ----------------- Internal helpers to reduce stack use ----------------
 
-    /// @dev Apply the single‑value config toggles; no return to avoid locals in caller.
+    /// @dev Apply the single‑value config toggles; no returns keeps caller stack shallow.
     function _applyCoreConfig(ConfigUpdate calldata cfg) internal {
         if (cfg.setENS) _setENS(cfg.ens);
         if (cfg.setNameWrapper) _setNameWrapper(cfg.nameWrapper);
@@ -809,30 +821,30 @@ contract IdentityRegistry is Ownable2Step {
         }
     }
 
-    /// @dev Emit in its own tiny frame to keep the external wrapper stack‑light.
-    function _emitAppliedAll(
+    /// @dev Emit in its own tiny frame using a compact bitmask and counts; avoids pushing many args at callsite.
+    function _emitAppliedFromMask(
         address caller,
-        ConfigUpdate calldata cfg,
-        AdditionalAgentConfig[] calldata agentUpdates,
-        AdditionalValidatorConfig[] calldata validatorUpdates,
-        AdditionalNodeOperatorConfig[] calldata nodeUpdates,
-        AgentTypeConfig[] calldata agentTypeUpdates
+        uint256 mask,
+        uint256 addAgents,
+        uint256 addValidators,
+        uint256 addNodes,
+        uint256 agentTypesLen
     ) internal {
         emit ConfigurationApplied(
             caller,
-            cfg.setENS,
-            cfg.setNameWrapper,
-            cfg.setReputationEngine,
-            cfg.setAttestationRegistry,
-            cfg.setAgentRootNode,
-            cfg.setClubRootNode,
-            cfg.setNodeRootNode,
-            cfg.setAgentMerkleRoot,
-            cfg.setValidatorMerkleRoot,
-            agentUpdates.length,
-            validatorUpdates.length,
-            nodeUpdates.length,
-            agentTypeUpdates.length
+            (mask & (1 << 0)) != 0,
+            (mask & (1 << 1)) != 0,
+            (mask & (1 << 2)) != 0,
+            (mask & (1 << 3)) != 0,
+            (mask & (1 << 4)) != 0,
+            (mask & (1 << 5)) != 0,
+            (mask & (1 << 6)) != 0,
+            (mask & (1 << 7)) != 0,
+            (mask & (1 << 8)) != 0,
+            addAgents,
+            addValidators,
+            addNodes,
+            agentTypesLen
         );
     }
 }
