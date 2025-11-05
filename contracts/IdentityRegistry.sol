@@ -235,7 +235,7 @@ contract IdentityRegistry is Ownable2Step {
 
     /**
      * @notice Atomically apply multiple configuration updates.
-     * @dev Keep this wrapper stack-light; do the work in small helpers and emit via a compact mask.
+     * @dev Uses a bitmask + a single memory struct to keep the call frame shallow (no viaIR).
      */
     function applyConfiguration(
         ConfigUpdate calldata config,
@@ -247,7 +247,19 @@ contract IdentityRegistry is Ownable2Step {
         RootNodeAliasConfig[] calldata nodeRootAliasUpdates,
         AgentTypeConfig[] calldata agentTypeUpdates
     ) external onlyOwner {
-        _applyCoreConfig(config);
+        uint256 mask; // bit0..bit8 => ens, wrapper, reputation, attestation, agentRoot, clubRoot, nodeRoot, agentMerkle, validatorMerkle
+
+        if (config.setENS)                { _setENS(config.ens);                               mask |= (1 << 0); }
+        if (config.setNameWrapper)        { _setNameWrapper(config.nameWrapper);               mask |= (1 << 1); }
+        if (config.setReputationEngine)   { _setReputationEngine(config.reputationEngine);     mask |= (1 << 2); }
+        if (config.setAttestationRegistry){ _setAttestationRegistry(config.attestationRegistry); mask |= (1 << 3); }
+        if (config.setAgentRootNode)      { _setAgentRootNode(config.agentRootNode);           mask |= (1 << 4); }
+        if (config.setClubRootNode)       { _setClubRootNode(config.clubRootNode);             mask |= (1 << 5); }
+        if (config.setNodeRootNode)       { _setNodeRootNode(config.nodeRootNode);             mask |= (1 << 6); }
+        if (config.setAgentMerkleRoot)    { _setAgentMerkleRoot(config.agentMerkleRoot);       mask |= (1 << 7); }
+        if (config.setValidatorMerkleRoot){ _setValidatorMerkleRoot(config.validatorMerkleRoot); mask |= (1 << 8); }
+
+        // Apply lists in separate tiny loops to keep lifetimes short.
         _applyAdditionalAgents(agentUpdates);
         _applyAdditionalValidators(validatorUpdates);
         _applyAdditionalNodes(nodeUpdates);
@@ -256,26 +268,16 @@ contract IdentityRegistry is Ownable2Step {
         _applyNodeRootAliases(nodeRootAliasUpdates);
         _applyAgentTypeUpdates(agentTypeUpdates);
 
-        // Build a small bitmask for boolean flags to avoid passing large structs.
-        uint256 mask;
-        if (config.setENS) mask |= (1 << 0);
-        if (config.setNameWrapper) mask |= (1 << 1);
-        if (config.setReputationEngine) mask |= (1 << 2);
-        if (config.setAttestationRegistry) mask |= (1 << 3);
-        if (config.setAgentRootNode) mask |= (1 << 4);
-        if (config.setClubRootNode) mask |= (1 << 5);
-        if (config.setNodeRootNode) mask |= (1 << 6);
-        if (config.setAgentMerkleRoot) mask |= (1 << 7);
-        if (config.setValidatorMerkleRoot) mask |= (1 << 8);
+        // Prepare a single memory struct so the emitter has only one param.
+        EmitArgs memory ea = EmitArgs({
+            mask: mask,
+            agentLen: agentUpdates.length,
+            validatorLen: validatorUpdates.length,
+            nodeLen: nodeUpdates.length,
+            agentTypeLen: agentTypeUpdates.length
+        });
 
-        _emitAppliedFromMask(
-            msg.sender,
-            mask,
-            agentUpdates.length,
-            validatorUpdates.length,
-            nodeUpdates.length,
-            agentTypeUpdates.length
-        );
+        _emitConfigurationApplied(ea);
     }
 
     function _setENS(address ensAddr) internal {
@@ -749,17 +751,32 @@ contract IdentityRegistry is Ownable2Step {
 
     // ----------------- Internal helpers to reduce stack use ----------------
 
-    /// @dev Apply the single‑value config toggles; no returns keeps caller stack shallow.
-    function _applyCoreConfig(ConfigUpdate calldata cfg) internal {
-        if (cfg.setENS) _setENS(cfg.ens);
-        if (cfg.setNameWrapper) _setNameWrapper(cfg.nameWrapper);
-        if (cfg.setReputationEngine) _setReputationEngine(cfg.reputationEngine);
-        if (cfg.setAttestationRegistry) _setAttestationRegistry(cfg.attestationRegistry);
-        if (cfg.setAgentRootNode) _setAgentRootNode(cfg.agentRootNode);
-        if (cfg.setClubRootNode) _setClubRootNode(cfg.clubRootNode);
-        if (cfg.setNodeRootNode) _setNodeRootNode(cfg.nodeRootNode);
-        if (cfg.setAgentMerkleRoot) _setAgentMerkleRoot(cfg.agentMerkleRoot);
-        if (cfg.setValidatorMerkleRoot) _setValidatorMerkleRoot(cfg.validatorMerkleRoot);
+    struct EmitArgs {
+        uint256 mask;
+        uint256 agentLen;
+        uint256 validatorLen;
+        uint256 nodeLen;
+        uint256 agentTypeLen;
+    }
+
+    /// @dev Emits ConfigurationApplied from a single memory struct to keep the frame shallow.
+    function _emitConfigurationApplied(EmitArgs memory ea) private {
+        emit ConfigurationApplied(
+            msg.sender,
+            (ea.mask & (1 << 0)) != 0,
+            (ea.mask & (1 << 1)) != 0,
+            (ea.mask & (1 << 2)) != 0,
+            (ea.mask & (1 << 3)) != 0,
+            (ea.mask & (1 << 4)) != 0,
+            (ea.mask & (1 << 5)) != 0,
+            (ea.mask & (1 << 6)) != 0,
+            (ea.mask & (1 << 7)) != 0,
+            (ea.mask & (1 << 8)) != 0,
+            ea.agentLen,
+            ea.validatorLen,
+            ea.nodeLen,
+            ea.agentTypeLen
+        );
     }
 
     function _applyAdditionalAgents(AdditionalAgentConfig[] calldata updates) internal {
@@ -819,32 +836,5 @@ contract IdentityRegistry is Ownable2Step {
             _setAgentType(updates[i].agent, updates[i].agentType);
             unchecked { ++i; }
         }
-    }
-
-    /// @dev Emit in its own tiny frame using a compact bitmask and counts; avoids pushing many args at callsite.
-    function _emitAppliedFromMask(
-        address caller,
-        uint256 mask,
-        uint256 addAgents,
-        uint256 addValidators,
-        uint256 addNodes,
-        uint256 agentTypesLen
-    ) internal {
-        emit ConfigurationApplied(
-            caller,
-            (mask & (1 << 0)) != 0,
-            (mask & (1 << 1)) != 0,
-            (mask & (1 << 2)) != 0,
-            (mask & (1 << 3)) != 0,
-            (mask & (1 << 4)) != 0,
-            (mask & (1 << 5)) != 0,
-            (mask & (1 << 6)) != 0,
-            (mask & (1 << 7)) != 0,
-            (mask & (1 << 8)) != 0,
-            addAgents,
-            addValidators,
-            addNodes,
-            agentTypesLen
-        );
     }
 }
