@@ -241,145 +241,301 @@ contract IdentityRegistry is Ownable2Step {
         _;
     }
 
-    struct EmitScratch {
-        uint256 mask;          // bit0..bit8 => ens, wrapper, reputation, attestation, agentRoot, clubRoot, nodeRoot, agentMerkle, validatorMerkle
-        uint256 agentLen;
-        uint256 validatorLen;
-        uint256 nodeLen;
-        uint256 agentTypeLen;
-    }
-    EmitScratch private _emitScratch;
-
     /**
-     * @notice Atomically apply multiple configuration updates (stack-safe, non-IR).
+     * @notice Atomically apply multiple configuration updates.
+     * @dev Keeps original ABI intact but avoids stack pressure by forwarding raw calldata.
      */
     function applyConfiguration(
-        ConfigUpdate calldata config,
-        AdditionalAgentConfig[] calldata agentUpdates,
-        AdditionalValidatorConfig[] calldata validatorUpdates,
-        AdditionalNodeOperatorConfig[] calldata nodeUpdates,
-        RootNodeAliasConfig[] calldata agentRootAliasUpdates,
-        RootNodeAliasConfig[] calldata clubRootAliasUpdates,
-        RootNodeAliasConfig[] calldata nodeRootAliasUpdates,
-        AgentTypeConfig[] calldata agentTypeUpdates
+        ConfigUpdate calldata /*config*/,
+        AdditionalAgentConfig[] calldata /*agentUpdates*/,
+        AdditionalValidatorConfig[] calldata /*validatorUpdates*/,
+        AdditionalNodeOperatorConfig[] calldata /*nodeUpdates*/,
+        RootNodeAliasConfig[] calldata /*agentRootAliasUpdates*/,
+        RootNodeAliasConfig[] calldata /*clubRootAliasUpdates*/,
+        RootNodeAliasConfig[] calldata /*nodeRootAliasUpdates*/,
+        AgentTypeConfig[] calldata /*agentTypeUpdates*/
     ) external onlyOwner {
-        delete _emitScratch;
-
-        if (config.setENS)                 { this._setENS_ext(config.ens); }
-        if (config.setNameWrapper)         { this._setNameWrapper_ext(config.nameWrapper); }
-        if (config.setReputationEngine)    { this._setReputationEngine_ext(config.reputationEngine); }
-        if (config.setAttestationRegistry) { this._setAttestationRegistry_ext(config.attestationRegistry); }
-        if (config.setAgentRootNode)       { this._setAgentRootNode_ext(config.agentRootNode); }
-        if (config.setClubRootNode)        { this._setClubRootNode_ext(config.clubRootNode); }
-        if (config.setNodeRootNode)        { this._setNodeRootNode_ext(config.nodeRootNode); }
-        if (config.setAgentMerkleRoot)     { this._setAgentMerkleRoot_ext(config.agentMerkleRoot); }
-        if (config.setValidatorMerkleRoot) { this._setValidatorMerkleRoot_ext(config.validatorMerkleRoot); }
-
-        this._applyAdditionalAgentsExt(agentUpdates);
-        this._applyAdditionalValidatorsExt(validatorUpdates);
-        this._applyAdditionalNodesExt(nodeUpdates);
-        this._applyAgentRootAliasesExt(agentRootAliasUpdates);
-        this._applyClubRootAliasesExt(clubRootAliasUpdates);
-        this._applyNodeRootAliasesExt(nodeRootAliasUpdates);
-        this._applyAgentTypeUpdatesExt(agentTypeUpdates);
-
-        this._emitAndClearConfigurationAppliedExt(msg.sender);
+        // Forward the *entire* arguments payload (without selector) to the packed variant.
+        this.applyConfigurationPacked(msg.data[4:]);
     }
 
-    // ---- external self-call helpers (guarded by onlySelf) ----
+    /**
+     * @dev Accepts the original arguments payload (ABI-encoded without selector) and applies updates
+     *      by reading directly from calldata to minimize locals (no via-IR).
+     *      Encoding of the original function is:
+     *      - Arg0: ConfigUpdate (static, 18 words)
+     *      - Arg1..Arg8: dynamic arrays (offsets at words 18..25)
+     */
+    function applyConfigurationPacked(bytes calldata raw) external onlySelf {
+        // ======== Decode and apply ConfigUpdate (18 words = 9 boolean/value pairs) ========
+        uint256 base;
+        assembly { base := raw.offset }
 
-    function _setENS_ext(address a) external onlySelf { _setENS(a); _emitScratch.mask |= (1 << 0); }
-    function _setNameWrapper_ext(address a) external onlySelf { _setNameWrapper(a); _emitScratch.mask |= (1 << 1); }
-    function _setReputationEngine_ext(address a) external onlySelf { _setReputationEngine(a); _emitScratch.mask |= (1 << 2); }
-    function _setAttestationRegistry_ext(address a) external onlySelf { _setAttestationRegistry(a); _emitScratch.mask |= (1 << 3); }
-    function _setAgentRootNode_ext(bytes32 v) external onlySelf { _setAgentRootNode(v); _emitScratch.mask |= (1 << 4); }
-    function _setClubRootNode_ext(bytes32 v) external onlySelf { _setClubRootNode(v); _emitScratch.mask |= (1 << 5); }
-    function _setNodeRootNode_ext(bytes32 v) external onlySelf { _setNodeRootNode(v); _emitScratch.mask |= (1 << 6); }
-    function _setAgentMerkleRoot_ext(bytes32 v) external onlySelf { _setAgentMerkleRoot(v); _emitScratch.mask |= (1 << 7); }
-    function _setValidatorMerkleRoot_ext(bytes32 v) external onlySelf { _setValidatorMerkleRoot(v); _emitScratch.mask |= (1 << 8); }
+        uint256 mask; // bit0..bit8 as in event fields
 
-    function _applyAdditionalAgentsExt(AdditionalAgentConfig[] calldata updates) external onlySelf {
-        uint256 len = updates.length;
-        for (uint256 i; i < len; ) {
-            _setAdditionalAgent(updates[i].agent, updates[i].allowed);
-            unchecked { ++i; }
+        // Pair 0: setENS / ens
+        {
+            bool setFlag;
+            uint256 val;
+            assembly {
+                setFlag := iszero(iszero(calldataload(base)))
+                val := calldataload(add(base, 0x20))
+            }
+            if (setFlag) { _setENS(address(uint160(val))); mask |= (1 << 0); }
         }
-        _emitScratch.agentLen = len;
-    }
 
-    function _applyAdditionalValidatorsExt(AdditionalValidatorConfig[] calldata updates) external onlySelf {
-        uint256 len = updates.length;
-        for (uint256 i; i < len; ) {
-            _setAdditionalValidator(updates[i].validator, updates[i].allowed);
-            unchecked { ++i; }
+        // Pair 1: setNameWrapper / nameWrapper
+        {
+            bool setFlag; uint256 val;
+            assembly {
+                setFlag := iszero(iszero(calldataload(add(base, 0x40))))
+                val := calldataload(add(base, 0x60))
+            }
+            if (setFlag) { _setNameWrapper(address(uint160(val))); mask |= (1 << 1); }
         }
-        _emitScratch.validatorLen = len;
-    }
 
-    function _applyAdditionalNodesExt(AdditionalNodeOperatorConfig[] calldata updates) external onlySelf {
-        uint256 len = updates.length;
-        for (uint256 i; i < len; ) {
-            _setAdditionalNodeOperator(updates[i].nodeOperator, updates[i].allowed);
-            unchecked { ++i; }
+        // Pair 2: setReputationEngine / reputationEngine
+        {
+            bool setFlag; uint256 val;
+            assembly {
+                setFlag := iszero(iszero(calldataload(add(base, 0x80))))
+                val := calldataload(add(base, 0xA0))
+            }
+            if (setFlag) { _setReputationEngine(address(uint160(val))); mask |= (1 << 2); }
         }
-        _emitScratch.nodeLen = len;
-    }
 
-    function _applyAgentRootAliasesExt(RootNodeAliasConfig[] calldata updates) external onlySelf {
-        uint256 len = updates.length;
-        for (uint256 i; i < len; ) {
-            RootNodeAliasConfig calldata u = updates[i];
-            if (u.allowed) _addAgentRootNodeAlias(u.node); else _removeAgentRootNodeAlias(u.node);
-            unchecked { ++i; }
+        // Pair 3: setAttestationRegistry / attestationRegistry
+        {
+            bool setFlag; uint256 val;
+            assembly {
+                setFlag := iszero(iszero(calldataload(add(base, 0xC0))))
+                val := calldataload(add(base, 0xE0))
+            }
+            if (setFlag) { _setAttestationRegistry(address(uint160(val))); mask |= (1 << 3); }
         }
-    }
 
-    function _applyClubRootAliasesExt(RootNodeAliasConfig[] calldata updates) external onlySelf {
-        uint256 len = updates.length;
-        for (uint256 i; i < len; ) {
-            RootNodeAliasConfig calldata u = updates[i];
-            if (u.allowed) _addClubRootNodeAlias(u.node); else _removeClubRootNodeAlias(u.node);
-            unchecked { ++i; }
+        // Pair 4: setAgentRootNode / agentRootNode
+        {
+            bool setFlag; bytes32 val;
+            assembly {
+                setFlag := iszero(iszero(calldataload(add(base, 0x100))))
+                val := calldataload(add(base, 0x120))
+            }
+            if (setFlag) { _setAgentRootNode(val); mask |= (1 << 4); }
         }
-    }
 
-    function _applyNodeRootAliasesExt(RootNodeAliasConfig[] calldata updates) external onlySelf {
-        uint256 len = updates.length;
-        for (uint256 i; i < len; ) {
-            RootNodeAliasConfig calldata u = updates[i];
-            if (u.allowed) _addNodeRootNodeAlias(u.node); else _removeNodeRootNodeAlias(u.node);
-            unchecked { ++i; }
+        // Pair 5: setClubRootNode / clubRootNode
+        {
+            bool setFlag; bytes32 val;
+            assembly {
+                setFlag := iszero(iszero(calldataload(add(base, 0x140))))
+                val := calldataload(add(base, 0x160))
+            }
+            if (setFlag) { _setClubRootNode(val); mask |= (1 << 5); }
         }
-    }
 
-    function _applyAgentTypeUpdatesExt(AgentTypeConfig[] calldata updates) external onlySelf {
-        uint256 len = updates.length;
-        for (uint256 i; i < len; ) {
-            _setAgentType(updates[i].agent, updates[i].agentType);
-            unchecked { ++i; }
+        // Pair 6: setNodeRootNode / nodeRootNode
+        {
+            bool setFlag; bytes32 val;
+            assembly {
+                setFlag := iszero(iszero(calldataload(add(base, 0x180))))
+                val := calldataload(add(base, 0x1A0))
+            }
+            if (setFlag) { _setNodeRootNode(val); mask |= (1 << 6); }
         }
-        _emitScratch.agentTypeLen = len;
-    }
 
-    function _emitAndClearConfigurationAppliedExt(address caller) external onlySelf {
-        EmitScratch storage s = _emitScratch;
+        // Pair 7: setAgentMerkleRoot / agentMerkleRoot
+        {
+            bool setFlag; bytes32 val;
+            assembly {
+                setFlag := iszero(iszero(calldataload(add(base, 0x1C0))))
+                val := calldataload(add(base, 0x1E0))
+            }
+            if (setFlag) { _setAgentMerkleRoot(val); mask |= (1 << 7); }
+        }
+
+        // Pair 8: setValidatorMerkleRoot / validatorMerkleRoot
+        {
+            bool setFlag; bytes32 val;
+            assembly {
+                setFlag := iszero(iszero(calldataload(add(base, 0x200))))
+                val := calldataload(add(base, 0x220))
+            }
+            if (setFlag) { _setValidatorMerkleRoot(val); mask |= (1 << 8); }
+        }
+
+        // ======== Array offsets (words 18..25) ========
+        // Layout (word indices relative to base):
+        // 18: AdditionalAgentConfig[]         (agentUpdates)
+        // 19: AdditionalValidatorConfig[]     (validatorUpdates)
+        // 20: AdditionalNodeOperatorConfig[]  (nodeUpdates)
+        // 21: RootNodeAliasConfig[]           (agentRootAliasUpdates)
+        // 22: RootNodeAliasConfig[]           (clubRootAliasUpdates)
+        // 23: RootNodeAliasConfig[]           (nodeRootAliasUpdates)
+        // 24: AgentTypeConfig[]               (agentTypeUpdates)
+        // (Note: we have 8 dynamic args total; the last one is at word 25 if present.
+        // Here we have 7 after the struct; indices 18..24 are used.)
+
+        uint256 offAgent; uint256 offValidator; uint256 offNode;
+        uint256 offAgentAliases; uint256 offClubAliases; uint256 offNodeAliases; uint256 offAgentTypes;
+        assembly {
+            offAgent        := calldataload(add(base, 0x240)) // 18*32
+            offValidator    := calldataload(add(base, 0x260)) // 19*32
+            offNode         := calldataload(add(base, 0x280)) // 20*32
+            offAgentAliases := calldataload(add(base, 0x2A0)) // 21*32
+            offClubAliases  := calldataload(add(base, 0x2C0)) // 22*32
+            offNodeAliases  := calldataload(add(base, 0x2E0)) // 23*32
+            offAgentTypes   := calldataload(add(base, 0x300)) // 24*32
+        }
+
+        uint256 agentLen; uint256 validatorLen; uint256 nodeLen; uint256 agentTypeLen;
+
+        // ---- AdditionalAgentConfig[] (address, bool)
+        if (offAgent != 0) {
+            uint256 p = base + offAgent;
+            uint256 len;
+            assembly { len := calldataload(p) }
+            agentLen = len;
+            uint256 dataStart = p + 32;
+            for (uint256 i; i < len; ) {
+                uint256 e = dataStart + (i << 6); // i * 64
+                uint256 a; uint256 b;
+                assembly {
+                    a := calldataload(e)
+                    b := calldataload(add(e, 0x20))
+                }
+                _setAdditionalAgent(address(uint160(a)), b != 0);
+                unchecked { ++i; }
+            }
+        }
+
+        // ---- AdditionalValidatorConfig[] (address, bool)
+        if (offValidator != 0) {
+            uint256 p = base + offValidator;
+            uint256 len;
+            assembly { len := calldataload(p) }
+            validatorLen = len;
+            uint256 dataStart = p + 32;
+            for (uint256 i; i < len; ) {
+                uint256 e = dataStart + (i << 6);
+                uint256 a; uint256 b;
+                assembly {
+                    a := calldataload(e)
+                    b := calldataload(add(e, 0x20))
+                }
+                _setAdditionalValidator(address(uint160(a)), b != 0);
+                unchecked { ++i; }
+            }
+        }
+
+        // ---- AdditionalNodeOperatorConfig[] (address, bool)
+        if (offNode != 0) {
+            uint256 p = base + offNode;
+            uint256 len;
+            assembly { len := calldataload(p) }
+            nodeLen = len;
+            uint256 dataStart = p + 32;
+            for (uint256 i; i < len; ) {
+                uint256 e = dataStart + (i << 6);
+                uint256 a; uint256 b;
+                assembly {
+                    a := calldataload(e)
+                    b := calldataload(add(e, 0x20))
+                }
+                _setAdditionalNodeOperator(address(uint160(a)), b != 0);
+                unchecked { ++i; }
+            }
+        }
+
+        // ---- RootNodeAliasConfig[] agent aliases (bytes32, bool)
+        if (offAgentAliases != 0) {
+            uint256 p = base + offAgentAliases;
+            uint256 len;
+            assembly { len := calldataload(p) }
+            uint256 dataStart = p + 32;
+            for (uint256 i; i < len; ) {
+                uint256 e = dataStart + (i << 6);
+                bytes32 n; uint256 allow;
+                assembly {
+                    n := calldataload(e)
+                    allow := calldataload(add(e, 0x20))
+                }
+                if (allow != 0) _addAgentRootNodeAlias(n); else _removeAgentRootNodeAlias(n);
+                unchecked { ++i; }
+            }
+        }
+
+        // ---- RootNodeAliasConfig[] club aliases
+        if (offClubAliases != 0) {
+            uint256 p = base + offClubAliases;
+            uint256 len;
+            assembly { len := calldataload(p) }
+            uint256 dataStart = p + 32;
+            for (uint256 i; i < len; ) {
+                uint256 e = dataStart + (i << 6);
+                bytes32 n; uint256 allow;
+                assembly {
+                    n := calldataload(e)
+                    allow := calldataload(add(e, 0x20))
+                }
+                if (allow != 0) _addClubRootNodeAlias(n); else _removeClubRootNodeAlias(n);
+                unchecked { ++i; }
+            }
+        }
+
+        // ---- RootNodeAliasConfig[] node aliases
+        if (offNodeAliases != 0) {
+            uint256 p = base + offNodeAliases;
+            uint256 len;
+            assembly { len := calldataload(p) }
+            uint256 dataStart = p + 32;
+            for (uint256 i; i < len; ) {
+                uint256 e = dataStart + (i << 6);
+                bytes32 n; uint256 allow;
+                assembly {
+                    n := calldataload(e)
+                    allow := calldataload(add(e, 0x20))
+                }
+                if (allow != 0) _addNodeRootNodeAlias(n); else _removeNodeRootNodeAlias(n);
+                unchecked { ++i; }
+            }
+        }
+
+        // ---- AgentTypeConfig[] (address, enum)
+        if (offAgentTypes != 0) {
+            uint256 p = base + offAgentTypes;
+            uint256 len;
+            assembly { len := calldataload(p) }
+            agentTypeLen = len;
+            uint256 dataStart = p + 32;
+            for (uint256 i; i < len; ) {
+                uint256 e = dataStart + (i << 6);
+                uint256 a; uint256 t;
+                assembly {
+                    a := calldataload(e)
+                    t := calldataload(add(e, 0x20))
+                }
+                _setAgentType(address(uint160(a)), AgentType(uint8(t)));
+                unchecked { ++i; }
+            }
+        }
+
         emit ConfigurationApplied(
-            caller,
-            (s.mask & (1 << 0)) != 0,
-            (s.mask & (1 << 1)) != 0,
-            (s.mask & (1 << 2)) != 0,
-            (s.mask & (1 << 3)) != 0,
-            (s.mask & (1 << 4)) != 0,
-            (s.mask & (1 << 5)) != 0,
-            (s.mask & (1 << 6)) != 0,
-            (s.mask & (1 << 7)) != 0,
-            (s.mask & (1 << 8)) != 0,
-            s.agentLen,
-            s.validatorLen,
-            s.nodeLen,
-            s.agentTypeLen
+            tx.origin, // original external caller (matches previous msg.sender semantics for emits here)
+            (mask & (1 << 0)) != 0,
+            (mask & (1 << 1)) != 0,
+            (mask & (1 << 2)) != 0,
+            (mask & (1 << 3)) != 0,
+            (mask & (1 << 4)) != 0,
+            (mask & (1 << 5)) != 0,
+            (mask & (1 << 6)) != 0,
+            (mask & (1 << 7)) != 0,
+            (mask & (1 << 8)) != 0,
+            agentLen,
+            validatorLen,
+            nodeLen,
+            agentTypeLen
         );
-        delete _emitScratch;
     }
 
     // ------------------------- core setters -------------------------
