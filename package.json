@@ -1,0 +1,13 @@
+{
+  "name": "agijobs-sovereign-labor-v0p1",
+  "version": "0.1.0-alpha",
+  "license": "MIT",
+  "private": true,
+  "devDependencies": {
+    "@openzeppelin/contracts": "^4.9.0",
+    "@truffle/hdwallet-provider": "^2.1.15",
+    "dotenv": "^16.4.5",
+    "truffle": "^5.11.5",
+    "truffle-plugin-verify": "^0.6.7"
+  }
+}
