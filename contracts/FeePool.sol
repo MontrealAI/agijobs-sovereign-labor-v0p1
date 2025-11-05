@@ -516,6 +516,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
      * @notice Atomically apply multiple configuration updates.
      * @dev Processes allowlist and rewarder updates before setters so newly
      *      authorised addresses can be referenced in the same transaction.
+     *      Refactored to avoid stack-depth limits without viaIR.
      * @param config Packed configuration toggles and values.
      * @param allowlistUpdates Treasury allowlist modifications to apply.
      * @param rewarderUpdates Rewarder allow/deny list updates to apply.
@@ -525,78 +526,47 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
         AllowlistUpdate[] calldata allowlistUpdates,
         RewarderConfig[] calldata rewarderUpdates
     ) external onlyOwner {
+        // First: apply allowlist updates
         uint256 allowlistLen = allowlistUpdates.length;
-        for (uint256 i; i < allowlistLen; i++) {
+        for (uint256 i = 0; i < allowlistLen; i++) {
             AllowlistUpdate calldata update = allowlistUpdates[i];
             _setTreasuryAllowlist(update.treasury, update.allowed);
         }
 
+        // Second: apply rewarder updates
         uint256 rewarderLen = rewarderUpdates.length;
-        for (uint256 i; i < rewarderLen; i++) {
-            RewarderConfig calldata entry = rewarderUpdates[i];
+        for (uint256 j = 0; j < rewarderLen; j++) {
+            RewarderConfig calldata entry = rewarderUpdates[j];
             _setRewarder(entry.rewarder, entry.allowed);
         }
 
-        bool stakeManagerChanged;
-        bool rewardRoleChanged;
-        bool burnPctChanged;
-        bool treasuryChanged;
-        bool governanceChanged;
-        bool taxPolicyChanged;
-        bool pauserChanged;
-        bool pauserManagerChanged;
+        // Third: apply setters; track changes in a compact bitmask to avoid many locals.
+        // bit0..bit7 => stakeManager, rewardRole, burnPct, treasury, governance, taxPolicy, pauser, pauserManager
+        uint256 mask;
 
-        if (config.setStakeManager) {
-            _setStakeManager(config.stakeManager);
-            stakeManagerChanged = true;
-        }
-
-        if (config.setRewardRole) {
-            _setRewardRole(config.rewardRole);
-            rewardRoleChanged = true;
-        }
-
-        if (config.setBurnPct) {
-            _setBurnPct(config.burnPct);
-            burnPctChanged = true;
-        }
-
-        if (config.setTreasury) {
-            _setTreasury(config.treasury);
-            treasuryChanged = true;
-        }
-
-        if (config.setGovernance) {
-            _setGovernance(config.governance);
-            governanceChanged = true;
-        }
-
-        if (config.setTaxPolicy) {
-            _setTaxPolicy(config.taxPolicy);
-            taxPolicyChanged = true;
-        }
-
-        if (config.setPauser) {
-            _setPauser(config.pauser);
-            pauserChanged = true;
-        }
-
-        if (config.setPauserManager) {
+        if (config.setStakeManager) { _setStakeManager(config.stakeManager);   mask |= (1 << 0); }
+        if (config.setRewardRole)   { _setRewardRole(config.rewardRole);       mask |= (1 << 1); }
+        if (config.setBurnPct)      { _setBurnPct(config.burnPct);             mask |= (1 << 2); }
+        if (config.setTreasury)     { _setTreasury(config.treasury);           mask |= (1 << 3); }
+        if (config.setGovernance)   { _setGovernance(config.governance);       mask |= (1 << 4); }
+        if (config.setTaxPolicy)    { _setTaxPolicy(config.taxPolicy);         mask |= (1 << 5); }
+        if (config.setPauser)       { _setPauser(config.pauser);               mask |= (1 << 6); }
+        if (config.setPauserManager){
             pauserManager = config.pauserManager;
             emit PauserManagerUpdated(config.pauserManager);
-            pauserManagerChanged = true;
+            mask |= (1 << 7);
         }
 
         emit ConfigurationApplied(
             msg.sender,
-            stakeManagerChanged,
-            rewardRoleChanged,
-            burnPctChanged,
-            treasuryChanged,
-            governanceChanged,
-            taxPolicyChanged,
-            pauserChanged,
-            pauserManagerChanged,
+            (mask & (1 << 0)) != 0,
+            (mask & (1 << 1)) != 0,
+            (mask & (1 << 2)) != 0,
+            (mask & (1 << 3)) != 0,
+            (mask & (1 << 4)) != 0,
+            (mask & (1 << 5)) != 0,
+            (mask & (1 << 6)) != 0,
+            (mask & (1 << 7)) != 0,
             rewarderLen,
             allowlistLen
         );
