@@ -1,0 +1,25 @@
+{
+  "chainId": 1,
+  "ownerSafe": "0xOwnerSafeAddressHere",
+  "guardianSafe": "0xGuardianSafeAddressHere",
+  "treasury": "0xTreasurySafeAddressHere",
+  "tokens": {
+    "agi": "0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA"
+  },
+  "params": {
+    "platformFeeBps": 1000,
+    "minStakeWei": "2500000000000000000000",
+    "slashBps": 500,
+    "validatorQuorum": 3,
+    "burnBpsOfFee": 100
+  },
+  "identity": {
+    "ensRegistry": "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e",
+    "nameWrapper":  "0xD4416b13EFfEFeb2E6b5A2E1C20F5A339586401",
+    "agentRootNode": "agent.agi.eth",
+    "clubRootNode":  "club.agi.eth",
+    "agentMerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "validatorMerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "tax": { "enabled": false, "policyUri": "", "description": "" }
+}
