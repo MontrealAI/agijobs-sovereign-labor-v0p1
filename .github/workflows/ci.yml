@@ -5,26 +5,28 @@ on:
     branches:
       - main
       - develop
-      - release/**
-      - feature/**
+      - 'release/**'
+      - 'feature/**'
+      - 'hotfix/**'
+      - 'chore/**'
   pull_request:
     branches:
       - main
       - develop
-      - release/**
+      - 'release/**'
   workflow_dispatch:
-
-concurrency:
-  group: sovereign-compile-${{ github.ref }}
-  cancel-in-progress: true
 
 permissions:
   contents: read
   actions: write
 
+concurrency:
+  group: sovereign-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   compile:
-    name: Compile smart contracts
+    name: Deterministic compile
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -34,12 +36,15 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
-      - name: Setup Node.js
+      - name: Setup Node.js 20 LTS
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
+          node-version: '20.x'
+          cache: 'npm'
           cache-dependency-path: package-lock.json
 
       - name: Prime Truffle cache directory
@@ -62,11 +67,12 @@ jobs:
           npm --version
           npx truffle version
 
-      - name: Generate compile metadata summary
-        run: node scripts/write-compile-summary.js
-
       - name: Compile contracts
         run: npm run compile
 
       - name: Verify compiled artifacts
         run: node scripts/verify-artifacts.js
+
+      - name: Generate compile metadata summary
+        if: always()
+        run: node scripts/write-compile-summary.js

@@ -15,13 +15,13 @@ Profiles live in [`truffle-config.js`](../truffle-config.js). Each pulls RPC URL
 ## Core Commands
 | Action | Command |
 | --- | --- |
-| Compile with Solidity 0.8.30 (via IR) | `npm run compile` |
+| Compile with Solidity 0.8.30 (via IR) | `npm run compile` (same command invoked by the `Sovereign Compile` GitHub Action) |
 | Launch local console | `npx truffle develop` |
 | Execute migrations | `npx truffle migrate --network <profile>` |
 | Run custom script | `npx truffle exec scripts/<file>.js --network <profile>` |
 | Inspect contract | `truffle console --network <profile>` |
 
-`migrations/1_deploy_kernel.js` expects `DEPLOY_CONFIG` to point at a JSON configuration (see [`deploy/README.md`](../deploy/README.md)). The migration automatically writes manifests under `manifests/`.
+`migrations/1_deploy_kernel.js` expects `DEPLOY_CONFIG` to point at a JSON configuration (see [`deploy/README.md`](../deploy/README.md)). The migration automatically writes manifests under `manifests/` and enforces `$AGIALPHA`'s 18-decimal discipline at runtime.
 
 ## Artifact Hygiene
 Compiled ABIs/bytecode live in `build/contracts/`. When modifying compiler settings or pulling fresh sources, clear the folder:
