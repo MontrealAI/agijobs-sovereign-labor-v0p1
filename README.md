@@ -1,13 +1,14 @@
 # AGIJobs Sovereign Labor v0.1
 
-[![Sovereign Compile](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml/badge.svg)](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
+[![Sovereign Compile](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
+[![GitHub Checks](https://img.shields.io/github/checks-status/AGIJobs/agijobs-sovereign-labor-v0p1/main?label=Branch%20Checks&logo=github)](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 ![Node.js](https://img.shields.io/badge/Node.js-20.x-339933?logo=node.js&logoColor=white)
 ![Solidity](https://img.shields.io/badge/Solidity-0.8.30-363636?logo=solidity)
 ![Truffle](https://img.shields.io/badge/Truffle-5.11.5-5e464d?logo=truffle)
 ![Security](https://img.shields.io/badge/Security-Protocol%20Grade%20Controls-0b7285)
 
-> A sovereign labor intelligence substrate tuned for planetary-scale coordination, composability, and absolute administrative control.
+> The sovereign labor intelligence substrate that silently choreographs global coordination, composability, and owner-level omnipotence.
 
 ---
 
@@ -29,6 +30,31 @@
 - **Precision governance.** Every privileged pathway is timelock mediated, auditable, and reversible by the contract owner with deterministic sequencing.
 - **Dynamic labor markets.** Registries, staking, validation, and dispute circuits interlock through hardened interfaces to choreograph human and machine job flows.
 - **Instant reconfiguration.** Core modules are hot-swappable, pausable, and parameterizable without downtime, empowering the owner to steer incentives in real time.
+- **Command singularity.** The mesh behaves as the intelligence engine that shapes economic gravity—deploy once, steer forever.
+
+## Autonomy Field Manual
+```mermaid
+mindmap
+  root((Sovereign Labor Core))
+    Control
+      Global Pauser
+      Governance Timelock
+      Owner Console
+    Markets
+      Job Registry
+      Platform Registry
+      Fee & Tax Orchestrators
+    Signal
+      Reputation Engine
+      Attestation Lattices
+      Certificate NFTs
+    Defense
+      Validation Mesh
+      Dispute Module
+      Arbitrator Committee
+```
+
+> Every branch of the mindmap is live code in this repository. Each leaf links to a pausable, owner-governed module whose parameters can be remapped mid-flight without forfeiting determinism.
 
 ## Repository Topology
 | Path | Signal |
@@ -133,6 +159,26 @@ stateDiagram-v2
   2. Enforce up-to-date merges before PR completion.
   3. Require at least one approving review.
   4. (Optional) Require signed commits for audit-grade provenance.
+
+## Branch Protection Enforcement Blueprint
+```mermaid
+graph TD
+    A[Repository Settings] --> B[Branches]
+    B --> C{Select main & develop}
+    C --> D[Require status checks]
+    D --> D1[[Sovereign Compile]]
+    D --> D2[[Peer Review >= 1]]
+    C --> E[Require linear history]
+    C --> F[Restrict who can push]
+    F --> F1[Ops Guardians]
+    F --> F2[Automation Bots]
+    style D1 fill:#211a6b,stroke:#00d4ff,stroke-width:3px,color:#f2f6ff
+    style F1 fill:#0b3e24,stroke:#00d78a,stroke-width:2px,color:#ebfff5
+```
+
+- Align GitHub branch protection rules with the diagram to guarantee that every pull request surfaces the Sovereign Compile check, code review, and governance-approved deployers.
+- Mirror the same rules on `develop` (or your staging trunk) so that downstream environments inherit identical guardrails.
+- Publish the enforcement policy in your Ops knowledge base; the system’s operators should treat it as a non-negotiable security boundary.
 
 ## Operator Playbooks
 | Scenario | Action Sequence |

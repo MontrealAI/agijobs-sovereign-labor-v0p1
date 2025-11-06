@@ -1,5 +1,7 @@
 # Contracts Atlas
 
+> This directory is the command lattice for the labor intelligence engine; every contract is owned, pausable, and awaiting operator intent.
+
 ```mermaid
 classDiagram
     class SystemPause {
@@ -50,6 +52,7 @@ classDiagram
 - Every contract inherits [`Governable.sol`](../contracts/Governable.sol) so governance is timelock-controlled and exposes `owner()` for compatibility.
 - Custom errors minimize bytecode while conveying precise failure modes.
 - `SystemPause` owns all managed modules, ensuring owner-triggered upgrades and pausability cascade across the mesh.
+- Owner-configurable parameters are intentionally surfaced via `OwnerConfigurator`, empowering the contract owner to hot-swap validation curves, staking ratios, taxation, pauser delegates, metadata registries, and dispute flows without redeploying.
 
 ## Module Notes
 - **JobRegistry**: Orchestrates job lifecycle, dispute escalations, tax acknowledgements, and fee routing. Emits dense telemetry for analytics. Owner setters reshape job templates, arbitration committees, metadata, and job economics.
@@ -68,6 +71,24 @@ classDiagram
 | `ValidationModule` | Owner functions for validator sets, scoring weights, failover strategy. |
 | `FeePool` | Owner functions for distribution tables, treasury addresses, sweep logic. |
 | `ReputationEngine` | Owner functions for scoring coefficients, decays, and aggregator addresses. |
+
+## Owner Override Field Diagram
+```mermaid
+graph LR
+    Owner((Owner / Safe)) -->|transferOwnership| Core[Governable Modules]
+    Owner --> Configurator[OwnerConfigurator]
+    Configurator -->|configure| Core
+    Owner --> Pause[SystemPause]
+    Pause -->|setModules & pauseAll| Core
+    Owner --> FeePool
+    FeePool -->|setRewarder / setTreasury / setPauser| Core
+    classDef owner fill:#1c2230,stroke:#00c2ff,color:#f7f9ff,font-size:12px;
+    classDef core fill:#0d2a1c,stroke:#20df9f,color:#ecfff7,font-size:12px;
+    class Owner owner;
+    class Core,Pause,FeePool core;
+```
+
+Every solid line in the diagram corresponds to callable functions exposed to the owner for runtime control—pausing, parameter tuning, treasury assignment, validator rotation, and reward distribution.
 
 ## Extensibility Hooks
 - Libraries under `libraries/` expose math, guard, and string utilities reused across modules to shrink bytecode.

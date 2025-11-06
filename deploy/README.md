@@ -1,5 +1,7 @@
 # Deployment Runbook
 
+> Execute these steps to breathe life into the production labor intelligence mesh while keeping absolute owner control over every parameter.
+
 ## Pipeline Overview
 ```mermaid
 flowchart LR
@@ -38,6 +40,17 @@ Store these secrets in your execution environment, CI vault, or GitHub environme
 4. **Verify** – `npm run verify:mainnet` (or equivalent network script) once deployment transactions are final.
 5. **Record** – capture deployed addresses, initialization parameters, pauser assignments, and governance timelock IDs in your runbook.
 
+## Mainnet Migration Script
+```bash
+npx truffle migrate --network mainnet --f 1 --to 3 \
+  --skip-dry-run \
+  --compile-all
+```
+
+- `migrations/3_mainnet_finalize.js` aligns runtime parameters (pausers, treasury routes, token metadata) with [`deploy/config.mainnet.json`](./config.mainnet.json).
+- Ensure `DEPLOY_CONFIG` points at a production-tuned JSON if you need different addresses.
+- The `$AGIALPHA` token (18 decimals) is hard-wired at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` to guarantee deterministic FeePool semantics.
+
 ## Rollback & Emergency Procedures
 - To halt the system quickly, queue `SystemPause.pauseAll()` through the governance timelock.
 - To rotate critical modules, deploy replacements, transfer ownership to `SystemPause`, and invoke `setModules(...)`.
@@ -47,3 +60,19 @@ Store these secrets in your execution environment, CI vault, or GitHub environme
 - Tag releases once contracts are deployed and verified.
 - Mirror release notes with the parameter set applied (staking ratios, treasury splits, active modules).
 - Coordinate with front-end and off-chain services to update addresses immediately after verification succeeds.
+
+```mermaid
+gantt
+    title Sovereign Mainnet Activation
+    dateFormat  YYYY-MM-DD
+    section Build
+    Compile (CI & Local)          :done,    build1, 2024-03-01, 1d
+    Artifact Integrity Check      :active,  build2, 2024-03-02, 1d
+    section Launch
+    Secrets Audit                 :crit,    launch1, 2024-03-03, 1d
+    Truffle Mainnet Migration     :crit,    launch2, after launch1, 1d
+    Verification & Manifest       :active,  launch3, after launch2, 1d
+    section Post
+    Address Broadcast             :         post1,   after launch3, 1d
+    Branch Protection Review      :         post2,   after post1, 1d
+```
