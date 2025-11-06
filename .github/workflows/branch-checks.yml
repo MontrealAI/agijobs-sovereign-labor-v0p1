@@ -41,8 +41,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  branch-name:
-    name: Validate branch naming
+  branch-naming:
+    name: Validate branch naming conventions
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
