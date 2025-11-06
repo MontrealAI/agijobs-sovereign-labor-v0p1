@@ -16,9 +16,13 @@ npx truffle compile
 You can also mirror the exact CI command sequence with the convenience scripts defined in `package.json`:
 
 ```bash
-npm ci --no-audit --no-fund
+npm install --no-audit --no-fund
 npm run compile
 ```
+
+> [!NOTE]
+> `npm ci` currently aborts on Linux because `fsevents` is published for macOS only. Using `npm install` still respects
+> `package-lock.json` while allowing the optional dependency to be skipped so the compile step can finish.
 
 ## Mainnet verification
 
