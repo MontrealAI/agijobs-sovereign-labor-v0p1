@@ -3,35 +3,41 @@
 ## Network Profiles
 ```mermaid
 flowchart TD
-    Dev[Development (in-memory)] --> Uses[Ganache / truffle develop]
-    Sepolia[Sapolia Testnet] --> RPC[SEPOLIA_RPC]
-    Mainnet[Mainnet] --> RPC2[MAINNET_RPC]
-    Sepolia --> Secrets[DEPLOYER_PK, ETHERSCAN_API_KEY]
-    Mainnet --> Secrets
+    Dev[truffle develop] --> Uses[In-memory Ganache]
+    Sepolia[Sepolia Testnet] --> RPC_SEP[Env: SEPOLIA_RPC]
+    Mainnet[Ethereum Mainnet] --> RPC_MAIN[Env: MAINNET_RPC]
+    Sepolia --> Secrets1[DEPLOYER_PK]
+    Mainnet --> Secrets2[DEPLOYER_PK, ETHERSCAN_API_KEY]
 ```
 
-Profiles are configured in [`truffle-config.js`](../truffle-config.js). Update environment variables before invoking `truffle migrate --network <profile>`.
+Profiles live in [`truffle-config.js`](../truffle-config.js). Each pulls RPC URLs and signer keys from environment variables so secrets never hit disk.
 
-## Useful Commands
-- `npx truffle develop` — launch an isolated VM with funded accounts.
-- `truffle console --network <profile>` — interact with deployed contracts.
-- `truffle test --network <profile>` — execute tests against a specific network.
-- `truffle exec <script.js> --network <profile>` — run custom scripts.
+## Core Commands
+| Action | Command |
+| --- | --- |
+| Compile with Solidity 0.8.30 (via IR) | `npm run compile` |
+| Launch local console | `npx truffle develop` |
+| Execute migrations | `npx truffle migrate --network <profile>` |
+| Run custom script | `npx truffle exec scripts/<file>.js --network <profile>` |
+| Inspect contract | `truffle console --network <profile>` |
 
-## Artifacts
-Compiled artifacts land in `build/contracts/`. Clean the directory when switching compiler settings to avoid stale ABIs:
+`migrations/1_deploy_kernel.js` expects `DEPLOY_CONFIG` to point at a JSON configuration (see [`deploy/README.md`](../deploy/README.md)). The migration automatically writes manifests under `manifests/`.
 
+## Artifact Hygiene
+Compiled ABIs/bytecode live in `build/contracts/`. When modifying compiler settings or pulling fresh sources, clear the folder:
 ```bash
 rm -rf build/contracts
 npm run compile
 ```
 
-## Debugging Tips
-- Enable verbose logging with `truffle develop --log`.
-- Use `truffle debug <tx-hash>` to step through failed transactions.
-- Confirm compiler version parity with `truffle version` (should report Solidity 0.8.30).
+## Debugging Toolkit
+- `truffle debug <txHash>` – step through failed transactions.
+- `truffle develop --log` – verbose EVM logging for local debugging.
+- `truffle version` – confirm Node, Truffle, and Solidity versions match CI (Node 20.x / Truffle 5.11.5 / Solidity 0.8.30).
 
-## Integration with Other Tooling
-- Hardhat & Foundry can consume Truffle artifacts by pointing to `build/contracts/*.json`.
-- Use `@truffle/hdwallet-provider` with environment secrets for deterministic signing.
-- Keep `.env` files out of version control; prefer environment managers or encrypted secrets.
+## Interop & Tooling
+- The project ships with `@truffle/hdwallet-provider`; configure `DEPLOYER_PK` + RPC to sign mainnet/testnet transactions.
+- Other frameworks (Hardhat, Foundry) can ingest the generated ABI/bytecode JSON artifacts for testing or verification.
+- The migration emits manifests consumed by downstream infrastructure; keep them under version control or archive them alongside releases.
+
+Treat the Truffle environment as the deterministic build & deployment spine—every run should mirror CI outputs to keep the sovereign labor machine reproducible.

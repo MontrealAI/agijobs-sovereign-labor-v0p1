@@ -1,98 +1,100 @@
 # Contracts Atlas
 
-> This directory is the command lattice for the labor intelligence engine; every contract is owned, pausable, and awaiting operator intent.
+> The solidity core is a tightly-governed mesh—every mutable surface routes through `SystemPause`, the owner-controlled command relay.
 
 ```mermaid
 classDiagram
     class SystemPause {
-        +setModules(...)
+        +setModules(JobRegistry, StakeManager, ValidationModule, DisputeModule, PlatformRegistry, FeePool, ReputationEngine, ArbitratorCommittee)
         +setGlobalPauser(address)
+        +executeGovernanceCall(address,bytes)
         +pauseAll()
         +unpauseAll()
-        +executeGovernanceCall(address,bytes)
+        +activePauser() address
     }
     class JobRegistry {
         +createJob(...)
         +acceptJob(...)
         +finalizeJob(...)
-        +escalateDispute(...)
+        +setModules(...)
+        +setIdentityRegistry(address)
     }
     class StakeManager {
-        +configureStakePolicy(...)
         +bondStake(...)
         +slash(...)
-        +claimRewards(...)
+        +setFeePool(address)
+        +setTreasury(address)
     }
     class ValidationModule {
         +registerValidator(...)
-        +reportResult(...)
         +triggerFailover(...)
+        +setJobRegistry(address)
+        +setIdentityRegistry(address)
+    }
+    class DisputeModule {
+        +raiseDispute(...)
+        +setCommittee(address)
+        +setTaxPolicy(address)
     }
     class FeePool {
-        +setFeeSchedule(...)
-        +disburse(...)
+        +depositFee(uint256)
+        +governanceWithdraw(address,uint256)
+        +setGovernance(address)
     }
     class ReputationEngine {
-        +score(address)
-        +updateScore(...)
+        +setCaller(address,bool)
+        +update(address,int256)
+        +rewardValidator(address,uint256)
     }
-
-    SystemPause --> JobRegistry : pauser authority
-    SystemPause --> StakeManager : pauser authority
-    SystemPause --> ValidationModule : pauser authority
-    SystemPause --> FeePool : pauser authority
-    SystemPause --> ReputationEngine : pauser authority
-    JobRegistry --> StakeManager : stake requirements
-    JobRegistry --> ValidationModule : validation hooks
-    JobRegistry --> ReputationEngine : score updates
-    JobRegistry --> FeePool : settlement routing
+    SystemPause --> JobRegistry : owns & pauses
+    SystemPause --> StakeManager : owns & pauses
+    SystemPause --> ValidationModule : owns & pauses
+    SystemPause --> DisputeModule : owns & pauses
+    SystemPause --> FeePool : owns & pauses
+    SystemPause --> ReputationEngine : owns & pauses
 ```
 
-## Storage & Upgrade Philosophy
-- Every contract inherits [`Governable.sol`](../contracts/Governable.sol) so governance is timelock-controlled and exposes `owner()` for compatibility.
-- Custom errors minimize bytecode while conveying precise failure modes.
-- `SystemPause` owns all managed modules, ensuring owner-triggered upgrades and pausability cascade across the mesh.
-- Owner-configurable parameters are intentionally surfaced via `OwnerConfigurator`, empowering the contract owner to hot-swap validation curves, staking ratios, taxation, pauser delegates, metadata registries, and dispute flows without redeploying.
+## Ownership Topology
+- `SystemPause` owns **all** runtime-critical modules (registry, staking, validation, dispute, platform, fee, reputation, committee, tax policy).
+- The owner Safe governs `SystemPause`; the guardian Safe receives pauser powers via `setGlobalPauser`.
+- Identity and attestation registries are transferred to the owner Safe via `CoreOwnable2Step`; the migration queues `transferOwnership` so the Safe can `acceptOwnership` post-deployment.
 
-## Module Notes
-- **JobRegistry**: Orchestrates job lifecycle, dispute escalations, tax acknowledgements, and fee routing. Emits dense telemetry for analytics. Owner setters reshape job templates, arbitration committees, metadata, and job economics.
-- **StakeManager**: Maintains validator and worker collateral, slash conditions, epoch rewards, and treasury integrations. Owner functions govern ratios, rewards, and validator registries.
-- **ValidationModule**: Handles validator enrollment, result aggregation, and failover controls. Owner may rotate validators, scoring weights, and slashing hooks.
-- **DisputeModule**: Isolates arbitration, committee membership, and appeals. Works in tandem with `ArbitratorCommittee` and `SystemPause` for escalations.
-- **ReputationEngine**: Aggregates multi-dimensional trust vectors, supports operator adjustments, and exposes events for off-chain ranking engines.
-- **FeePool** & **TaxPolicy**: Route settlements, taxes, and treasury splits with owner-calibrated coefficients.
+## Module Synopsis
+| Contract | Purpose | Owner Surfaces |
+| --- | --- | --- |
+| `SystemPause` | Aggregates ownership, pausing, and governance forwarding. | `setModules`, `setGlobalPauser`, `refreshPausers`, `executeGovernanceCall`, `pauseAll`, `unpauseAll`. |
+| `JobRegistry` | Orchestrates job lifecycle, taxation acknowledgements, arbitration escalations, and settlement routing. | `setModules`, `setIdentityRegistry`, `setDisputeModule`, `setValidationModule`, parameter setters for fees, deadlines, templates. |
+| `StakeManager` | Manages AGIALPHA collateral, slashing, validator pools, and treasury routing. | `setJobRegistry`, `setDisputeModule`, `setFeePool`, `setTreasury`, `setRoleMinimums`, `setRewardCurves`. |
+| `ValidationModule` | Coordinates validator selection, commit/reveal windows, failover logic. | `setJobRegistry`, `setStakeManager`, `setIdentityRegistry`, `setReputationEngine`, `setValidatorPool`, `setRandaoCoordinator`. |
+| `DisputeModule` | Handles dispute fees, committee escalation, and tax policy linkage. | `setJobRegistry`, `setStakeManager`, `setCommittee`, `setTaxPolicy`, `setDisputeFee`, `setDisputeWindow`. |
+| `FeePool` | Receives job fees, burns configured percentages, and streams rewards. | `setStakeManager`, `setRewardRole`, `setTaxPolicy`, `setTreasuryAllowlist`, `setTreasury`, `setGovernance`, `setPauserManager`. |
+| `ReputationEngine` | Maintains trust vectors and exposes programmable scoring. | `setCaller`, `setStakeManager`, `setScoringWeights`, `setDecay`, `blacklist`. |
+| `ArbitratorCommittee` | Seats jurors and processes dispute verdicts. | `setDisputeModule`, `setCommitRevealWindows`, `setAbsenteeSlash`, `pause`. |
+| `TaxPolicy` | Stores canonical tax acknowledgement metadata. | Two-step `transferOwnership` / `acceptOwnership`, `setPolicyUri`, `setDescription`. |
 
-## Governance Access Patterns
-| Contract | Privileged Entry Points |
-| --- | --- |
-| `SystemPause` | `setModules`, `refreshPausers`, `setGlobalPauser`, `executeGovernanceCall`, `pauseAll`, `unpauseAll`. |
-| `JobRegistry` | Extensive owner setters for job templates, arbitration policies, fee gradients, metadata registries. |
-| `StakeManager` | Owner functions for collateral ratios, reward emission, slash penalties, validator registries, treasury sinks. |
-| `ValidationModule` | Owner functions for validator sets, scoring weights, failover strategy. |
-| `FeePool` | Owner functions for distribution tables, treasury addresses, sweep logic. |
-| `ReputationEngine` | Owner functions for scoring coefficients, decays, and aggregator addresses. |
-
-## Owner Override Field Diagram
+## Governance Routines
 ```mermaid
 graph LR
-    Owner((Owner / Safe)) -->|transferOwnership| Core[Governable Modules]
-    Owner --> Configurator[OwnerConfigurator]
-    Configurator -->|configure| Core
-    Owner --> Pause[SystemPause]
-    Pause -->|setModules & pauseAll| Core
-    Owner --> FeePool
-    FeePool -->|setRewarder / setTreasury / setPauser| Core
-    classDef owner fill:#1c2230,stroke:#00c2ff,color:#f7f9ff,font-size:12px;
-    classDef core fill:#0d2a1c,stroke:#20df9f,color:#ecfff7,font-size:12px;
-    class Owner owner;
-    class Core,Pause,FeePool core;
+    Owner((Owner Safe)) -->|transferOwnership| SystemPause
+    Guardian((Guardian Safe)) -->|setGlobalPauser| SystemPause
+    SystemPause -->|executeGovernanceCall| Modules
+    Modules -->|emit ModuleUpdated| Observers
+    Owner --> OwnerConfigurator
+    OwnerConfigurator -->|configureBatch| Modules
 ```
 
-Every solid line in the diagram corresponds to callable functions exposed to the owner for runtime control—pausing, parameter tuning, treasury assignment, validator rotation, and reward distribution.
+- **Upgrade:** Deploy replacement contract → `transferOwnership(SystemPause)` → `SystemPause.setModules` with new address.
+- **Parameter change:** Encode calldata and call `SystemPause.executeGovernanceCall(target, data)` from the owner Safe.
+- **Emergency pause:** Guardian Safe invokes `SystemPause.pauseAll()`; resume with `unpauseAll()`.
+
+## Storage & Bytecode Discipline
+- All contracts use custom errors, unchecked arithmetic where safe, and shared libraries from `libraries/` to stay under EIP-170 limits.
+- `Governable` surfaces expose `owner()` for compatibility while enforcing Timelock discipline.
+- Events include precise deltas so off-chain automation can reconcile state without expensive reads.
 
 ## Extensibility Hooks
-- Libraries under `libraries/` expose math, guard, and string utilities reused across modules to shrink bytecode.
-- Interfaces in `interfaces/` define minimal ABI surfaces for cross-contract messaging, aiding verification and proxy compatibility.
-- Modules under `modules/` encapsulate optional behaviors (e.g., disputes) and are owned by `SystemPause` for hot-swapping.
+- Interfaces under `interfaces/` define the minimum ABI for external integrations (staking, reputation, dispute, identity, FeePool).
+- Utility contracts under `utils/` provide reusable Ownable2Step, math, and guard constructs.
+- Modules in `modules/` (e.g. `DisputeModule`) can be hot-swapped through `SystemPause.setModules` with no downtime.
 
-For full symbol references, inspect the JSON artifacts under `build/contracts/` after running `npm run compile`.
+Compile artifacts live in `build/contracts/` after `npm run compile` and mirror the exact ABI/bytecode consumed by CI and deployment.

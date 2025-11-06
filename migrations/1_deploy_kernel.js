@@ -1,142 +1,312 @@
-const fs = require('fs'); const path = require('path');
-const cfgPath = process.env.DEPLOY_CONFIG || path.join(__dirname, '../deploy/config.mainnet.json');
-const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+const fs = require('fs');
+const path = require('path');
+const namehash = require('eth-ens-namehash');
 
-const SystemPause         = artifacts.require('SystemPause');
-const OwnerConfigurator   = artifacts.require('OwnerConfigurator');
-
-const JobRegistry         = artifacts.require('JobRegistry');
-const StakeManager        = artifacts.require('StakeManager');
-const ValidationModule    = artifacts.require('ValidationModule');
-const DisputeModule       = artifacts.require('DisputeModule');
+const SystemPause = artifacts.require('SystemPause');
+const OwnerConfigurator = artifacts.require('OwnerConfigurator');
+const JobRegistry = artifacts.require('JobRegistry');
+const StakeManager = artifacts.require('StakeManager');
+const ValidationModule = artifacts.require('ValidationModule');
+const DisputeModule = artifacts.require('DisputeModule');
 const ArbitratorCommittee = artifacts.require('ArbitratorCommittee');
-
-const PlatformRegistry    = artifacts.require('PlatformRegistry');
-const ReputationEngine    = artifacts.require('ReputationEngine');
-const IdentityRegistry    = artifacts.require('IdentityRegistry');
+const PlatformRegistry = artifacts.require('PlatformRegistry');
+const ReputationEngine = artifacts.require('ReputationEngine');
+const IdentityRegistry = artifacts.require('IdentityRegistry');
 const AttestationRegistry = artifacts.require('AttestationRegistry');
+const CertificateNFT = artifacts.require('CertificateNFT');
+const TaxPolicy = artifacts.require('TaxPolicy');
+const FeePool = artifacts.require('FeePool');
 
-const CertificateNFT      = artifacts.require('CertificateNFT');
-const TaxPolicy           = artifacts.require('TaxPolicy');
-const FeePool             = artifacts.require('FeePool');
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+const ZERO_BYTES32 = '0x0000000000000000000000000000000000000000000000000000000000000000';
 
-module.exports = async function (deployer, network) {
+function resolveConfig() {
+  const cfgPath = process.env.DEPLOY_CONFIG || path.join(__dirname, '../deploy/config.mainnet.json');
+  return JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+}
+
+async function send(label, fn) {
+  console.log(`▶️  ${label}`);
+  return fn();
+}
+
+module.exports = async function (deployer, network, accounts) {
+  const [deployerAccount] = accounts;
+  const cfg = resolveConfig();
   const chainId = await web3.eth.getChainId();
-  if (chainId !== cfg.chainId) throw new Error(`Config chainId ${cfg.chainId} != network ${chainId}`);
+  if (chainId !== cfg.chainId) {
+    throw new Error(`Config chainId ${cfg.chainId} != network ${chainId}`);
+  }
 
-  const AGI          = cfg.tokens.agi;
-  const OWNER_SAFE   = cfg.ownerSafe;
-  const GUARDIAN_SAFE= cfg.guardianSafe;
-  const TREASURY     = cfg.treasury;
+  const ownerSafe = cfg.ownerSafe;
+  const guardianSafe = cfg.guardianSafe || ownerSafe;
+  const treasury = cfg.treasury || ZERO_ADDRESS;
 
-  // 1) Admin + treasury
-  await deployer.deploy(OwnerConfigurator, OWNER_SAFE);
-  const ownerCfg = await OwnerConfigurator.deployed();
+  const params = cfg.params || {};
+  const platformFeeBps = Number(params.platformFeeBps ?? 1000);
+  if (platformFeeBps % 100 !== 0) {
+    throw new Error('platformFeeBps must be a multiple of 100');
+  }
+  const platformFeePct = Math.floor(platformFeeBps / 100);
+  if (platformFeePct > 100) {
+    throw new Error(`platformFeeBps ${platformFeeBps} exceeds 100%`);
+  }
 
-  await deployer.deploy(FeePool, AGI);
-  const feePool = await FeePool.deployed();
+  const burnBpsOfFee = Number(params.burnBpsOfFee ?? 100);
+  if (burnBpsOfFee % 100 !== 0) {
+    throw new Error('burnBpsOfFee must be a multiple of 100');
+  }
+  const burnPct = Math.floor(burnBpsOfFee / 100);
+  if (burnPct > 100) {
+    throw new Error(`burnBpsOfFee ${burnBpsOfFee} exceeds 100%`);
+  }
 
-  // 2) Stake / Reputation / Identity
-  // NOTE: If your StakeManager constructor differs, adjust here.
-  await deployer.deploy(StakeManager, feePool.address);
-  const stake = await StakeManager.deployed();
+  const slashBps = Number(params.slashBps ?? 500);
+  if (slashBps < 0 || slashBps > 10000) {
+    throw new Error('slashBps must be between 0 and 10_000');
+  }
+  const treasuryPct = slashBps;
+  const employerPct = 10000 - treasuryPct;
 
-  await deployer.deploy(ReputationEngine);
-  const rep = await ReputationEngine.deployed();
+  const validatorQuorum = Number(params.validatorQuorum ?? 3);
+  const maxValidators = Number(params.maxValidators ?? Math.max(validatorQuorum * 2, validatorQuorum));
+  const minStakeWei = params.minStakeWei ?? '0';
+  const jobStakeWei = params.jobStakeWei ?? minStakeWei;
+  const disputeFeeWei = params.disputeFeeWei ?? '0';
+  const disputeWindow = Number(params.disputeWindow ?? 0);
 
-  await deployer.deploy(AttestationRegistry, cfg.identity.ensRegistry, cfg.identity.nameWrapper);
-  const attReg = await AttestationRegistry.deployed();
+  const agentRootNode = cfg.identity?.agentRootNode ? namehash.hash(cfg.identity.agentRootNode) : ZERO_BYTES32;
+  const clubRootNode = cfg.identity?.clubRootNode ? namehash.hash(cfg.identity.clubRootNode) : ZERO_BYTES32;
+  const agentMerkleRoot = cfg.identity?.agentMerkleRoot ?? ZERO_BYTES32;
+  const validatorMerkleRoot = cfg.identity?.validatorMerkleRoot ?? ZERO_BYTES32;
 
-  await deployer.deploy(IdentityRegistry);
-  const idReg = await IdentityRegistry.deployed();
+  console.log('🚀 Deploying Sovereign Labor kernel with deployer', deployerAccount);
 
-  // 3) Core registry + modules
-  await deployer.deploy(JobRegistry);
-  const reg = await JobRegistry.deployed();
+  const ownerCfg = await send('Deploy OwnerConfigurator', () => deployer.deploy(OwnerConfigurator, ownerSafe).then(() => OwnerConfigurator.deployed()));
+  const tax = await send('Deploy TaxPolicy', () => deployer.deploy(TaxPolicy, cfg.tax?.policyUri || '', cfg.tax?.description || '').then(() => TaxPolicy.deployed()));
 
-  await deployer.deploy(DisputeModule, reg.address, stake.address);
-  const disp = await DisputeModule.deployed();
-
-  await deployer.deploy(ValidationModule, reg.address, stake.address, 0, 0, 0, 0, []);
-  const val = await ValidationModule.deployed();
-
-  await deployer.deploy(ArbitratorCommittee, reg.address, disp.address);
-  const arb = await ArbitratorCommittee.deployed();
-
-  await deployer.deploy(PlatformRegistry, stake.address, rep.address, 0);
-  const plat = await PlatformRegistry.deployed();
-
-  await deployer.deploy(CertificateNFT);
-  const cert = await CertificateNFT.deployed();
-
-  await deployer.deploy(TaxPolicy, cfg.tax.policyUri || "", cfg.tax.description || "");
-  const tax = await TaxPolicy.deployed();
-
-  // 4) Pause lattice
-  // If your SystemPause constructor differs, adjust the arguments accordingly.
-  await deployer.deploy(
-    SystemPause,
-    reg.address, stake.address, val.address, disp.address,
-    plat.address, feePool.address, rep.address, arb.address,
-    OWNER_SAFE
+  const stake = await send('Deploy StakeManager', () =>
+    deployer
+      .deploy(
+        StakeManager,
+        minStakeWei,
+        employerPct,
+        treasuryPct,
+        treasury,
+        ZERO_ADDRESS,
+        ZERO_ADDRESS,
+        deployerAccount
+      )
+      .then(() => StakeManager.deployed())
   );
-  const pause = await SystemPause.deployed();
 
-  // 5) Wiring helpers
-  const safeCall = async (inst, fn, args=[]) => { if (inst[fn]) await inst[fn](...args); };
+  const feePool = await send('Deploy FeePool', () =>
+    deployer
+      .deploy(FeePool, stake.address, burnPct, treasury, tax.address)
+      .then(() => FeePool.deployed())
+  );
 
-  await safeCall(reg, 'setModules', [val.address, stake.address, rep.address, disp.address, cert.address, tax.address]);
+  const reputation = await send('Deploy ReputationEngine', () =>
+    deployer.deploy(ReputationEngine, stake.address).then(() => ReputationEngine.deployed())
+  );
 
-  await safeCall(stake, 'setJobRegistry', [reg.address]);
-  await safeCall(stake, 'setDisputeModule', [disp.address]);
-  await safeCall(stake, 'setTreasury', [feePool.address]);
+  const platform = await send('Deploy PlatformRegistry', () =>
+    deployer.deploy(PlatformRegistry, stake.address, reputation.address, minStakeWei).then(() => PlatformRegistry.deployed())
+  );
 
-  await safeCall(val, 'setIdentityRegistry', [idReg.address]);
-  await safeCall(val, 'setReputationEngine', [rep.address]);
+  const attestation = await send('Deploy AttestationRegistry', () =>
+    deployer
+      .deploy(AttestationRegistry, cfg.identity?.ensRegistry || ZERO_ADDRESS, cfg.identity?.nameWrapper || ZERO_ADDRESS)
+      .then(() => AttestationRegistry.deployed())
+  );
 
-  await safeCall(cert, 'setJobRegistry', [reg.address]);
+  const identity = await send('Deploy IdentityRegistry', () =>
+    deployer
+      .deploy(
+        IdentityRegistry,
+        cfg.identity?.ensRegistry || ZERO_ADDRESS,
+        cfg.identity?.nameWrapper || ZERO_ADDRESS,
+        reputation.address,
+        agentRootNode,
+        clubRootNode
+      )
+      .then(() => IdentityRegistry.deployed())
+  );
 
-  await safeCall(ownerCfg, 'setRegistry', [reg.address]);
-  await safeCall(ownerCfg, 'setStakeManager', [stake.address]);
-  await safeCall(ownerCfg, 'setValidation', [val.address]);
-  await safeCall(ownerCfg, 'setReputationEngine', [rep.address]);
-  await safeCall(ownerCfg, 'setDisputeModule', [disp.address]);
-  await safeCall(ownerCfg, 'setFeePool', [feePool.address]);
-  await safeCall(ownerCfg, 'setCertificateNFT', [cert.address]);
-  await safeCall(ownerCfg, 'setIdentityRegistry', [idReg.address]);
-  await safeCall(ownerCfg, 'setPlatformRegistry', [plat.address]);
+  const certificate = await send('Deploy CertificateNFT', () =>
+    deployer.deploy(CertificateNFT, 'Sovereign Labor Credential', 'SLC').then(() => CertificateNFT.deployed())
+  );
 
-  await safeCall(idReg, 'setENS', [cfg.identity.ensRegistry, cfg.identity.nameWrapper]);
-  await safeCall(idReg, 'setRoots', [cfg.identity.agentRootNode, cfg.identity.clubRootNode]);
-  await safeCall(idReg, 'setMerkleRoots', [cfg.identity.agentMerkleRoot, cfg.identity.validatorMerkleRoot]);
+  const validation = await send('Deploy ValidationModule', () =>
+    deployer
+      .deploy(
+        ValidationModule,
+        ZERO_ADDRESS,
+        stake.address,
+        0,
+        0,
+        validatorQuorum,
+        maxValidators,
+        []
+      )
+      .then(() => ValidationModule.deployed())
+  );
 
-  // 6) Hand ownership to governance Safe
-  const ownables = [reg, stake, val, disp, plat, rep, idReg, attReg, cert, tax, arb, ownerCfg, feePool, pause];
-  for (const c of ownables) if (c.transferOwnership) await c.transferOwnership(OWNER_SAFE);
+  const dispute = await send('Deploy DisputeModule', () =>
+    deployer
+      .deploy(
+        DisputeModule,
+        ZERO_ADDRESS,
+        disputeFeeWei,
+        disputeWindow,
+        ZERO_ADDRESS,
+        deployerAccount
+      )
+      .then(() => DisputeModule.deployed())
+  );
 
-  // 7) Write a manifest for downstream tools
+  const job = await send('Deploy JobRegistry', () =>
+    deployer
+      .deploy(
+        JobRegistry,
+        validation.address,
+        stake.address,
+        reputation.address,
+        dispute.address,
+        certificate.address,
+        feePool.address,
+        tax.address,
+        platformFeePct,
+        jobStakeWei,
+        [tax.address],
+        deployerAccount
+      )
+      .then(() => JobRegistry.deployed())
+  );
+
+  const committee = await send('Deploy ArbitratorCommittee', () =>
+    deployer.deploy(ArbitratorCommittee, job.address, dispute.address).then(() => ArbitratorCommittee.deployed())
+  );
+
+  const pause = await send('Deploy SystemPause', () =>
+    deployer
+      .deploy(
+        SystemPause,
+        job.address,
+        stake.address,
+        validation.address,
+        dispute.address,
+        platform.address,
+        feePool.address,
+        reputation.address,
+        committee.address,
+        deployerAccount
+      )
+      .then(() => SystemPause.deployed())
+  );
+
+  console.log('🔧 Wiring modules');
+
+  if (attestation.address !== ZERO_ADDRESS) {
+    await send('IdentityRegistry.setAttestationRegistry', () => identity.setAttestationRegistry(attestation.address));
+  }
+  if (agentMerkleRoot !== ZERO_BYTES32) {
+    await send('IdentityRegistry.setAgentMerkleRoot', () => identity.setAgentMerkleRoot(agentMerkleRoot));
+  }
+  if (validatorMerkleRoot !== ZERO_BYTES32) {
+    await send('IdentityRegistry.setValidatorMerkleRoot', () => identity.setValidatorMerkleRoot(validatorMerkleRoot));
+  }
+
+  await send('ValidationModule.setJobRegistry', () => validation.setJobRegistry(job.address));
+  await send('ValidationModule.setStakeManager', () => validation.setStakeManager(stake.address));
+  await send('ValidationModule.setIdentityRegistry', () => validation.setIdentityRegistry(identity.address));
+  await send('ValidationModule.setReputationEngine', () => validation.setReputationEngine(reputation.address));
+
+  await send('StakeManager.setFeePool', () => stake.setFeePool(feePool.address));
+  await send('StakeManager.setJobRegistry', () => stake.setJobRegistry(job.address));
+  await send('StakeManager.setDisputeModule', () => stake.setDisputeModule(dispute.address));
+  if (treasury !== ZERO_ADDRESS) {
+    await send('StakeManager.setTreasuryAllowlist', () => stake.setTreasuryAllowlist(treasury, true));
+    await send('StakeManager.setTreasury', () => stake.setTreasury(treasury));
+  }
+
+  await send('DisputeModule.setJobRegistry', () => dispute.setJobRegistry(job.address));
+  await send('DisputeModule.setStakeManager', () => dispute.setStakeManager(stake.address));
+  await send('DisputeModule.setCommittee', () => dispute.setCommittee(committee.address));
+  await send('DisputeModule.setTaxPolicy', () => dispute.setTaxPolicy(tax.address));
+
+  await send('FeePool.setStakeManager', () => feePool.setStakeManager(stake.address));
+  await send('FeePool.setRewardRole', () => feePool.setRewardRole(2));
+  await send('FeePool.setTaxPolicy', () => feePool.setTaxPolicy(tax.address));
+  if (treasury !== ZERO_ADDRESS) {
+    await send('FeePool.setTreasuryAllowlist', () => feePool.setTreasuryAllowlist(treasury, true));
+    await send('FeePool.setTreasury', () => feePool.setTreasury(treasury));
+  }
+  await send('FeePool.setGovernance', () => feePool.setGovernance(pause.address));
+
+  await send('ReputationEngine.setCaller(JobRegistry)', () => reputation.setCaller(job.address, true));
+  await send('ReputationEngine.setCaller(ValidationModule)', () => reputation.setCaller(validation.address, true));
+
+  await send('CertificateNFT.setJobRegistry', () => certificate.setJobRegistry(job.address));
+
+  console.log('🎛️  Transferring ownership to SystemPause lattice');
+
+  await send('TaxPolicy.transferOwnership(SystemPause)', () => tax.transferOwnership(pause.address));
+
+  await send('JobRegistry.transferOwnership(SystemPause)', () => job.transferOwnership(pause.address));
+  await send('StakeManager.transferOwnership(SystemPause)', () => stake.transferOwnership(pause.address));
+  await send('ValidationModule.transferOwnership(SystemPause)', () => validation.transferOwnership(pause.address));
+  await send('DisputeModule.transferOwnership(SystemPause)', () => dispute.transferOwnership(pause.address));
+  await send('PlatformRegistry.transferOwnership(SystemPause)', () => platform.transferOwnership(pause.address));
+  await send('FeePool.transferOwnership(SystemPause)', () => feePool.transferOwnership(pause.address));
+  await send('ReputationEngine.transferOwnership(SystemPause)', () => reputation.transferOwnership(pause.address));
+  await send('ArbitratorCommittee.transferOwnership(SystemPause)', () => committee.transferOwnership(pause.address));
+
+  await send('SystemPause.accept TaxPolicy ownership', () =>
+    pause.executeGovernanceCall(tax.address, tax.contract.methods.acceptOwnership().encodeABI())
+  );
+
+  await send('SystemPause.setModules', () =>
+    pause.setModules(
+      job.address,
+      stake.address,
+      validation.address,
+      dispute.address,
+      platform.address,
+      feePool.address,
+      reputation.address,
+      committee.address
+    )
+  );
+
+  await send('SystemPause.setGlobalPauser', () => pause.setGlobalPauser(guardianSafe));
+  await send('SystemPause.transferOwnership(ownerSafe)', () => pause.transferOwnership(ownerSafe));
+
+  await send('CertificateNFT.transferOwnership(ownerSafe)', () => certificate.transferOwnership(ownerSafe));
+  await send('AttestationRegistry.transferOwnership(ownerSafe)', () => attestation.transferOwnership(ownerSafe));
+  await send('IdentityRegistry.transferOwnership(ownerSafe)', () => identity.transferOwnership(ownerSafe));
+
   const writeManifest = require('../truffle/util/writeManifest');
   await writeManifest(network, {
     chainId,
-    AGI,
-    ownerSafe: OWNER_SAFE,
-    guardianSafe: GUARDIAN_SAFE,
-    treasury: TREASURY,
+    ownerSafe,
+    guardianSafe,
+    treasury,
     SystemPause: pause.address,
     OwnerConfigurator: ownerCfg.address,
-    JobRegistry: reg.address,
+    JobRegistry: job.address,
     StakeManager: stake.address,
-    ValidationModule: val.address,
-    DisputeModule: disp.address,
-    ArbitratorCommittee: arb.address,
-    PlatformRegistry: plat.address,
-    ReputationEngine: rep.address,
-    IdentityRegistry: idReg.address,
-    AttestationRegistry: attReg.address,
-    CertificateNFT: cert.address,
+    ValidationModule: validation.address,
+    DisputeModule: dispute.address,
+    ArbitratorCommittee: committee.address,
+    PlatformRegistry: platform.address,
+    ReputationEngine: reputation.address,
+    IdentityRegistry: identity.address,
+    AttestationRegistry: attestation.address,
+    CertificateNFT: certificate.address,
     TaxPolicy: tax.address,
     FeePool: feePool.address
   });
 
-  console.log('✅ Sovereign Labor α0.1 deployed (addresses written to manifests/).');
+  console.log('✅ Sovereign Labor kernel deployed. Update pending ownerships (Identity & Attestation) must be accepted by owner safe.');
 };

@@ -1,233 +1,157 @@
 # AGIJobs Sovereign Labor v0.1
 
-[![Sovereign Compile](https://img.shields.io/github/actions/workflow/status/AGIJobs/agijobs-sovereign-labor-v0p1/ci.yml?branch=main&label=Sovereign%20Compile&logo=github)][workflow-sovereign-compile]
-[![GitHub Checks](https://img.shields.io/github/checks-status/AGIJobs/agijobs-sovereign-labor-v0p1/main?label=Branch%20Checks&logo=github)](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-![Node.js](https://img.shields.io/badge/Node.js-20.x-339933?logo=node.js&logoColor=white)
-![Solidity](https://img.shields.io/badge/Solidity-0.8.30-363636?logo=solidity)
-![Truffle](https://img.shields.io/badge/Truffle-5.11.5-5e464d?logo=truffle)
-![Security](https://img.shields.io/badge/Security-Protocol%20Grade%20Controls-0b7285)
+[![Sovereign Compile](https://img.shields.io/github/actions/workflow/status/AGIJobs/agijobs-sovereign-labor-v0p1/ci.yml?branch=main&label=Sovereign%20Compile&logo=github&logoColor=white&style=for-the-badge)](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
+[![Branch Gatekeeper](https://img.shields.io/github/actions/workflow/status/AGIJobs/agijobs-sovereign-labor-v0p1/branch-checks.yml?branch=main&label=Branch%20Gatekeeper&logo=github&logoColor=white&style=for-the-badge)](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+![Node.js](https://img.shields.io/badge/Node.js-20.x-339933?logo=node.js&logoColor=white&style=for-the-badge)
+![Solidity](https://img.shields.io/badge/Solidity-0.8.30-363636?logo=solidity&style=for-the-badge)
+![Truffle](https://img.shields.io/badge/Truffle-5.11.5-5e464d?logo=truffle&style=for-the-badge)
 
-[workflow-sovereign-compile]: https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml
-
-> The sovereign labor intelligence substrate that silently choreographs global coordination, composability, and owner-level omnipotence.
+> The sovereign labor intelligence lattice engineered to command economic coordination with absolute owner authority.
 
 ---
 
 ## Table of Contents
-- [Mission Vector](#mission-vector)
-- [Repository Topology](#repository-topology)
-- [System Cartography](#system-cartography)
-- [Lifecycle Orchestration](#lifecycle-orchestration)
-- [Governance & Control Surfaces](#governance--control-surfaces)
-- [Continuous Integration & Release Discipline](#continuous-integration--release-discipline)
-- [Operator Playbooks](#operator-playbooks)
-- [Development Quickstart](#development-quickstart)
-- [Observability Signals](#observability-signals)
-- [Directory Atlases](#directory-atlases)
+- [Mission Trajectory](#mission-trajectory)
+- [Neural Cartography](#neural-cartography)
+- [Governance Spine](#governance-spine)
+- [Continuous Verification](#continuous-verification)
+- [Deployment Codex](#deployment-codex)
+- [Owner Operations](#owner-operations)
+- [Telemetry Signals](#telemetry-signals)
+- [Directory Atlas](#directory-atlas)
 
 ---
 
-## Mission Vector
-- **Precision governance.** Every privileged pathway is timelock mediated, auditable, and reversible by the contract owner with deterministic sequencing.
-- **Dynamic labor markets.** Registries, staking, validation, and dispute circuits interlock through hardened interfaces to choreograph human and machine job flows.
-- **Instant reconfiguration.** Core modules are hot-swappable, pausable, and parameterizable without downtime, empowering the owner to steer incentives in real time.
-- **Command singularity.** The mesh behaves as the intelligence engine that shapes economic gravity—deploy once, steer forever.
+## Mission Trajectory
+- **Centralised leverage.** `SystemPause` owns every mutable surface while reporting to the owner Safe; one switch orchestrates pause, upgrades, and governance mutations.
+- **Composable labor markets.** Registries, staking, reputation, arbitration, and tax policy interlock through deterministic interfaces so incentives can be rewritten mid-flight.
+- **Immediate reconfiguration.** Each module is pausable, upgradeable, and owner-tunable, giving the platform the steering wheel of a global labor cognition engine.
+- **Battle-ready CI.** Branch protection, deterministic compiles, and branch-name enforcement keep the intelligence substrate deployable by non-technical operators.
 
-## Autonomy Field Manual
+## Neural Cartography
 ```mermaid
-mindmap
-  root((Sovereign Labor Core))
-    Control
-      Global Pauser
-      Governance Timelock
-      Owner Console
-    Markets
-      Job Registry
-      Platform Registry
-      Fee & Tax Orchestrators
-    Signal
-      Reputation Engine
-      Attestation Lattices
-      Certificate NFTs
-    Defense
-      Validation Mesh
-      Dispute Module
-      Arbitrator Committee
-```
-
-> Every branch of the mindmap is live code in this repository. Each leaf links to a pausable, owner-governed module whose parameters can be remapped mid-flight without forfeiting determinism.
-
-## Repository Topology
-| Path | Signal |
-| --- | --- |
-| `contracts/` | Solidity source for registries, staking, arbitration, attestation, tax policy, and composable modules. |
-| `deploy/` | Deployment pipelines and scripted environment bootstraps. |
-| `migrations/` | Legacy Truffle migrations for historical compatibility. |
-| `truffle/` | Network snapshots, fixtures, and environment shims. |
-| `truffle-config.js` | Compiler settings (Solidity 0.8.30 via IR, optimizer, deterministic metadata). |
-| `package.json` | Tooling manifest and reproducible build scripts. |
-| `.github/workflows/` | Sovereign compile workflow enforcing green pipelines on every push and PR. |
-
-## System Cartography
-```mermaid
-flowchart TD
-    subgraph ControlPlane[Control Plane]
-        GOV[Timelock Governance]
+flowchart LR
+    subgraph Governance[L1 : Governance Spine]
         SYS[SystemPause]
+        SAFE[Owner Safe]
+        GUARD[Guardian / Pauser]
+    end
+    subgraph CoreMesh[L2 : Labor Mesh]
+        JOB[JobRegistry]
+        STK[StakeManager]
+        VAL[ValidationModule]
+        DISP[DisputeModule]
+        FEE[FeePool]
+        REP[ReputationEngine]
+        PLAT[PlatformRegistry]
+        COMM[ArbitratorCommittee]
         TAX[TaxPolicy]
-        TRE[FeePool]
     end
-    subgraph LaborMesh[Labor Mesh]
-        JR[JobRegistry]
-        PR[PlatformRegistry]
-        IR[IdentityRegistry]
-        SM[StakeManager]
-        VM[ValidationModule]
-        DM[modules/DisputeModule]
-        RE[ReputationEngine]
-        AC[ArbitratorCommittee]
+    subgraph Identity[L3 : Identity Fabric]
+        IDR[IdentityRegistry]
+        ATR[AttestationRegistry]
+        CERT[CertificateNFT]
     end
 
-    GOV -->|authorizes| SYS
-    SYS -->|pauses/resumes| JR & PR & SM & VM & DM & RE & AC & TRE
-    SYS -->|treasury routing| TRE
-    PR -->|platform onboarding| JR
-    IR -->|identity attestations| JR
-    SM -->|collateral gates| JR
-    VM -->|validation verdicts| JR
-    DM -->|dispute resolution| JR
-    RE -->|reputation updates| JR
-    AC -->|arbitration| DM
-    TAX -->|policy drift| TRE
-
-    classDef plane fill:#120c3b,stroke:#7360ff,stroke-width:2px,color:#f8f9ff,font-size:12px;
-    classDef mesh fill:#00332f,stroke:#26a69a,stroke-width:2px,color:#f4fff9,font-size:12px;
-    class GOV,SYS,TAX,TRE plane;
-    class JR,PR,IR,SM,VM,DM,RE,AC mesh;
+    SAFE -->|governs| SYS
+    GUARD -->|pauses| SYS
+    SYS -->|owns| JOB & STK & VAL & DISP & FEE & REP & PLAT & COMM & TAX
+    JOB -->|orchestrates| STK & VAL & DISP & REP & FEE
+    STK -->|settles AGIALPHA| FEE
+    REP -->|trust vectors| JOB
+    DISP -->|escalations| COMM
+    IDR -->|proof-of-personhood| VAL & JOB
+    ATR -->|attestations| IDR
+    CERT -->|credentials| JOB
 ```
 
-## Lifecycle Orchestration
+Every module address is etched into the deployment manifest. Ownership is routed through `SystemPause`, so the owner Safe can reconfigure the entire lattice with one governance action.
+
+## Governance Spine
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Governance
-    participant SystemPause
-    participant Platform
-    participant Worker
-    participant JobRegistry
-    participant ValidationModule
-    participant StakeManager
-    participant ReputationEngine
+    participant Safe as Owner Safe (Timelock / Multisig)
+    participant Pause as SystemPause (Governable)
+    participant Module as Core Module
+    participant Guardian as Guardian / Pauser
 
-    Governance->>SystemPause: Curate pauser + module set
-    SystemPause->>JobRegistry: Propagate module delegates
-    Platform->>JobRegistry: Register platform metadata
-    JobRegistry->>ValidationModule: Dispatch validation hooks
-    Worker->>StakeManager: Bond collateral
-    Worker->>JobRegistry: Accept job unit
-    ValidationModule-->>JobRegistry: Emit verdicts / failovers
-    JobRegistry->>ReputationEngine: Update trust vector
-    JobRegistry-->>Platform: Route settlement via FeePool
-    Governance-->>SystemPause: Pause / resume in emergencies
+    Safe->>Pause: Execute governance call (setModules / executeGovernanceCall)
+    Pause->>Module: Forward privileged setter
+    Guardian-->>Pause: setGlobalPauser / pauseAll
+    Pause->>Module: pause()/unpause()
+    Module-->>Pause: emit ModuleUpdated / PauserUpdated
+    Pause-->>Safe: emit GovernanceCallExecuted
 ```
 
-## Governance & Control Surfaces
-The owner (timelock governance) retains complete, immediate command over every parameter:
+Key control surfaces:
+- **`SystemPause.setModules`** rewires module addresses and refreshes pauser delegates in one transaction. Requires the owner Safe.
+- **`SystemPause.setGlobalPauser`** hands emergency brake authority to the guardian Safe while retaining ultimate Safe oversight.
+- **`SystemPause.executeGovernanceCall`** lets the owner Safe invoke any known module setter without bespoke admin contracts.
+- **Ownership topology:** every core module (`JobRegistry`, `StakeManager`, `ValidationModule`, `DisputeModule`, `PlatformRegistry`, `FeePool`, `ReputationEngine`, `ArbitratorCommittee`, `TaxPolicy`) is owned by `SystemPause`. Identity and attestation surfaces hand off to the owner Safe via two-step transfer.
 
-- `SystemPause.setModules(...)` & `refreshPausers()` keep all subsystem references and pauser roles synchronized under a single lever.
-- `SystemPause.executeGovernanceCall(...)` forwards arbitrary governance-approved calldata to any managed module while enforcing ownership and pauser invariants.
-- `StakeManager` exposes owner-only routines for collateral ratios, reward curves, slash multipliers, and treasury routing, enabling rapid incentive tuning.
-- `JobRegistry` governance setters reshape job templates, fee gradients, arbitration policies, and module endpoints without redeploys.
-- Each module inherits pausing and ownership surfaces so the owner can stop, resume, or upgrade any flow instantly.
-
-Every critical operation emits rich telemetry events for downstream automation, dashboards, and compliance archives.
-
-## Continuous Integration & Release Discipline
+## Continuous Verification
 ```mermaid
 stateDiagram-v2
     [*] --> Checkout
-    Checkout --> Toolchain: setup-node@v4
-    Toolchain --> Cache : prime npm + truffle caches
-    Cache --> Install : npm ci --omit=optional --no-audit --no-fund
-    Install --> Compile : npm run compile
-    Compile --> [*]
+    Checkout --> Toolchain: actions/setup-node@v4
+    Toolchain --> Cache: npm & Truffle cache hydrated
+    Cache --> Install: npm ci --omit=optional --no-audit --no-fund
+    Install --> Compile: npm run compile
+    Compile --> SizeGuard: bytecode & initcode size assertions
+    SizeGuard --> [*]
 ```
 
-- The **Sovereign Compile** workflow gates every push to `main`, `develop`, `feature/**`, and `release/**` as well as all PRs targeting protected branches.
-- Caches keep compiler downloads deterministic while `npm ci` enforces lockfile integrity.
-- Branch protection checklist:
-  1. Require the **Sovereign Compile** check.
-  2. Enforce up-to-date merges before PR completion.
-  3. Require at least one approving review.
-  4. (Optional) Require signed commits for audit-grade provenance.
+- **Sovereign Compile (ci.yml)** runs on every push and PR targeting `main`, `develop`, `feature/**`, and `release/**`. It compiles via IR, exports toolchain versions into the job summary, and asserts artifact size constraints.
+- **Branch Gatekeeper (branch-checks.yml)** enforces canonical branch naming. Set it as a required status check alongside Sovereign Compile.
+- **Branch protection** checklist:
+  1. Require both workflow checks on `main` (and staging branches).
+  2. Enforce linear history & up-to-date merges.
+  3. Require ≥1 approved review.
+  4. (Optional) Require signed commits for forensic parity.
 
-## Branch Protection Enforcement Blueprint
+## Deployment Codex
 ```mermaid
-graph TD
-    A[Repository Settings] --> B[Branches]
-    B --> C{Select main & develop}
-    C --> D[Require status checks]
-    D --> D1[[Sovereign Compile]]
-    D --> D2[[Peer Review >= 1]]
-    C --> E[Require linear history]
-    C --> F[Restrict who can push]
-    F --> F1[Ops Guardians]
-    F --> F2[Automation Bots]
-    style D1 fill:#211a6b,stroke:#00d4ff,stroke-width:3px,color:#f2f6ff
-    style F1 fill:#0b3e24,stroke:#00d78a,stroke-width:2px,color:#ebfff5
+flowchart TD
+    A[Prepare config.mainnet.json] --> B[npm run compile]
+    B --> C[Export DEPLOY_CONFIG]
+    C --> D[npx truffle migrate --network mainnet --f 1 --to 3]
+    D --> E[Accept two-step ownerships]
+    E --> F[npm run verify:mainnet]
+    F --> G[Broadcast manifest]
 ```
 
-- Align GitHub branch protection rules with the diagram to guarantee that every pull request surfaces the Sovereign Compile check, code review, and governance-approved deployers.
-- Mirror the same rules on `develop` (or your staging trunk) so that downstream environments inherit identical guardrails.
-- Publish the enforcement policy in your Ops knowledge base; the system’s operators should treat it as a non-negotiable security boundary.
+1. **Bootstrap** – `npm install --omit=optional --no-audit --no-fund`.
+2. **Compile** – `npm run compile` (identical to CI).
+3. **Configure** – populate `deploy/config.mainnet.json`. Fields:
+   - `ownerSafe`, `guardianSafe`, `treasury`
+   - `params.platformFeeBps`, `params.minStakeWei`, `params.validatorQuorum`, etc.
+   - `identity` ENS roots (`agentRootNode`, `clubRootNode`) are standard ENS names; the migration auto-namehashes them.
+4. **Migrate** – `DEPLOY_CONFIG=$(pwd)/deploy/config.mainnet.json npx truffle migrate --network mainnet --f 1 --to 3`.
+5. **Accept ownership** – two-step contracts (`IdentityRegistry`, `AttestationRegistry`, any CoreOwnable2Step surfaces) must call `acceptOwnership` from the owner Safe.
+6. **Verify** – `npm run verify:mainnet` after confirmations.
 
-## Operator Playbooks
-| Scenario | Action Sequence |
-| --- | --- |
-| Pause entire mesh | Queue `SystemPause.pauseAll()` via timelock, execute after delay, monitor `PausersUpdated` & `ModulesUpdated`. |
-| Rotate pauser delegate | Call `SystemPause.setGlobalPauser(newPauser)` to update every module atomically. |
-| Swap out validation logic | Deploy new validation module, transfer ownership to `SystemPause`, call `setModules(...)` with the new address. |
-| Adjust staking economics | Invoke `StakeManager` governance setters to revise collateral ratios, reward splits, slash multipliers, and escrow managers. |
-| Trigger validation failover | `SystemPause.triggerValidationFailover(jobId, action, extension, reason)` extends windows or escalates to disputes. |
+The migration writes `manifests/addresses.mainnet.json` capturing module addresses, guardians, and treasury routes for downstream automation.
 
-## Development Quickstart
-```bash
-# Clone & bootstrap
-git clone https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1.git
-cd agijobs-sovereign-labor-v0p1
-npm install --omit=optional --no-audit --no-fund
+## Owner Operations
+- **Emergency pause:** guardian Safe calls `SystemPause.pauseAll()`; resume with `unpauseAll()`.
+- **Module upgrade:** deploy replacement, transfer ownership to `SystemPause`, then call `setModules` with new address.
+- **Parameter tuning:** invoke `SystemPause.executeGovernanceCall(target, abi.encodeWithSignature(...))` from the owner Safe to reach any setter.
+- **Treasury routing:** `StakeManager.setTreasuryAllowlist` + `setTreasury` configure slashing payouts; `FeePool.setGovernance` remains pointed at `SystemPause` so withdrawals travel through governance.
 
-# Deterministic compile
-npm run compile
+## Telemetry Signals
+- `SystemPause.ModulesUpdated`, `PausersUpdated` – canonical wiring events.
+- `StakeManager.ParametersUpdated`, `TreasuryUpdated` – staking economics & treasury snapshots.
+- `JobRegistry.JobCreated` / `JobFinalized` / `JobChallenged` – labor flow milestones.
+- `ValidationModule.ValidatorsUpdated`, `FailoverTriggered` – validator health.
+- `ReputationEngine.ScoreUpdated`, `BlacklistUpdated` – trust analytics.
 
-# Interactive sandbox
-npx truffle develop
-truffle(develop)> migrate
-truffle(develop)> test
-```
-
-### Environment secrets for live deployment
-| Variable | Purpose |
-| --- | --- |
-| `MAINNET_RPC` | HTTPS RPC endpoint (archive tier recommended). |
-| `SEPOLIA_RPC` | Testnet RPC endpoint. |
-| `DEPLOYER_PK` | Hex private key (no `0x`). |
-| `ETHERSCAN_API_KEY` | Verification API token. |
-
-Deploy with `truffle migrate --network <network>` and verify via `npm run verify:mainnet` once addresses are stable.
-
-## Observability Signals
-- `SystemPause.PausersUpdated` & `ModulesUpdated` — authoritative source of control surface state.
-- `StakeManager.Slashed`, `RewardClaimed`, `ParametersUpdated` — staking liquidity and risk posture.
-- `JobRegistry.JobCreated`, `JobAccepted`, `JobFinalized`, `JobChallenged` — labor flow telemetry.
-- `ReputationEngine.ScoreUpdated` — trust dynamics for platforms and workers.
-
-## Directory Atlases
-- [`contracts/`](contracts/README.md) – Architecture, storage layout, and module interfaces for every on-chain component.
-- [`deploy/`](deploy/README.md) – Deployment pipelines and environment tunables.
-- [`truffle/`](truffle/README.md) – Per-network configuration, fixtures, and simulation harnesses.
+## Directory Atlas
+- [`contracts/`](contracts/README.md) – contract architecture, storage maps, and governance entry points.
+- [`deploy/`](deploy/README.md) – migration choreography, env variables, Safe acceptance checklist.
+- [`truffle/`](truffle/README.md) – project configuration, manifests, and utility scripts.
+- `.github/workflows/` – CI blueprints enforcing green pipelines.
 
 ---
-
-Harness this repository with the discipline it deserves: precision governance, verified automation, and relentless CI keep the labor intelligence engine aligned with its operators.
+Harness this repository as the economic cognition engine it is: disciplined CI, single-switch governance, and owner-grade observability keep every labor market mutation under precise, sovereign control.
