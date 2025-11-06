@@ -65,7 +65,7 @@ jobs:
             status_label="Solidity lint failed"
           fi
 
-          cat <<EOF >> "$GITHUB_STEP_SUMMARY"
+          cat <<'EOF' >> "$GITHUB_STEP_SUMMARY"
           ### $status_icon Solidity lint
 
           $status_label
