@@ -69,7 +69,8 @@ module.exports = async function (_deployer, network) {
     platform: await pause.platformRegistry(),
     feePool: await pause.feePool(),
     reputation: await pause.reputationEngine(),
-    committee: await pause.arbitratorCommittee()
+    committee: await pause.arbitratorCommittee(),
+    tax: await pause.taxPolicy()
   };
 
   if (pointers.validation.toLowerCase() !== validation.address.toLowerCase()) {
@@ -92,6 +93,9 @@ module.exports = async function (_deployer, network) {
   }
   if (pointers.committee.toLowerCase() !== committee.address.toLowerCase()) {
     throw new Error('SystemPause committee pointer mismatch');
+  }
+  if (pointers.tax.toLowerCase() !== tax.address.toLowerCase()) {
+    throw new Error('SystemPause tax policy pointer mismatch');
   }
 
   const feeToken = await feePool.token();

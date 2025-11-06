@@ -5,12 +5,13 @@
 ```mermaid
 classDiagram
     class SystemPause {
-        +setModules(JobRegistry, StakeManager, ValidationModule, DisputeModule, PlatformRegistry, FeePool, ReputationEngine, ArbitratorCommittee)
+        +setModules(JobRegistry, StakeManager, ValidationModule, DisputeModule, PlatformRegistry, FeePool, ReputationEngine, ArbitratorCommittee, TaxPolicy)
         +setGlobalPauser(address)
         +executeGovernanceCall(address,bytes)
         +pauseAll()
         +unpauseAll()
         +activePauser() address
+        +taxPolicy() TaxPolicy
     }
     class JobRegistry {
         +createJob(...)
@@ -46,12 +47,20 @@ classDiagram
         +update(address,int256)
         +rewardValidator(address,uint256)
     }
+    class TaxPolicy {
+        +setPolicyURI(string)
+        +setAcknowledgement(string)
+        +setPolicy(string,string)
+        +setAcknowledger(address,bool)
+        +revokeAcknowledgement(address)
+    }
     SystemPause --> JobRegistry : owns & pauses
     SystemPause --> StakeManager : owns & pauses
     SystemPause --> ValidationModule : owns & pauses
     SystemPause --> DisputeModule : owns & pauses
     SystemPause --> FeePool : owns & pauses
     SystemPause --> ReputationEngine : owns & pauses
+    SystemPause --> TaxPolicy : owns & governs
 ```
 
 ## Ownership Topology
@@ -62,7 +71,7 @@ classDiagram
 ## Module Synopsis
 | Contract | Purpose | Owner Surfaces |
 | --- | --- | --- |
-| `SystemPause` | Aggregates ownership, pausing, and governance forwarding. | `setModules`, `setGlobalPauser`, `refreshPausers`, `executeGovernanceCall`, `pauseAll`, `unpauseAll`. |
+| `SystemPause` | Aggregates ownership, pausing, and governance forwarding (Job, Stake, Validation, Dispute, Platform, Fee, Reputation, Committee, Tax Policy). | `setModules`, `setGlobalPauser`, `refreshPausers`, `executeGovernanceCall`, `pauseAll`, `unpauseAll`. |
 | `JobRegistry` | Orchestrates job lifecycle, taxation acknowledgements, arbitration escalations, and settlement routing. | `setModules`, `setIdentityRegistry`, `setDisputeModule`, `setValidationModule`, parameter setters for fees, deadlines, templates. |
 | `StakeManager` | Manages AGIALPHA collateral, slashing, validator pools, and treasury routing. | `setJobRegistry`, `setDisputeModule`, `setFeePool`, `setTreasury`, `setRoleMinimums`, `setRewardCurves`. |
 | `ValidationModule` | Coordinates validator selection, commit/reveal windows, failover logic. | `setJobRegistry`, `setStakeManager`, `setIdentityRegistry`, `setReputationEngine`, `setValidatorPool`, `setRandaoCoordinator`. |
