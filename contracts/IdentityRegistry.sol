@@ -360,131 +360,138 @@ contract IdentityRegistry is Ownable2Step {
         RootNodeAliasConfig[] calldata nodeRootAliasUpdates,
         AgentTypeConfig[] calldata agentTypeUpdates
     ) external onlyOwner {
-        bool ensUpdated;
-        bool nameWrapperUpdated;
-        bool reputationUpdated;
-        bool attestationUpdated;
-        bool agentRootUpdated;
-        bool clubRootUpdated;
-        bool nodeRootUpdated;
-        bool agentMerkleUpdated;
-        bool validatorMerkleUpdated;
-
         if (config.setENS) {
             _setENS(config.ens);
-            ensUpdated = true;
         }
 
         if (config.setNameWrapper) {
             _setNameWrapper(config.nameWrapper);
-            nameWrapperUpdated = true;
         }
 
         if (config.setReputationEngine) {
             _setReputationEngine(config.reputationEngine);
-            reputationUpdated = true;
         }
 
         if (config.setAttestationRegistry) {
             _setAttestationRegistry(config.attestationRegistry);
-            attestationUpdated = true;
         }
 
         if (config.setAgentRootNode) {
             _setAgentRootNode(config.agentRootNode);
-            agentRootUpdated = true;
         }
 
         if (config.setClubRootNode) {
             _setClubRootNode(config.clubRootNode);
-            clubRootUpdated = true;
         }
 
         if (config.setNodeRootNode) {
             _setNodeRootNode(config.nodeRootNode);
-            nodeRootUpdated = true;
         }
 
         if (config.setAgentMerkleRoot) {
             _setAgentMerkleRoot(config.agentMerkleRoot);
-            agentMerkleUpdated = true;
         }
 
         if (config.setValidatorMerkleRoot) {
             _setValidatorMerkleRoot(config.validatorMerkleRoot);
-            validatorMerkleUpdated = true;
         }
 
-        uint256 agentLen = agentUpdates.length;
-        for (uint256 i; i < agentLen; i++) {
-            AdditionalAgentConfig calldata update = agentUpdates[i];
+        uint256 agentLen = _applyAgentUpdates(agentUpdates);
+        uint256 validatorLen = _applyValidatorUpdates(validatorUpdates);
+        uint256 nodeLen = _applyNodeOperatorUpdates(nodeUpdates);
+        _applyAgentRootAliasUpdates(agentRootAliasUpdates);
+        _applyClubRootAliasUpdates(clubRootAliasUpdates);
+        _applyNodeRootAliasUpdates(nodeRootAliasUpdates);
+        uint256 agentTypeLen = _applyAgentTypeUpdates(agentTypeUpdates);
+
+        emit ConfigurationApplied(
+            msg.sender,
+            config.setENS,
+            config.setNameWrapper,
+            config.setReputationEngine,
+            config.setAttestationRegistry,
+            config.setAgentRootNode,
+            config.setClubRootNode,
+            config.setNodeRootNode,
+            config.setAgentMerkleRoot,
+            config.setValidatorMerkleRoot,
+            agentLen,
+            validatorLen,
+            nodeLen,
+            agentTypeLen
+        );
+    }
+
+    function _applyAgentUpdates(AdditionalAgentConfig[] calldata updates) private returns (uint256) {
+        uint256 len = updates.length;
+        for (uint256 i; i < len; i++) {
+            AdditionalAgentConfig calldata update = updates[i];
             _setAdditionalAgent(update.agent, update.allowed);
         }
+        return len;
+    }
 
-        uint256 validatorLen = validatorUpdates.length;
-        for (uint256 i; i < validatorLen; i++) {
-            AdditionalValidatorConfig calldata update = validatorUpdates[i];
+    function _applyValidatorUpdates(AdditionalValidatorConfig[] calldata updates) private returns (uint256) {
+        uint256 len = updates.length;
+        for (uint256 i; i < len; i++) {
+            AdditionalValidatorConfig calldata update = updates[i];
             _setAdditionalValidator(update.validator, update.allowed);
         }
+        return len;
+    }
 
-        uint256 nodeLen = nodeUpdates.length;
-        for (uint256 i; i < nodeLen; i++) {
-            AdditionalNodeOperatorConfig calldata nodeUpdate = nodeUpdates[i];
+    function _applyNodeOperatorUpdates(AdditionalNodeOperatorConfig[] calldata updates) private returns (uint256) {
+        uint256 len = updates.length;
+        for (uint256 i; i < len; i++) {
+            AdditionalNodeOperatorConfig calldata nodeUpdate = updates[i];
             _setAdditionalNodeOperator(nodeUpdate.nodeOperator, nodeUpdate.allowed);
         }
+        return len;
+    }
 
-        uint256 agentAliasLen = agentRootAliasUpdates.length;
-        for (uint256 i; i < agentAliasLen; i++) {
-            RootNodeAliasConfig calldata update = agentRootAliasUpdates[i];
+    function _applyAgentRootAliasUpdates(RootNodeAliasConfig[] calldata updates) private {
+        uint256 len = updates.length;
+        for (uint256 i; i < len; i++) {
+            RootNodeAliasConfig calldata update = updates[i];
             if (update.allowed) {
                 _addAgentRootNodeAlias(update.node);
             } else {
                 _removeAgentRootNodeAlias(update.node);
             }
         }
+    }
 
-        uint256 clubAliasLen = clubRootAliasUpdates.length;
-        for (uint256 i; i < clubAliasLen; i++) {
-            RootNodeAliasConfig calldata update = clubRootAliasUpdates[i];
+    function _applyClubRootAliasUpdates(RootNodeAliasConfig[] calldata updates) private {
+        uint256 len = updates.length;
+        for (uint256 i; i < len; i++) {
+            RootNodeAliasConfig calldata update = updates[i];
             if (update.allowed) {
                 _addClubRootNodeAlias(update.node);
             } else {
                 _removeClubRootNodeAlias(update.node);
             }
         }
+    }
 
-        uint256 nodeAliasLen = nodeRootAliasUpdates.length;
-        for (uint256 i; i < nodeAliasLen; i++) {
-            RootNodeAliasConfig calldata update = nodeRootAliasUpdates[i];
+    function _applyNodeRootAliasUpdates(RootNodeAliasConfig[] calldata updates) private {
+        uint256 len = updates.length;
+        for (uint256 i; i < len; i++) {
+            RootNodeAliasConfig calldata update = updates[i];
             if (update.allowed) {
                 _addNodeRootNodeAlias(update.node);
             } else {
                 _removeNodeRootNodeAlias(update.node);
             }
         }
+    }
 
-        uint256 agentTypeLen = agentTypeUpdates.length;
-        for (uint256 i; i < agentTypeLen; i++) {
-            AgentTypeConfig calldata update = agentTypeUpdates[i];
+    function _applyAgentTypeUpdates(AgentTypeConfig[] calldata updates) private returns (uint256) {
+        uint256 len = updates.length;
+        for (uint256 i; i < len; i++) {
+            AgentTypeConfig calldata update = updates[i];
             _setAgentType(update.agent, update.agentType);
         }
-
-        emit ConfigurationApplied(
-            msg.sender,
-            ensUpdated,
-            nameWrapperUpdated,
-            reputationUpdated,
-            attestationUpdated,
-            agentRootUpdated,
-            clubRootUpdated,
-            nodeRootUpdated,
-            agentMerkleUpdated,
-            validatorMerkleUpdated,
-            agentLen,
-            validatorLen,
-            nodeLen,
-            agentTypeLen
-        );
+        return len;
     }
 
     function _setENS(address ensAddr) internal {
