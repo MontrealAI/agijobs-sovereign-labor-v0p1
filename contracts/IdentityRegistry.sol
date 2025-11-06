@@ -364,164 +364,174 @@ contract IdentityRegistry is Ownable2Step {
             if (setFlag) { _setValidatorMerkleRoot(val); mask |= (1 << 8); }
         }
 
-        // ======== Array offsets (words 18..25) ========
-        // Layout (word indices relative to base):
-        // 18: AdditionalAgentConfig[]         (agentUpdates)
-        // 19: AdditionalValidatorConfig[]     (validatorUpdates)
-        // 20: AdditionalNodeOperatorConfig[]  (nodeUpdates)
-        // 21: RootNodeAliasConfig[]           (agentRootAliasUpdates)
-        // 22: RootNodeAliasConfig[]           (clubRootAliasUpdates)
-        // 23: RootNodeAliasConfig[]           (nodeRootAliasUpdates)
-        // 24: AgentTypeConfig[]               (agentTypeUpdates)
-        // (Note: we have 8 dynamic args total; the last one is at word 25 if present.
-        // Here we have 7 after the struct; indices 18..24 are used.)
-
-        uint256 offAgent; uint256 offValidator; uint256 offNode;
-        uint256 offAgentAliases; uint256 offClubAliases; uint256 offNodeAliases; uint256 offAgentTypes;
-        assembly {
-            offAgent        := calldataload(add(base, 0x240)) // 18*32
-            offValidator    := calldataload(add(base, 0x260)) // 19*32
-            offNode         := calldataload(add(base, 0x280)) // 20*32
-            offAgentAliases := calldataload(add(base, 0x2A0)) // 21*32
-            offClubAliases  := calldataload(add(base, 0x2C0)) // 22*32
-            offNodeAliases  := calldataload(add(base, 0x2E0)) // 23*32
-            offAgentTypes   := calldataload(add(base, 0x300)) // 24*32
-        }
-
+        // Predeclare counts that will be emitted later.
         uint256 agentLen; uint256 validatorLen; uint256 nodeLen; uint256 agentTypeLen;
 
-        // ---- AdditionalAgentConfig[] (address, bool)
-        if (offAgent != 0) {
-            uint256 p = base + offAgent;
-            uint256 len;
-            assembly { len := calldataload(p) }
-            agentLen = len;
-            uint256 dataStart = p + 32;
-            for (uint256 i; i < len; ) {
-                uint256 e = dataStart + (i << 6); // i * 64
-                uint256 a; uint256 b;
-                assembly {
-                    a := calldataload(e)
-                    b := calldataload(add(e, 0x20))
-                }
-                _setAdditionalAgent(address(uint160(a)), b != 0);
-                unchecked { ++i; }
-            }
-        }
+        // ======== Array offsets (words 18..24) in a scoped block to reduce live locals ========
+        {
+            uint256 offAgent;
+            uint256 offValidator;
+            uint256 offNode;
+            uint256 offAgentAliases;
+            uint256 offClubAliases;
+            uint256 offNodeAliases;
+            uint256 offAgentTypes;
 
-        // ---- AdditionalValidatorConfig[] (address, bool)
-        if (offValidator != 0) {
-            uint256 p = base + offValidator;
-            uint256 len;
-            assembly { len := calldataload(p) }
-            validatorLen = len;
-            uint256 dataStart = p + 32;
-            for (uint256 i; i < len; ) {
-                uint256 e = dataStart + (i << 6);
-                uint256 a; uint256 b;
-                assembly {
-                    a := calldataload(e)
-                    b := calldataload(add(e, 0x20))
-                }
-                _setAdditionalValidator(address(uint160(a)), b != 0);
-                unchecked { ++i; }
+            assembly {
+                offAgent        := calldataload(add(base, 0x240)) // 18*32
+                offValidator    := calldataload(add(base, 0x260)) // 19*32
+                offNode         := calldataload(add(base, 0x280)) // 20*32
+                offAgentAliases := calldataload(add(base, 0x2A0)) // 21*32
+                offClubAliases  := calldataload(add(base, 0x2C0)) // 22*32
+                offNodeAliases  := calldataload(add(base, 0x2E0)) // 23*32
+                offAgentTypes   := calldataload(add(base, 0x300)) // 24*32
             }
-        }
 
-        // ---- AdditionalNodeOperatorConfig[] (address, bool)
-        if (offNode != 0) {
-            uint256 p = base + offNode;
-            uint256 len;
-            assembly { len := calldataload(p) }
-            nodeLen = len;
-            uint256 dataStart = p + 32;
-            for (uint256 i; i < len; ) {
-                uint256 e = dataStart + (i << 6);
-                uint256 a; uint256 b;
-                assembly {
-                    a := calldataload(e)
-                    b := calldataload(add(e, 0x20))
+            // ---- AdditionalAgentConfig[] (address, bool)
+            if (offAgent != 0) {
+                uint256 p = base + offAgent;
+                uint256 len;
+                assembly { len := calldataload(p) }
+                agentLen = len;
+                uint256 dataStart = p + 32;
+                for (uint256 i; i < len; ) {
+                    uint256 e = dataStart + (i << 6); // i * 64
+                    uint256 a; uint256 b;
+                    assembly {
+                        a := calldataload(e)
+                        b := calldataload(add(e, 0x20))
+                    }
+                    _setAdditionalAgent(address(uint160(a)), b != 0);
+                    unchecked { ++i; }
                 }
-                _setAdditionalNodeOperator(address(uint160(a)), b != 0);
-                unchecked { ++i; }
             }
-        }
 
-        // ---- RootNodeAliasConfig[] agent aliases (bytes32, bool)
-        if (offAgentAliases != 0) {
-            uint256 p = base + offAgentAliases;
-            uint256 len;
-            assembly { len := calldataload(p) }
-            uint256 dataStart = p + 32;
-            for (uint256 i; i < len; ) {
-                uint256 e = dataStart + (i << 6);
-                bytes32 n; uint256 allow;
-                assembly {
-                    n := calldataload(e)
-                    allow := calldataload(add(e, 0x20))
+            // ---- AdditionalValidatorConfig[] (address, bool)
+            if (offValidator != 0) {
+                uint256 p = base + offValidator;
+                uint256 len;
+                assembly { len := calldataload(p) }
+                validatorLen = len;
+                uint256 dataStart = p + 32;
+                for (uint256 i; i < len; ) {
+                    uint256 e = dataStart + (i << 6);
+                    uint256 a; uint256 b;
+                    assembly {
+                        a := calldataload(e)
+                        b := calldataload(add(e, 0x20))
+                    }
+                    _setAdditionalValidator(address(uint160(a)), b != 0);
+                    unchecked { ++i; }
                 }
-                if (allow != 0) _addAgentRootNodeAlias(n); else _removeAgentRootNodeAlias(n);
-                unchecked { ++i; }
             }
-        }
 
-        // ---- RootNodeAliasConfig[] club aliases
-        if (offClubAliases != 0) {
-            uint256 p = base + offClubAliases;
-            uint256 len;
-            assembly { len := calldataload(p) }
-            uint256 dataStart = p + 32;
-            for (uint256 i; i < len; ) {
-                uint256 e = dataStart + (i << 6);
-                bytes32 n; uint256 allow;
-                assembly {
-                    n := calldataload(e)
-                    allow := calldataload(add(e, 0x20))
+            // ---- AdditionalNodeOperatorConfig[] (address, bool)
+            if (offNode != 0) {
+                uint256 p = base + offNode;
+                uint256 len;
+                assembly { len := calldataload(p) }
+                nodeLen = len;
+                uint256 dataStart = p + 32;
+                for (uint256 i; i < len; ) {
+                    uint256 e = dataStart + (i << 6);
+                    uint256 a; uint256 b;
+                    assembly {
+                        a := calldataload(e)
+                        b := calldataload(add(e, 0x20))
+                    }
+                    _setAdditionalNodeOperator(address(uint160(a)), b != 0);
+                    unchecked { ++i; }
                 }
-                if (allow != 0) _addClubRootNodeAlias(n); else _removeClubRootNodeAlias(n);
-                unchecked { ++i; }
             }
-        }
 
-        // ---- RootNodeAliasConfig[] node aliases
-        if (offNodeAliases != 0) {
-            uint256 p = base + offNodeAliases;
-            uint256 len;
-            assembly { len := calldataload(p) }
-            uint256 dataStart = p + 32;
-            for (uint256 i; i < len; ) {
-                uint256 e = dataStart + (i << 6);
-                bytes32 n; uint256 allow;
-                assembly {
-                    n := calldataload(e)
-                    allow := calldataload(add(e, 0x20))
+            // ---- RootNodeAliasConfig[] agent aliases (bytes32, bool)
+            if (offAgentAliases != 0) {
+                uint256 p = base + offAgentAliases;
+                uint256 len;
+                assembly { len := calldataload(p) }
+                uint256 dataStart = p + 32;
+                for (uint256 i; i < len; ) {
+                    uint256 e = dataStart + (i << 6);
+                    bytes32 n; uint256 allow;
+                    assembly {
+                        n := calldataload(e)
+                        allow := calldataload(add(e, 0x20))
+                    }
+                    if (allow != 0) _addAgentRootNodeAlias(n); else _removeAgentRootNodeAlias(n);
+                    unchecked { ++i; }
                 }
-                if (allow != 0) _addNodeRootNodeAlias(n); else _removeNodeRootNodeAlias(n);
-                unchecked { ++i; }
             }
-        }
 
-        // ---- AgentTypeConfig[] (address, enum)
-        if (offAgentTypes != 0) {
-            uint256 p = base + offAgentTypes;
-            uint256 len;
-            assembly { len := calldataload(p) }
-            agentTypeLen = len;
-            uint256 dataStart = p + 32;
-            for (uint256 i; i < len; ) {
-                uint256 e = dataStart + (i << 6);
-                uint256 a; uint256 t;
-                assembly {
-                    a := calldataload(e)
-                    t := calldataload(add(e, 0x20))
+            // ---- RootNodeAliasConfig[] club aliases
+            if (offClubAliases != 0) {
+                uint256 p = base + offClubAliases;
+                uint256 len;
+                assembly { len := calldataload(p) }
+                uint256 dataStart = p + 32;
+                for (uint256 i; i < len; ) {
+                    uint256 e = dataStart + (i << 6);
+                    bytes32 n; uint256 allow;
+                    assembly {
+                        n := calldataload(e)
+                        allow := calldataload(add(e, 0x20))
+                    }
+                    if (allow != 0) _addClubRootNodeAlias(n); else _removeClubRootNodeAlias(n);
+                    unchecked { ++i; }
                 }
-                _setAgentType(address(uint160(a)), AgentType(uint8(t)));
-                unchecked { ++i; }
             }
-        }
 
+            // ---- RootNodeAliasConfig[] node aliases
+            if (offNodeAliases != 0) {
+                uint256 p = base + offNodeAliases;
+                uint256 len;
+                assembly { len := calldataload(p) }
+                uint256 dataStart = p + 32;
+                for (uint256 i; i < len; ) {
+                    uint256 e = dataStart + (i << 6);
+                    bytes32 n; uint256 allow;
+                    assembly {
+                        n := calldataload(e)
+                        allow := calldataload(add(e, 0x20))
+                    }
+                    if (allow != 0) _addNodeRootNodeAlias(n); else _removeNodeRootNodeAlias(n);
+                    unchecked { ++i; }
+                }
+            }
+
+            // ---- AgentTypeConfig[] (address, enum)
+            if (offAgentTypes != 0) {
+                uint256 p = base + offAgentTypes;
+                uint256 len;
+                assembly { len := calldataload(p) }
+                agentTypeLen = len;
+                uint256 dataStart = p + 32;
+                for (uint256 i; i < len; ) {
+                    uint256 e = dataStart + (i << 6);
+                    uint256 a; uint256 t;
+                    assembly {
+                        a := calldataload(e)
+                        t := calldataload(add(e, 0x20))
+                    }
+                    _setAgentType(address(uint160(a)), AgentType(uint8(t)));
+                    unchecked { ++i; }
+                }
+            }
+        } // end scoped offsets
+
+        _emitConfigurationApplied(tx.origin, mask, agentLen, validatorLen, nodeLen, agentTypeLen);
+    }
+
+    // Tiny helper to keep the big function's live stack small during the emit
+    function _emitConfigurationApplied(
+        address caller,
+        uint256 mask,
+        uint256 agentLen,
+        uint256 validatorLen,
+        uint256 nodeLen,
+        uint256 agentTypeLen
+    ) internal {
         emit ConfigurationApplied(
-            tx.origin, // original external caller (matches previous msg.sender semantics for emits here)
+            caller,
             (mask & (1 << 0)) != 0,
             (mask & (1 << 1)) != 0,
             (mask & (1 << 2)) != 0,
