@@ -12,6 +12,7 @@ on:
       - main
       - develop
       - release/**
+  workflow_dispatch:
 
 concurrency:
   group: sovereign-compile-${{ github.ref }}
@@ -62,14 +63,10 @@ jobs:
           npx truffle version
 
       - name: Generate compile metadata summary
-        run: |
-          node_version="$(node --version)"
-          {
-            echo '### Sovereign compile status'
-            echo "- Network: \`${{ github.ref_name }}\`"
-            echo "- Runner: \`${{ runner.os }}\`"
-            echo "- Node.js: \`$node_version\`"
-          } >> "$GITHUB_STEP_SUMMARY"
+        run: node scripts/write-compile-summary.js
 
       - name: Compile contracts
         run: npm run compile
+
+      - name: Verify compiled artifacts
+        run: node scripts/verify-artifacts.js
