@@ -8,6 +8,11 @@ import {Governable} from "./Governable.sol";
 contract Thermostat is Governable {
     enum Role {Agent, Validator, Operator, Employer}
 
+    error InvalidTemperatureBounds();
+    error TemperatureOutOfRange(int256 temperature);
+    error InvalidIntegralBounds();
+    error NonPositiveTemperature(int256 temperature);
+
     int256 public systemTemperature;
     int256 public minTemp;
     int256 public maxTemp;
@@ -37,7 +42,9 @@ contract Thermostat is Governable {
     constructor(int256 _temp, int256 _min, int256 _max, address _governance)
         Governable(_governance)
     {
-        require(_min > 0 && _max > _min, "bounds");
+        if (_min <= 0 || _max <= _min) {
+            revert InvalidTemperatureBounds();
+        }
         systemTemperature = _temp;
         minTemp = _min;
         maxTemp = _max;
@@ -73,7 +80,9 @@ contract Thermostat is Governable {
     /// @notice Sets a new system temperature within bounds.
     /// @param temp Desired system temperature.
     function setSystemTemperature(int256 temp) external onlyGovernance {
-        require(temp > 0 && temp >= minTemp && temp <= maxTemp, "temp");
+        if (temp <= 0 || temp < minTemp || temp > maxTemp) {
+            revert TemperatureOutOfRange(temp);
+        }
         systemTemperature = temp;
         emit TemperatureUpdated(temp);
     }
@@ -82,7 +91,9 @@ contract Thermostat is Governable {
     /// @param _min New minimum temperature.
     /// @param _max New maximum temperature.
     function setTemperatureBounds(int256 _min, int256 _max) external onlyGovernance {
-        require(_min > 0 && _max > _min, "bounds");
+        if (_min <= 0 || _max <= _min) {
+            revert InvalidTemperatureBounds();
+        }
         minTemp = _min;
         maxTemp = _max;
         if (systemTemperature < minTemp) systemTemperature = minTemp;
@@ -95,7 +106,9 @@ contract Thermostat is Governable {
     /// @param _min New minimum integral value.
     /// @param _max New maximum integral value.
     function setIntegralBounds(int256 _min, int256 _max) external onlyGovernance {
-        require(_max > _min, "bounds");
+        if (_max <= _min) {
+            revert InvalidIntegralBounds();
+        }
         integralMin = _min;
         integralMax = _max;
         emit IntegralBoundsUpdated(_min, _max);
@@ -105,7 +118,9 @@ contract Thermostat is Governable {
     /// @param r Role to update.
     /// @param temp New temperature for the role.
     function setRoleTemperature(Role r, int256 temp) external onlyGovernance {
-        require(temp > 0 && temp >= minTemp && temp <= maxTemp, "bounds");
+        if (temp <= 0 || temp < minTemp || temp > maxTemp) {
+            revert TemperatureOutOfRange(temp);
+        }
         roleTemps[r] = temp;
         emit RoleTemperatureUpdated(r, temp);
     }
@@ -141,7 +156,9 @@ contract Thermostat is Governable {
         systemTemperature += delta;
         if (systemTemperature < minTemp) systemTemperature = minTemp;
         if (systemTemperature > maxTemp) systemTemperature = maxTemp;
-        require(systemTemperature > 0, "temp");
+        if (systemTemperature <= 0) {
+            revert NonPositiveTemperature(systemTemperature);
+        }
         lastError = error;
         emit TemperatureUpdated(systemTemperature);
         emit Tick(emission, backlog, sla, systemTemperature);

@@ -16,6 +16,13 @@ import {TOKEN_SCALE} from "./Constants.sol";
 ///      use 18 decimals via the `StakeManager`.
 contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     error NotOwnerOrPauserManager();
+    error OwnerOrPauserOnly(address caller);
+    error StakeManagerNotConfigured();
+    error AlreadyRegistered(address operator);
+    error OperatorBlacklisted(address operator);
+    error NotRegistered(address operator);
+    error RegistrarNotAuthorized(address registrar);
+    error InsufficientPlatformStake(address operator, uint256 required, uint256 actual);
     uint256 public constant DEFAULT_MIN_PLATFORM_STAKE = TOKEN_SCALE;
 
     IStakeManager public stakeManager;
@@ -74,10 +81,9 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     );
 
     modifier onlyOwnerOrPauser() {
-        require(
-            msg.sender == owner() || msg.sender == pauser,
-            "owner or pauser only"
-        );
+        if (msg.sender != owner() && msg.sender != pauser) {
+            revert OwnerOrPauserOnly(msg.sender);
+        }
         _;
     }
 
@@ -95,7 +101,9 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
 
     function _requireStakeManager() internal view returns (IStakeManager manager) {
         manager = stakeManager;
-        require(address(manager) != address(0), "stake manager not set");
+        if (address(manager) == address(0)) {
+            revert StakeManagerNotConfigured();
+        }
     }
 
     /// @notice Deploys the PlatformRegistry.
@@ -134,12 +142,18 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     }
 
     function _register(address operator) internal {
-        require(!registered[operator], "registered");
-        require(!blacklist[operator], "blacklisted");
+        if (registered[operator]) {
+            revert AlreadyRegistered(operator);
+        }
+        if (blacklist[operator]) {
+            revert OperatorBlacklisted(operator);
+        }
         IStakeManager manager = _requireStakeManager();
         uint256 stake = manager.stakeOf(operator, IStakeManager.Role.Platform);
         if (operator != owner()) {
-            require(stake >= minPlatformStake, "stake");
+            if (stake < minPlatformStake) {
+                revert InsufficientPlatformStake(operator, minPlatformStake, stake);
+            }
         }
         registered[operator] = true;
         emit Registered(operator);
@@ -152,7 +166,9 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
 
     /// @notice Remove caller from the registry.
     function deregister() external whenNotPaused nonReentrant {
-        require(registered[msg.sender], "not registered");
+        if (!registered[msg.sender]) {
+            revert NotRegistered(msg.sender);
+        }
         registered[msg.sender] = false;
         emit Deregistered(msg.sender);
     }
@@ -164,8 +180,12 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
      * @param amount Stake amount in $AGIALPHA with 18 decimals.
      */
     function stakeAndRegister(uint256 amount) external whenNotPaused nonReentrant {
-        require(!registered[msg.sender], "registered");
-        require(!blacklist[msg.sender], "blacklisted");
+        if (registered[msg.sender]) {
+            revert AlreadyRegistered(msg.sender);
+        }
+        if (blacklist[msg.sender]) {
+            revert OperatorBlacklisted(msg.sender);
+        }
         IStakeManager manager = _requireStakeManager();
         manager.depositStakeFor(
             msg.sender,
@@ -202,8 +222,12 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
      * @param amount Stake amount in $AGIALPHA with 18 decimals.
      */
     function acknowledgeStakeAndRegister(uint256 amount) external whenNotPaused nonReentrant {
-        require(!registered[msg.sender], "registered");
-        require(!blacklist[msg.sender], "blacklisted");
+        if (registered[msg.sender]) {
+            revert AlreadyRegistered(msg.sender);
+        }
+        if (blacklist[msg.sender]) {
+            revert OperatorBlacklisted(msg.sender);
+        }
         IStakeManager manager = _requireStakeManager();
         address registry = manager.jobRegistry();
         if (registry != address(0)) {
@@ -224,7 +248,9 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
      *      the associated `JobRegistry` when set.
      */
     function acknowledgeAndDeregister() external whenNotPaused nonReentrant {
-        require(registered[msg.sender], "not registered");
+        if (!registered[msg.sender]) {
+            revert NotRegistered(msg.sender);
+        }
         IStakeManager manager = _requireStakeManager();
         address registry = manager.jobRegistry();
         if (registry != address(0)) {
@@ -237,7 +263,9 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     /// @notice Register an operator on their behalf.
     function registerFor(address operator) external whenNotPaused nonReentrant {
         if (msg.sender != operator) {
-            require(registrars[msg.sender], "registrar");
+            if (!registrars[msg.sender]) {
+                revert RegistrarNotAuthorized(msg.sender);
+            }
         }
         _register(operator);
     }
@@ -253,7 +281,9 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
      */
     function acknowledgeAndRegisterFor(address operator) external whenNotPaused nonReentrant {
         if (msg.sender != operator) {
-            require(registrars[msg.sender], "registrar");
+            if (!registrars[msg.sender]) {
+                revert RegistrarNotAuthorized(msg.sender);
+            }
         }
         IStakeManager manager = _requireStakeManager();
         address registry = manager.jobRegistry();
@@ -277,10 +307,16 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
         uint256 amount
     ) external whenNotPaused nonReentrant {
         if (msg.sender != operator) {
-            require(registrars[msg.sender], "registrar");
+            if (!registrars[msg.sender]) {
+                revert RegistrarNotAuthorized(msg.sender);
+            }
         }
-        require(!registered[operator], "registered");
-        require(!blacklist[operator], "blacklisted");
+        if (registered[operator]) {
+            revert AlreadyRegistered(operator);
+        }
+        if (blacklist[operator]) {
+            revert OperatorBlacklisted(operator);
+        }
         IStakeManager manager = _requireStakeManager();
         address registry = manager.jobRegistry();
         if (registry != address(0)) {

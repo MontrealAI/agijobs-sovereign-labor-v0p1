@@ -119,6 +119,12 @@ contract DisputeModule is Governable, Pausable {
     error UnauthorizedResolver(address caller);
     error NotGovernanceOrPauser();
     error NotGovernanceOrPauserManager();
+    error NotJobRegistry(address caller);
+    error DisputeAlreadyExists(uint256 jobId);
+    error EmptyDisputeReason();
+    error InvalidClaimant();
+    error DisputeWindowOngoing(uint256 availableAt);
+    error UnauthorizedDisputeParticipant(address claimant);
 
     /// @param _jobRegistry Address of the JobRegistry contract.
     /// @param _disputeFee Initial dispute fee in token units (18 decimals); defaults to TOKEN_SCALE.
@@ -150,7 +156,9 @@ contract DisputeModule is Governable, Pausable {
 
     /// @notice Restrict functions to the JobRegistry.
     modifier onlyJobRegistry() {
-        require(msg.sender == address(jobRegistry), "not registry");
+        if (msg.sender != address(jobRegistry)) {
+            revert NotJobRegistry(msg.sender);
+        }
         _;
     }
 
@@ -306,18 +314,18 @@ contract DisputeModule is Governable, Pausable {
         bytes32 evidenceHash,
         string calldata reason
     ) external onlyJobRegistry whenNotPaused {
-        require(
-            evidenceHash != bytes32(0) || bytes(reason).length != 0,
-            "evidence"
-        );
+        if (evidenceHash == bytes32(0) && bytes(reason).length == 0) {
+            revert EvidenceRequired();
+        }
         Dispute storage d = disputes[jobId];
-        require(d.raisedAt == 0, "disputed");
+        if (d.raisedAt != 0) {
+            revert DisputeAlreadyExists(jobId);
+        }
 
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
-        require(
-            claimant == job.agent || claimant == job.employer,
-            "not participant"
-        );
+        if (claimant != job.agent && claimant != job.employer) {
+            revert UnauthorizedDisputeParticipant(claimant);
+        }
 
         IStakeManager sm = _stakeManager();
         if (address(sm) != address(0)) {
@@ -349,16 +357,22 @@ contract DisputeModule is Governable, Pausable {
         onlyGovernance
         whenNotPaused
     {
-        require(bytes(reason).length != 0, "reason");
+        if (bytes(reason).length == 0) {
+            revert EmptyDisputeReason();
+        }
         Dispute storage d = disputes[jobId];
-        require(d.raisedAt == 0, "disputed");
+        if (d.raisedAt != 0) {
+            revert DisputeAlreadyExists(jobId);
+        }
 
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
         address claimant = job.employer;
         if (claimant == address(0)) {
             claimant = job.agent;
         }
-        require(claimant != address(0), "job");
+        if (claimant == address(0)) {
+            revert InvalidClaimant();
+        }
 
         d.claimant = claimant;
         d.raisedAt = block.timestamp;
@@ -399,8 +413,13 @@ contract DisputeModule is Governable, Pausable {
     ) external whenNotPaused {
         if (signatures.length == 0) revert InvalidModeratorWeight();
         Dispute storage d = disputes[jobId];
-        require(d.raisedAt != 0 && !d.resolved, "no dispute");
-        require(block.timestamp >= d.raisedAt + disputeWindow, "window");
+        if (d.raisedAt == 0 || d.resolved) {
+            revert NoActiveDispute();
+        }
+        uint256 availableAt = d.raisedAt + disputeWindow;
+        if (block.timestamp < availableAt) {
+            revert DisputeWindowOngoing(availableAt);
+        }
 
         uint96 totalWeight = totalModeratorWeight;
         if (totalWeight == 0) revert NoModeratorsConfigured();
@@ -514,8 +533,13 @@ contract DisputeModule is Governable, Pausable {
 
     function _resolve(uint256 jobId, bool employerWins, address resolver) internal {
         Dispute storage d = disputes[jobId];
-        require(d.raisedAt != 0 && !d.resolved, "no dispute");
-        require(block.timestamp >= d.raisedAt + disputeWindow, "window");
+        if (d.raisedAt == 0 || d.resolved) {
+            revert NoActiveDispute();
+        }
+        uint256 availableAt = d.raisedAt + disputeWindow;
+        if (block.timestamp < availableAt) {
+            revert DisputeWindowOngoing(availableAt);
+        }
 
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
         (address[] memory validators, bool[] memory votes) =

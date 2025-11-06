@@ -13,6 +13,21 @@ import {IValidationModule} from "./interfaces/IValidationModule.sol";
 ///      ValidationModule's RANDAO-based selection.
 contract ArbitratorCommittee is Ownable, Pausable {
     error NotOwnerOrPauserManager();
+    error OwnerOrPauserOnly(address caller);
+    error NotDisputeModule(address caller);
+    error InvalidCommitRevealWindows();
+    error CaseAlreadyExists(uint256 jobId);
+    error ValidationModuleNotConfigured();
+    error CaseNotFound(uint256 jobId);
+    error CommitWindowClosed(uint256 deadline);
+    error NotJuror(address juror);
+    error AlreadyCommitted(address juror);
+    error CommitPhaseActive(uint256 deadline);
+    error RevealWindowClosed(uint256 deadline);
+    error InvalidReveal(address juror);
+    error AlreadyRevealed(address juror);
+    error CaseFinalizedAlready(uint256 jobId);
+    error CaseStillActive(uint256 revealDeadline);
     IJobRegistry public jobRegistry;
     IDisputeModule public disputeModule;
     address public pauser;
@@ -47,10 +62,9 @@ contract ArbitratorCommittee is Ownable, Pausable {
     event CaseFinalized(uint256 indexed jobId, bool employerWins);
 
     modifier onlyOwnerOrPauser() {
-        require(
-            msg.sender == owner() || msg.sender == pauser,
-            "owner or pauser only"
-        );
+        if (msg.sender != owner() && msg.sender != pauser) {
+            revert OwnerOrPauserOnly(msg.sender);
+        }
         _;
     }
 
@@ -75,7 +89,9 @@ contract ArbitratorCommittee is Ownable, Pausable {
     }
 
     modifier onlyDisputeModule() {
-        require(msg.sender == address(disputeModule), "not dispute");
+        if (msg.sender != address(disputeModule)) {
+            revert NotDisputeModule(msg.sender);
+        }
         _;
     }
 
@@ -88,7 +104,9 @@ contract ArbitratorCommittee is Ownable, Pausable {
         external
         onlyOwner
     {
-        require(commitDur > 0 && revealDur > 0, "windows");
+        if (commitDur == 0 || revealDur == 0) {
+            revert InvalidCommitRevealWindows();
+        }
         commitWindow = commitDur;
         revealWindow = revealDur;
         emit TimingUpdated(commitDur, revealDur);
@@ -104,9 +122,13 @@ contract ArbitratorCommittee is Ownable, Pausable {
     /// @dev Only callable by the DisputeModule when a dispute is raised.
     function openCase(uint256 jobId) external onlyDisputeModule whenNotPaused {
         Case storage c = cases[jobId];
-        require(c.jurors.length == 0, "exists");
+        if (c.jurors.length != 0) {
+            revert CaseAlreadyExists(jobId);
+        }
         address valMod = address(jobRegistry.validationModule());
-        require(valMod != address(0), "no val");
+        if (valMod == address(0)) {
+            revert ValidationModuleNotConfigured();
+        }
         address[] memory jurors = IValidationModule(valMod).validators(jobId);
         c.jurors = jurors;
         for (uint256 i; i < jurors.length; ++i) {
@@ -120,10 +142,18 @@ contract ArbitratorCommittee is Ownable, Pausable {
     /// @notice Commit a hashed vote for the given job dispute.
     function commit(uint256 jobId, bytes32 commitment) external whenNotPaused {
         Case storage c = cases[jobId];
-        require(c.jurors.length != 0, "no case");
-        require(block.timestamp <= c.commitDeadline, "commit over");
-        require(c.isJuror[msg.sender], "not juror");
-        require(c.commits[msg.sender] == bytes32(0), "committed");
+        if (c.jurors.length == 0) {
+            revert CaseNotFound(jobId);
+        }
+        if (block.timestamp > c.commitDeadline) {
+            revert CommitWindowClosed(c.commitDeadline);
+        }
+        if (!c.isJuror[msg.sender]) {
+            revert NotJuror(msg.sender);
+        }
+        if (c.commits[msg.sender] != bytes32(0)) {
+            revert AlreadyCommitted(msg.sender);
+        }
         c.commits[msg.sender] = commitment;
         emit VoteCommitted(jobId, msg.sender, commitment);
     }
@@ -131,12 +161,22 @@ contract ArbitratorCommittee is Ownable, Pausable {
     /// @notice Reveal a vote previously committed.
     function reveal(uint256 jobId, bool employerWins, uint256 salt) external whenNotPaused {
         Case storage c = cases[jobId];
-        require(c.isJuror[msg.sender], "not juror");
-        require(block.timestamp > c.commitDeadline, "commit phase");
-        require(block.timestamp <= c.revealDeadline, "reveal over");
+        if (!c.isJuror[msg.sender]) {
+            revert NotJuror(msg.sender);
+        }
+        if (block.timestamp <= c.commitDeadline) {
+            revert CommitPhaseActive(c.commitDeadline);
+        }
+        if (block.timestamp > c.revealDeadline) {
+            revert RevealWindowClosed(c.revealDeadline);
+        }
         bytes32 expected = keccak256(abi.encodePacked(msg.sender, jobId, employerWins, salt));
-        require(c.commits[msg.sender] == expected, "bad reveal");
-        require(!c.revealed[msg.sender], "revealed");
+        if (c.commits[msg.sender] != expected) {
+            revert InvalidReveal(msg.sender);
+        }
+        if (c.revealed[msg.sender]) {
+            revert AlreadyRevealed(msg.sender);
+        }
         c.revealed[msg.sender] = true;
         c.reveals += 1;
         if (employerWins) {
@@ -148,10 +188,16 @@ contract ArbitratorCommittee is Ownable, Pausable {
     /// @notice Finalize a case once all jurors have revealed. Majority wins.
     function finalize(uint256 jobId) external whenNotPaused {
         Case storage c = cases[jobId];
-        require(!c.finalized, "finalized");
-        require(c.jurors.length != 0, "no case");
+        if (c.finalized) {
+            revert CaseFinalizedAlready(jobId);
+        }
+        if (c.jurors.length == 0) {
+            revert CaseNotFound(jobId);
+        }
         if (c.reveals != c.jurors.length) {
-            require(block.timestamp > c.revealDeadline, "active");
+            if (block.timestamp <= c.revealDeadline) {
+                revert CaseStillActive(c.revealDeadline);
+            }
         }
         c.finalized = true;
         bool employerWins = c.reveals > 0 && c.employerVotes * 2 > c.reveals;
