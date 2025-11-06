@@ -1,9 +1,9 @@
 # AGIJobs Sovereign Labor v0.1
 
-[![Compile](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml/badge.svg)](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
+[![Compile](https://img.shields.io/github/actions/workflow/status/AGIJobs/agijobs-sovereign-labor-v0p1/ci.yml?label=Compile&logo=github)](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 ![Node.js](https://img.shields.io/badge/Node.js-20.x-339933?logo=node.js&logoColor=white)
-![Solidity](https://img.shields.io/badge/Solidity-0.8.25-363636?logo=solidity)
+![Solidity](https://img.shields.io/badge/Solidity-0.8.30-363636?logo=solidity)
 ![Truffle](https://img.shields.io/badge/Truffle-5.11.5-5e464d?logo=truffle)
 
 > A sovereign labor intelligence core designed to choreograph human and machine coordination with surgical precision and total composability.
