@@ -13,6 +13,17 @@ npm install --no-audit --no-fund
 npx truffle compile
 ```
 
+You can also mirror the exact CI command sequence with the convenience scripts defined in `package.json`:
+
+```bash
+npm install --no-audit --no-fund
+npm run compile
+```
+
+> [!NOTE]
+> `npm ci` currently aborts on Linux because `fsevents` is published for macOS only. Using `npm install` still respects
+> `package-lock.json` while allowing the optional dependency to be skipped so the compile step can finish.
+
 ## Mainnet verification
 
 Set the following environment variables before deploying or verifying:
@@ -26,6 +37,13 @@ After deploying, regenerate artifacts with the same compiler settings and use th
 ```bash
 npx truffle compile
 npx truffle run verify IdentityRegistry JobRegistry PlatformRegistry StakeManager SystemPause ValidationModule --network mainnet --force-license MIT
+```
+
+If you prefer using the npm scripts, the equivalent is available:
+
+```bash
+npm run compile
+npm run verify:mainnet
 ```
 
 The Solidity compiler is configured for `viaIR` with the optimizer enabled so that Etherscan receives bytecode identical to the deployment bytecode.
