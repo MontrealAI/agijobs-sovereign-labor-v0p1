@@ -89,7 +89,7 @@ sequenceDiagram
 Key control surfaces:
 - **`SystemPause.setModules`** rewires module addresses and refreshes pauser delegates in one transaction. Requires the owner Safe.
 - **`SystemPause.setGlobalPauser`** hands emergency brake authority to the guardian Safe while retaining ultimate Safe oversight.
-- **`SystemPause.executeGovernanceCall`** lets the owner Safe invoke any known module setter without bespoke admin contracts.
+- **`SystemPause.executeGovernanceCall`** lets the owner Safe invoke any known module setter (including `TaxPolicy`) without bespoke admin contracts.
 - **Ownership topology:** every core module (`JobRegistry`, `StakeManager`, `ValidationModule`, `DisputeModule`, `PlatformRegistry`, `FeePool`, `ReputationEngine`, `ArbitratorCommittee`, `TaxPolicy`) is owned by `SystemPause`. Identity and attestation surfaces hand off to the owner Safe via two-step transfer.
 
 ## Continuous Verification
@@ -129,7 +129,7 @@ flowchart TD
    - `ownerSafe`, `guardianSafe`, `treasury`
    - `params.platformFeeBps`, `params.minStakeWei`, `params.validatorQuorum`, etc.
    - `identity` ENS roots (`agentRootNode`, `clubRootNode`) are standard ENS names; the migration auto-namehashes them.
-4. **Migrate** – `DEPLOY_CONFIG=$(pwd)/deploy/config.mainnet.json npx truffle migrate --network mainnet --f 1 --to 3`.
+4. **Migrate** – `DEPLOY_CONFIG=$(pwd)/deploy/config.mainnet.json npx truffle migrate --network mainnet --f 1 --to 3`. The migration wires every module pointer and records the `TaxPolicy` address inside `SystemPause` for direct governance calls.
 5. **Accept ownership** – two-step contracts (`IdentityRegistry`, `AttestationRegistry`, any CoreOwnable2Step surfaces) must call `acceptOwnership` from the owner Safe.
 6. **Verify** – `npm run verify:mainnet` after confirmations.
 
@@ -137,12 +137,12 @@ The migration writes `manifests/addresses.mainnet.json` capturing module address
 
 ## Owner Operations
 - **Emergency pause:** guardian Safe calls `SystemPause.pauseAll()`; resume with `unpauseAll()`.
-- **Module upgrade:** deploy replacement, transfer ownership to `SystemPause`, then call `setModules` with new address.
-- **Parameter tuning:** invoke `SystemPause.executeGovernanceCall(target, abi.encodeWithSignature(...))` from the owner Safe to reach any setter.
+- **Module upgrade:** deploy replacement, transfer ownership to `SystemPause`, then call `setModules` with the refreshed module + tax policy addresses.
+- **Parameter tuning:** invoke `SystemPause.executeGovernanceCall(target, abi.encodeWithSignature(...))` from the owner Safe to reach any setter, including direct `TaxPolicy` mutations.
 - **Treasury routing:** `StakeManager.setTreasuryAllowlist` + `setTreasury` configure slashing payouts; `FeePool.setGovernance` remains pointed at `SystemPause` so withdrawals travel through governance.
 
 ## Telemetry Signals
-- `SystemPause.ModulesUpdated`, `PausersUpdated` – canonical wiring events.
+- `SystemPause.ModulesUpdated` (includes tax policy pointer), `PausersUpdated` – canonical wiring events.
 - `StakeManager.ParametersUpdated`, `TreasuryUpdated` – staking economics & treasury snapshots.
 - `JobRegistry.JobCreated` / `JobFinalized` / `JobChallenged` – labor flow milestones.
 - `ValidationModule.ValidatorsUpdated`, `FailoverTriggered` – validator health.

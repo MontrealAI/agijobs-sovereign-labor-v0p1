@@ -60,7 +60,7 @@ npx truffle migrate --network mainnet --f 1 --to 3 --skip-dry-run --compile-all
 
 ### What the migration does
 1. Deploys `OwnerConfigurator`, `TaxPolicy`, `StakeManager`, `FeePool`, `ReputationEngine`, `PlatformRegistry`, `AttestationRegistry`, `IdentityRegistry`, `CertificateNFT`, `ValidationModule`, `DisputeModule`, `JobRegistry`, `ArbitratorCommittee`, and `SystemPause`.
-2. Wires module references, treasury allowlists, validator quorum, pauser managers, and reputation callers.
+2. Wires module references, treasury allowlists, validator quorum, pauser managers, the canonical tax policy pointer, and reputation callers.
 3. Transfers ownership of all core modules + `TaxPolicy` to `SystemPause`, sets the guardian pauser, and finally transfers `SystemPause` governance to the owner Safe.
 4. Writes `manifests/addresses.<network>.json` capturing addresses, treasury, guardian, and token metadata.
 

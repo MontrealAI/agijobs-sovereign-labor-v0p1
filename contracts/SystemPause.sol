@@ -10,6 +10,7 @@ import {PlatformRegistry} from "./PlatformRegistry.sol";
 import {FeePool} from "./FeePool.sol";
 import {ReputationEngine} from "./ReputationEngine.sol";
 import {ArbitratorCommittee} from "./ArbitratorCommittee.sol";
+import {TaxPolicy} from "./TaxPolicy.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @title SystemPause
@@ -25,6 +26,7 @@ contract SystemPause is Governable, ReentrancyGuard {
     FeePool public feePool;
     ReputationEngine public reputationEngine;
     ArbitratorCommittee public arbitratorCommittee;
+    TaxPolicy public taxPolicy;
 
     /// @notice Tracks the currently delegated pauser address used across all modules.
     address public activePauser;
@@ -37,6 +39,7 @@ contract SystemPause is Governable, ReentrancyGuard {
     error InvalidFeePool(address module);
     error InvalidReputationEngine(address module);
     error InvalidArbitratorCommittee(address module);
+    error InvalidTaxPolicy(address module);
     error ModuleNotOwned(address module, address owner);
     error InvalidPauser(address pauser);
     error PauserManagerNotDelegated(address module);
@@ -52,7 +55,8 @@ contract SystemPause is Governable, ReentrancyGuard {
         address platformRegistry,
         address feePool,
         address reputationEngine,
-        address arbitratorCommittee
+        address arbitratorCommittee,
+        address taxPolicy
     );
 
     event PausersUpdated(address indexed pauser);
@@ -79,6 +83,7 @@ contract SystemPause is Governable, ReentrancyGuard {
         FeePool _feePool,
         ReputationEngine _reputationEngine,
         ArbitratorCommittee _arbitratorCommittee,
+        TaxPolicy _taxPolicy,
         address _governance
     ) Governable(_governance) {
         if (
@@ -111,6 +116,9 @@ contract SystemPause is Governable, ReentrancyGuard {
             address(_arbitratorCommittee) == address(0) ||
             address(_arbitratorCommittee).code.length == 0
         ) revert InvalidArbitratorCommittee(address(_arbitratorCommittee));
+        if (address(_taxPolicy) == address(0) || address(_taxPolicy).code.length == 0) {
+            revert InvalidTaxPolicy(address(_taxPolicy));
+        }
 
         jobRegistry = _jobRegistry;
         stakeManager = _stakeManager;
@@ -120,6 +128,7 @@ contract SystemPause is Governable, ReentrancyGuard {
         feePool = _feePool;
         reputationEngine = _reputationEngine;
         arbitratorCommittee = _arbitratorCommittee;
+        taxPolicy = _taxPolicy;
     }
 
     function setModules(
@@ -130,7 +139,8 @@ contract SystemPause is Governable, ReentrancyGuard {
         PlatformRegistry _platformRegistry,
         FeePool _feePool,
         ReputationEngine _reputationEngine,
-        ArbitratorCommittee _arbitratorCommittee
+        ArbitratorCommittee _arbitratorCommittee,
+        TaxPolicy _taxPolicy
     ) external onlyGovernance {
         if (
             address(_jobRegistry) == address(0) ||
@@ -162,6 +172,9 @@ contract SystemPause is Governable, ReentrancyGuard {
             address(_arbitratorCommittee) == address(0) ||
             address(_arbitratorCommittee).code.length == 0
         ) revert InvalidArbitratorCommittee(address(_arbitratorCommittee));
+        if (address(_taxPolicy) == address(0) || address(_taxPolicy).code.length == 0) {
+            revert InvalidTaxPolicy(address(_taxPolicy));
+        }
 
         _requireModuleOwnership(
             _jobRegistry,
@@ -171,7 +184,8 @@ contract SystemPause is Governable, ReentrancyGuard {
             _platformRegistry,
             _feePool,
             _reputationEngine,
-            _arbitratorCommittee
+            _arbitratorCommittee,
+            _taxPolicy
         );
 
         jobRegistry = _jobRegistry;
@@ -182,6 +196,7 @@ contract SystemPause is Governable, ReentrancyGuard {
         feePool = _feePool;
         reputationEngine = _reputationEngine;
         arbitratorCommittee = _arbitratorCommittee;
+        taxPolicy = _taxPolicy;
 
         _setPausers(address(this));
 
@@ -193,7 +208,8 @@ contract SystemPause is Governable, ReentrancyGuard {
             address(_platformRegistry),
             address(_feePool),
             address(_reputationEngine),
-            address(_arbitratorCommittee)
+            address(_arbitratorCommittee),
+            address(_taxPolicy)
         );
     }
 
@@ -208,7 +224,8 @@ contract SystemPause is Governable, ReentrancyGuard {
             platformRegistry,
             feePool,
             reputationEngine,
-            arbitratorCommittee
+            arbitratorCommittee,
+            taxPolicy
         );
 
         _setPausers(address(this));
@@ -226,7 +243,8 @@ contract SystemPause is Governable, ReentrancyGuard {
             platformRegistry,
             feePool,
             reputationEngine,
-            arbitratorCommittee
+            arbitratorCommittee,
+            taxPolicy
         );
 
         _setPausers(pauser);
@@ -385,7 +403,8 @@ contract SystemPause is Governable, ReentrancyGuard {
         PlatformRegistry _platformRegistry,
         FeePool _feePool,
         ReputationEngine _reputationEngine,
-        ArbitratorCommittee _arbitratorCommittee
+        ArbitratorCommittee _arbitratorCommittee,
+        TaxPolicy _taxPolicy
     ) internal view {
         if (_jobRegistry.owner() != address(this)) {
             revert ModuleNotOwned(address(_jobRegistry), _jobRegistry.owner());
@@ -420,6 +439,9 @@ contract SystemPause is Governable, ReentrancyGuard {
                 _arbitratorCommittee.owner()
             );
         }
+        if (_taxPolicy.owner() != address(this)) {
+            revert ModuleNotOwned(address(_taxPolicy), _taxPolicy.owner());
+        }
     }
 
     function _isKnownModule(address target) internal view returns (bool) {
@@ -431,7 +453,8 @@ contract SystemPause is Governable, ReentrancyGuard {
             target == address(platformRegistry) ||
             target == address(feePool) ||
             target == address(reputationEngine) ||
-            target == address(arbitratorCommittee);
+            target == address(arbitratorCommittee) ||
+            target == address(taxPolicy);
     }
 }
 
