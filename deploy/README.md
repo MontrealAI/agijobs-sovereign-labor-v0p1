@@ -22,6 +22,8 @@ flowchart TD
     A --> B --> C --> D --> E --> F --> G --> H
 ```
 
+The compilation step mirrors CI: Node.js 20.x, `npm ci --omit=optional --no-audit --no-fund`, then `npm run compile` so bytecode stays deterministic between local and automated runs.
+
 ## Environment Variables
 | Variable | Description |
 | --- | --- |
@@ -40,7 +42,7 @@ export DEPLOY_CONFIG=$(pwd)/deploy/config.mainnet.json
 - `ownerSafe` – multisig / timelock that will ultimately control `SystemPause`.
 - `guardianSafe` – pauser delegate (falls back to `ownerSafe` if omitted).
 - `treasury` – recipient for staking slashes and FeePool dust.
-- `tokens.agi` – immutable `$AGIALPHA` ERC-20 address (mainnet default provided).
+- `tokens.agi` – immutable `$AGIALPHA` ERC-20 address (mainnet default provided and enforced at runtime; decimals must equal 18 or deployment reverts).
 - `params`
   - `platformFeeBps` (multiple of 100)
   - `burnBpsOfFee` (multiple of 100)

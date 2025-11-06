@@ -5,40 +5,40 @@ on:
     branches:
       - main
       - develop
-      - release/**
-      - feature/**
-      - hotfix/**
-      - bugfix/**
-      - chore/**
-      - docs/**
-      - test/**
-      - refactor/**
-      - dependabot/**
-      - renovate/**
-      - codex/**
+      - 'release/**'
+      - 'feature/**'
+      - 'hotfix/**'
+      - 'bugfix/**'
+      - 'chore/**'
+      - 'docs/**'
+      - 'test/**'
+      - 'refactor/**'
+      - 'dependabot/**'
+      - 'renovate/**'
+      - 'codex/**'
   push:
     branches:
       - main
       - develop
-      - release/**
-      - feature/**
-      - hotfix/**
-      - bugfix/**
-      - chore/**
-      - docs/**
-      - test/**
-      - refactor/**
-      - dependabot/**
-      - renovate/**
-      - codex/**
+      - 'release/**'
+      - 'feature/**'
+      - 'hotfix/**'
+      - 'bugfix/**'
+      - 'chore/**'
+      - 'docs/**'
+      - 'test/**'
+      - 'refactor/**'
+      - 'dependabot/**'
+      - 'renovate/**'
+      - 'codex/**'
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: branch-gatekeeper-${{ github.ref }}
   cancel-in-progress: false
-
-permissions:
-  contents: read
 
 jobs:
   branch-naming:
@@ -47,14 +47,17 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
-      - name: Setup Node.js
+      - name: Setup Node.js 20 LTS
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20.x'
 
       - name: Validate branch name pattern
         env:
           BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
           SUMMARY_FILE: ${{ github.step_summary }}
-        run: node scripts/check-branch-name.mjs
+        run: node scripts/check-branch-name.mjs "$BRANCH_NAME"

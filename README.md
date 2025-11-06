@@ -27,7 +27,8 @@
 - **Centralised leverage.** `SystemPause` owns every mutable surface while reporting to the owner Safe; one switch orchestrates pause, upgrades, and governance mutations.
 - **Composable labor markets.** Registries, staking, reputation, arbitration, and tax policy interlock through deterministic interfaces so incentives can be rewritten mid-flight.
 - **Immediate reconfiguration.** Each module is pausable, upgradeable, and owner-tunable, giving the platform the steering wheel of a global labor cognition engine.
-- **Battle-ready CI.** Branch protection, deterministic compiles, and branch-name enforcement keep the intelligence substrate deployable by non-technical operators.
+- **Battle-ready CI.** Branch protection, deterministic compiles (`npm ci` + `npm run compile`), and branch-name enforcement keep the intelligence substrate deployable by non-technical operators.
+- **Singular token rail.** Every fee and reward flows through immutable `$AGIALPHA` (0xa61a3b3a130a9c20768eebf97e21515a6046a1fa), locking economics to the mainnet anchor.
 
 ## Neural Cartography
 ```mermaid
@@ -103,7 +104,7 @@ stateDiagram-v2
     SizeGuard --> [*]
 ```
 
-- **Sovereign Compile (ci.yml)** runs on every push and PR targeting `main`, `develop`, `feature/**`, and `release/**`. It compiles via IR, exports toolchain versions into the job summary, and asserts artifact size constraints.
+- **Sovereign Compile (ci.yml)** runs on every push and PR targeting `main`, `develop`, `feature/**`, and `release/**`. It locks Node.js 20.x, executes `npm ci --omit=optional --no-audit --no-fund` followed by `npm run compile`, captures toolchain versions, and publishes them in the job summary for audit trails.
 - **Branch Gatekeeper (branch-checks.yml)** enforces canonical branch naming. Set it as a required status check alongside Sovereign Compile.
 - **Branch protection** checklist:
   1. Require both workflow checks on `main` (and staging branches).
