@@ -14,6 +14,13 @@ import {TOKEN_SCALE} from "./Constants.sol";
 ///      owner ever custodies assets or incurs tax liabilities.
 contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
     error NotOwnerOrPauserManager();
+    error OwnerOrPauserOnly(address caller);
+    error InvalidStakeManager();
+    error StakeManagerVersionMismatch(uint256 expected, uint256 actual);
+    error CallerNotAuthorized(address caller);
+    error PercentageOutOfRange(uint256 percentage);
+    error UserBlacklisted(address user);
+    error InsufficientReputation(address user, uint256 required, uint256 actual);
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
 
@@ -69,10 +76,9 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
     error ArrayLengthMismatch();
 
     modifier onlyOwnerOrPauser() {
-        require(
-            msg.sender == owner() || msg.sender == pauser,
-            "owner or pauser only"
-        );
+        if (msg.sender != owner() && msg.sender != pauser) {
+            revert OwnerOrPauserOnly(msg.sender);
+        }
         _;
     }
 
@@ -89,15 +95,22 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
         emit PauserManagerUpdated(manager);
     }
     constructor(IStakeManager _stakeManager) Ownable(msg.sender) {
-        require(address(_stakeManager) != address(0), "invalid stake manager");
-        require(_stakeManager.version() == 2, "incompatible version");
+        if (address(_stakeManager) == address(0)) {
+            revert InvalidStakeManager();
+        }
+        uint256 version_ = _stakeManager.version();
+        if (version_ != 2) {
+            revert StakeManagerVersionMismatch(2, version_);
+        }
         stakeManager = _stakeManager;
         emit StakeManagerUpdated(address(_stakeManager));
         emit ModulesUpdated(address(_stakeManager));
     }
 
     modifier onlyCaller() {
-        require(callers[msg.sender], "not authorized");
+        if (!callers[msg.sender]) {
+            revert CallerNotAuthorized(msg.sender);
+        }
         _;
     }
 
@@ -118,8 +131,13 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
 
     /// @notice Set the StakeManager used for stake lookups.
     function setStakeManager(IStakeManager manager) external onlyOwner {
-        require(address(manager) != address(0), "invalid stake manager");
-        require(manager.version() == 2, "incompatible version");
+        if (address(manager) == address(0)) {
+            revert InvalidStakeManager();
+        }
+        uint256 version_ = manager.version();
+        if (version_ != 2) {
+            revert StakeManagerVersionMismatch(2, version_);
+        }
         stakeManager = manager;
         emit StakeManagerUpdated(address(manager));
         emit ModulesUpdated(address(manager));
@@ -136,7 +154,9 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
 
     /// @notice Set percentage of agent gain given to validators.
     function setValidationRewardPercentage(uint256 percentage) external onlyOwner {
-        require(percentage <= PERCENTAGE_SCALE, "invalid percentage");
+        if (percentage > PERCENTAGE_SCALE) {
+            revert PercentageOutOfRange(percentage);
+        }
         validationRewardPercentage = percentage;
         emit ValidationRewardPercentageUpdated(percentage);
     }
@@ -263,8 +283,13 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
 
     /// @notice Ensure an applicant meets premium requirements and is not blacklisted.
     function onApply(address user) external view onlyCaller whenNotPaused {
-        require(!blacklisted[user], "Blacklisted agent");
-        require(reputation[user] >= premiumThreshold, "insufficient reputation");
+        if (blacklisted[user]) {
+            revert UserBlacklisted(user);
+        }
+        uint256 score = reputation[user];
+        if (score < premiumThreshold) {
+            revert InsufficientReputation(user, premiumThreshold, score);
+        }
     }
 
     /// @notice Finalise a job and update reputation using v1 formulas.

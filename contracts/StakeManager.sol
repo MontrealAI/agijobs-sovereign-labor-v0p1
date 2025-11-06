@@ -61,6 +61,7 @@ error PendingPenalty();
 error TokenNotBurnable();
 error Unauthorized();
 error NotGovernanceOrPauserManager();
+error TooManyValidators(uint256 provided, uint256 maxAllowed);
 
 /// @title StakeManager
 /// @notice Handles staking balances, job escrows and slashing logic.
@@ -2670,7 +2671,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @dev internal slashing routine used by dispute and job slashing
     function _slash(address user, Role role, uint256 amount, address recipient, address[] memory validators) internal {
         if (role > Role.Platform) revert InvalidRole();
-        require(validators.length <= MAX_VALIDATORS, "too many validators");
+        if (validators.length > MAX_VALIDATORS) {
+            revert TooManyValidators(validators.length, MAX_VALIDATORS);
+        }
         uint256 staked = stakes[user][role];
         if (staked < amount) revert InsufficientStake();
         _validateSlashConfig();

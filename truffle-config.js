@@ -20,9 +20,15 @@ module.exports = {
       settings: {
         optimizer: {
           enabled: true,
-          runs: 200
+          runs: 1
         },
-        viaIR: true
+        viaIR: true,
+        metadata: {
+          bytecodeHash: "none"
+        },
+        debug: {
+          revertStrings: "strip"
+        }
       }
     }
   },
