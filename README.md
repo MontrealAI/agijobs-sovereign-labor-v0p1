@@ -1,6 +1,6 @@
 # AGIJobs Sovereign Labor v0.1
 
-[![Sovereign Compile][badge-sovereign-compile]][workflow-sovereign-compile]
+[![Sovereign Compile](https://img.shields.io/github/actions/workflow/status/AGIJobs/agijobs-sovereign-labor-v0p1/ci.yml?branch=main&label=Sovereign%20Compile&logo=github)][workflow-sovereign-compile]
 [![GitHub Checks](https://img.shields.io/github/checks-status/AGIJobs/agijobs-sovereign-labor-v0p1/main?label=Branch%20Checks&logo=github)](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 ![Node.js](https://img.shields.io/badge/Node.js-20.x-339933?logo=node.js&logoColor=white)
@@ -8,7 +8,6 @@
 ![Truffle](https://img.shields.io/badge/Truffle-5.11.5-5e464d?logo=truffle)
 ![Security](https://img.shields.io/badge/Security-Protocol%20Grade%20Controls-0b7285)
 
-[badge-sovereign-compile]: https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml/badge.svg?branch=main
 [workflow-sovereign-compile]: https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml
 
 > The sovereign labor intelligence substrate that silently choreographs global coordination, composability, and owner-level omnipotence.
