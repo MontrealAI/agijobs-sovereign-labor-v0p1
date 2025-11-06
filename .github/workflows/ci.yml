@@ -13,6 +13,10 @@ on:
       - develop
       - release/**
 
+concurrency:
+  group: sovereign-compile-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -21,6 +25,10 @@ jobs:
     name: Compile smart contracts
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      FORCE_COLOR: "1"
+      NPM_CONFIG_FUND: "false"
+      NPM_CONFIG_AUDIT: "false"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -30,6 +38,16 @@ jobs:
         with:
           node-version: 20
           cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Display toolchain versions
+        run: |
+          node --version
+          npm --version
+          npx truffle version
+
+      - name: Prime Truffle cache directory
+        run: mkdir -p ~/.cache/truffle
 
       - name: Cache Truffle compiler downloads
         uses: actions/cache@v4
@@ -41,6 +59,15 @@ jobs:
 
       - name: Install dependencies
         run: npm ci --omit=optional --no-audit --no-fund
+
+      - name: Generate compile metadata summary
+        run: |
+          {
+            echo '### Sovereign compile status';
+            echo "- Network: \`${{ github.ref_name }}\``";
+            echo "- Runner: \`${{ runner.os }}\``";
+            echo "- Node.js: \`$(node --version)\``";
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Compile contracts
         run: npm run compile
