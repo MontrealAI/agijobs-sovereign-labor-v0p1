@@ -41,12 +41,6 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
 
-      - name: Display toolchain versions
-        run: |
-          node --version
-          npm --version
-          npx truffle version
-
       - name: Prime Truffle cache directory
         run: mkdir -p ~/.cache/truffle
 
@@ -60,6 +54,12 @@ jobs:
 
       - name: Install dependencies
         run: npm ci --omit=optional --no-audit --no-fund
+
+      - name: Display toolchain versions
+        run: |
+          node --version
+          npm --version
+          npx truffle version
 
       - name: Generate compile metadata summary
         run: |
