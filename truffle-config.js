@@ -14,15 +14,17 @@ module.exports = {
       network_id: 11155111, confirmations: 2, timeoutBlocks: 500, skipDryRun: false
     }
   },
+  plugins: ['truffle-plugin-verify', 'truffle-contract-size'],
   compilers: {
     solc: {
       version: "0.8.30",
       settings: {
         optimizer: {
           enabled: true,
-          runs: 5
+          runs: 1
         },
         viaIR: true,
+        evmVersion: "shanghai",
         metadata: {
           bytecodeHash: "none"
         },
@@ -32,6 +34,5 @@ module.exports = {
       }
     }
   },
-  plugins: ['truffle-plugin-verify'],
   api_keys: { etherscan: ETHERSCAN_API_KEY }
 };
