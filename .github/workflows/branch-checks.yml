@@ -27,14 +27,14 @@ jobs:
           BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
         run: |
           echo "Validating branch name: $BRANCH_NAME"
-          if [[ "$BRANCH_NAME" =~ ^(main|develop|release\/.+|feature\/.+|bugfix\/.+|hotfix\/.+|chore\/.+|docs\/.+|test\/.+|refactor\/.+|dependabot\/.+|renovate\/.+)$ ]]; then
+          if [[ "$BRANCH_NAME" =~ ^(main|develop|release\/.+|feature\/.+|bugfix\/.+|hotfix\/.+|chore\/.+|docs\/.+|test\/.+|refactor\/.+|dependabot\/.+|renovate\/.+|codex\/.+)$ ]]; then
             echo "Branch name '$BRANCH_NAME' complies with the required conventions." | tee -a "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           {
             echo "### Branch name validation failed"
             echo "- Branch: \`$BRANCH_NAME\`"
-            echo "- Allowed patterns: \`main\`, \`develop\`, \`release/*\`, \`feature/*\`, \`bugfix/*\`, \`hotfix/*\`, \`chore/*\`, \`docs/*\`, \`test/*\`, \`refactor/*\`, \`dependabot/*\`, \`renovate/*\`"
+            echo "- Allowed patterns: \`main\`, \`develop\`, \`release/*\`, \`feature/*\`, \`bugfix/*\`, \`hotfix/*\`, \`chore/*\`, \`docs/*\`, \`test/*\`, \`refactor/*\`, \`dependabot/*\`, \`renovate/*\`, \`codex/*\`"
           } >> "$GITHUB_STEP_SUMMARY"
           echo "Branch name '$BRANCH_NAME' does not match any allowed pattern." >&2
           exit 1
