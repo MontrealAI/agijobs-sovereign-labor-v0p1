@@ -11,5 +11,13 @@ jobs:
         with:
           node-version: '20'   # no cache key needed without a lockfile
 
-      - run: npm install --no-audit --no-fund
-      - run: npx truffle compile
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - run: npm ci --no-audit --no-fund
+      - run: npm run compile

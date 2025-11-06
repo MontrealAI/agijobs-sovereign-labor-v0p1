@@ -3,6 +3,10 @@
   "version": "0.1.0-alpha",
   "license": "MIT",
   "private": true,
+  "scripts": {
+    "compile": "truffle compile",
+    "verify:mainnet": "truffle run verify IdentityRegistry JobRegistry PlatformRegistry StakeManager SystemPause ValidationModule --network mainnet --force-license MIT"
+  },
   "devDependencies": {
     "@openzeppelin/contracts": "^5.1.0",
     "@truffle/hdwallet-provider": "^2.1.15",
