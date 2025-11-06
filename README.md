@@ -1,7 +1,7 @@
 # AGIJobs Sovereign Labor v0.1
 
 [![Sovereign Compile](https://img.shields.io/badge/Sovereign%20Compile-Passing-success?logo=github&logoColor=white&style=for-the-badge)](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
-[![Branch Gatekeeper](https://img.shields.io/github/actions/workflow/status/AGIJobs/agijobs-sovereign-labor-v0p1/branch-checks.yml?branch=main&label=Branch%20Gatekeeper&logo=github&logoColor=white&style=for-the-badge)](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml)
+[![Branch Gatekeeper](https://img.shields.io/github/actions/workflow/status/AGIJobs-Labs/agijobs-sovereign-labor-v0p1/branch-checks.yml?branch=main&label=Branch%20Gatekeeper&logo=github&logoColor=white&style=for-the-badge)](https://github.com/AGIJobs-Labs/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 ![Node.js](https://img.shields.io/badge/Node.js-20.x-339933?logo=node.js&logoColor=white&style=for-the-badge)
 ![Solidity](https://img.shields.io/badge/Solidity-0.8.30-363636?logo=solidity&style=for-the-badge)
