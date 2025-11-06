@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {Ownable2Step} from "./utils/Ownable2Step.sol";
+import {CoreOwnable2Step} from "./utils/CoreOwnable2Step.sol";
 import {IENS} from "./interfaces/IENS.sol";
 import {INameWrapper} from "./interfaces/INameWrapper.sol";
 import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
@@ -19,7 +19,7 @@ error EmptySubdomain();
 /// @notice Verifies ENS subdomain ownership and tracks manual allowlists
 /// for agents and validators. Provides helper views that also check
 /// reputation blacklists.
-contract IdentityRegistry is Ownable2Step {
+contract IdentityRegistry is CoreOwnable2Step {
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
     enum AgentType {
@@ -189,7 +189,7 @@ contract IdentityRegistry is Ownable2Step {
         IReputationEngine _reputationEngine,
         bytes32 _agentRootNode,
         bytes32 _clubRootNode
-    ) Ownable2Step(msg.sender) {
+    ) CoreOwnable2Step(msg.sender) {
         ens = _ens;
         if (address(_ens) != address(0)) {
             emit ENSUpdated(address(_ens));

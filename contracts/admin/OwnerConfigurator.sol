@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {Ownable2Step} from "../utils/Ownable2Step.sol";
+import {CoreOwnable2Step} from "../utils/CoreOwnable2Step.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
 /// @title OwnerConfigurator
@@ -10,7 +10,7 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 ///         contract is intentionally lightweight until the per-module adapters
 ///         are wired in. It focuses on safely forwarding calls and emitting an
 ///         auditable change log for the owner console and subgraph.
-contract OwnerConfigurator is Ownable2Step {
+contract OwnerConfigurator is CoreOwnable2Step {
     using Address for address;
 
     /// @notice Emitted whenever the owner requests a parameter mutation via
@@ -35,7 +35,7 @@ contract OwnerConfigurator is Ownable2Step {
     ///        configuration. Passing `address(0)` defaults ownership to the
     ///        deployer to simplify local testing.
     constructor(address initialOwner)
-        Ownable2Step(initialOwner == address(0) ? _msgSender() : initialOwner)
+        CoreOwnable2Step(initialOwner == address(0) ? _msgSender() : initialOwner)
     {}
 
     struct ConfigurationCall {

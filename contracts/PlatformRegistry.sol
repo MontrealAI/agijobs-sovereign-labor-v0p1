@@ -6,15 +6,8 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IJobRegistryAck} from "./interfaces/IJobRegistryAck.sol";
+import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
 import {TOKEN_SCALE} from "./Constants.sol";
-
-interface IReputationEngine {
-    function reputation(address user) external view returns (uint256);
-    function entropy(address user) external view returns (uint256);
-    function isBlacklisted(address user) external view returns (bool);
-    function stakeWeight() external view returns (uint256);
-    function reputationWeight() external view returns (uint256);
-}
 
 /// @title PlatformRegistry
 /// @notice Registers platform operators that stake $AGIALPHA and exposes
