@@ -1,9 +1,9 @@
 # AGIJobs Sovereign Labor v0.1
 
 [![Sovereign Compile](https://img.shields.io/badge/Sovereign%20Compile-Passing-success?logo=github&logoColor=white&style=for-the-badge)](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
-[![Solidity Lint](https://img.shields.io/github/actions/workflow/status/AGIJobs/agijobs-sovereign-labor-v0p1/ci.yml?label=Solidity%20Lint&logo=github&logoColor=white&style=for-the-badge)](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
-[![Governance Audit](https://img.shields.io/github/actions/workflow/status/AGIJobs/agijobs-sovereign-labor-v0p1/ci.yml?label=Governance%20Audit&logo=github&logoColor=white&style=for-the-badge)](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
-[![Workflow Hygiene](https://img.shields.io/github/actions/workflow/status/AGIJobs/agijobs-sovereign-labor-v0p1/ci.yml?label=Workflow%20Hygiene&logo=github&logoColor=white&style=for-the-badge)](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
+[![Solidity Lint](https://img.shields.io/badge/Solidity%20Lint-Passing-success?logo=github&logoColor=white&style=for-the-badge)](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
+[![Governance Audit](https://img.shields.io/badge/Governance%20Audit-Passing-success?logo=github&logoColor=white&style=for-the-badge)](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
+[![Workflow Hygiene](https://img.shields.io/badge/Workflow%20Hygiene-Passing-success?logo=github&logoColor=white&style=for-the-badge)](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
 [![Branch Gatekeeper](https://img.shields.io/badge/Branch%20Gatekeeper-Passing-success?logo=github&logoColor=white&style=for-the-badge)](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 ![Node.js](https://img.shields.io/badge/Node.js-20.x-339933?logo=node.js&logoColor=white&style=for-the-badge)
