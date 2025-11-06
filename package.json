@@ -6,13 +6,16 @@
   "scripts": {
     "compile": "truffle compile",
     "verify:mainnet": "truffle run verify IdentityRegistry JobRegistry PlatformRegistry StakeManager SystemPause ValidationModule --network mainnet --force-license MIT",
-    "lint:branch": "node scripts/check-branch-name.mjs"
+    "lint:branch": "node scripts/check-branch-name.mjs",
+    "lint:sol": "solhint --max-warnings=0 'contracts/**/*.sol'",
+    "ci:governance": "node scripts/check-governance-matrix.mjs"
   },
   "devDependencies": {
-    "eth-ens-namehash": "^2.0.8",
     "@openzeppelin/contracts": "^5.1.0",
     "@truffle/hdwallet-provider": "^2.1.15",
     "dotenv": "^16.4.5",
+    "eth-ens-namehash": "^2.0.8",
+    "solhint": "^6.0.1",
     "truffle": "^5.11.5",
     "truffle-plugin-verify": "^0.6.7"
   }

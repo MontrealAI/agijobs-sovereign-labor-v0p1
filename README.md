@@ -1,6 +1,9 @@
 # AGIJobs Sovereign Labor v0.1
 
 [![Sovereign Compile](https://img.shields.io/badge/Sovereign%20Compile-Passing-success?logo=github&logoColor=white&style=for-the-badge)](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
+[![Solidity Lint](https://img.shields.io/github/actions/workflow/status/AGIJobs/agijobs-sovereign-labor-v0p1/ci.yml?label=Solidity%20Lint&logo=github&logoColor=white&style=for-the-badge)](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
+[![Governance Audit](https://img.shields.io/github/actions/workflow/status/AGIJobs/agijobs-sovereign-labor-v0p1/ci.yml?label=Governance%20Audit&logo=github&logoColor=white&style=for-the-badge)](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
+[![Workflow Hygiene](https://img.shields.io/github/actions/workflow/status/AGIJobs/agijobs-sovereign-labor-v0p1/ci.yml?label=Workflow%20Hygiene&logo=github&logoColor=white&style=for-the-badge)](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
 [![Branch Gatekeeper](https://img.shields.io/badge/Branch%20Gatekeeper-Passing-success?logo=github&logoColor=white&style=for-the-badge)](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 ![Node.js](https://img.shields.io/badge/Node.js-20.x-339933?logo=node.js&logoColor=white&style=for-the-badge)
@@ -94,23 +97,26 @@ Key control surfaces:
 
 ## Continuous Verification
 ```mermaid
-stateDiagram-v2
-    [*] --> Checkout
-    Checkout --> Toolchain: actions/setup-node@v4
-    Toolchain --> Cache: npm & Truffle cache hydrated
-    Cache --> Install: npm ci --omit=optional --no-audit --no-fund
-    Install --> Compile: npm run compile
-    Compile --> SizeGuard: bytecode & initcode size assertions
-    SizeGuard --> [*]
+flowchart TD
+    L[Solidity Lint \n npm run lint:sol] --> C[Sovereign Compile \n npm run compile]
+    C --> G[Governance Audit \n npm run ci:governance]
+    C --> A[Workflow Hygiene \n actionlint]
+    G --> S[Step Summary & artifacts]
+    A --> S
 ```
 
-- **Sovereign Compile (ci.yml)** runs on every push and PR targeting `main`, `develop`, `feature/**`, and `release/**`. It locks Node.js 20.x, executes `npm ci --omit=optional --no-audit --no-fund` followed by `npm run compile`, captures toolchain versions, and publishes them in the job summary for audit trails.
-- **Branch Gatekeeper (branch-checks.yml)** enforces canonical branch naming. Set it as a required status check alongside Sovereign Compile.
-- **Branch protection** checklist:
-  1. Require both workflow checks on `main` (and staging branches).
-  2. Enforce linear history & up-to-date merges.
-  3. Require ≥1 approved review.
-  4. (Optional) Require signed commits for forensic parity.
+- **Solidity Lint** guards every Solidity surface with `solhint --max-warnings=0`. The summary attaches to the PR so reviewers can see lint success without digging into logs.
+- **Sovereign Compile** (ci.yml) locks Node.js 20.x, hydrates deterministic caches, runs `npm ci --omit=optional --no-audit --no-fund`, `npm run compile`, and `node scripts/verify-artifacts.js`, then archives `build/contracts` for downstream audits.
+- **Governance Surface Audit** consumes the compiled artifacts and executes `npm run ci:governance`, confirming every owner/pauser setter and `$AGIALPHA` constant matches `deploy/config.mainnet.json`.
+- **Workflow Hygiene** runs [`actionlint`](https://github.com/rhysd/actionlint) on every push so GitHub workflow syntax errors never make it into `main`.
+- **Branch Gatekeeper** (branch-checks.yml) enforces canonical branch naming and is required alongside the CI workflow.
+- **Branch protection checklist:** mark the following statuses as required on `main` (and staging branches):
+  1. `Sovereign Compile / Solidity lint`
+  2. `Sovereign Compile / Compile smart contracts`
+  3. `Sovereign Compile / Governance surface audit`
+  4. `Sovereign Compile / Workflow hygiene`
+  5. `Branch Gatekeeper / Validate branch naming conventions`
+  6. Require ≥1 approving review, up-to-date merges, and optionally signed commits for forensic parity.
 
 ## Deployment Codex
 ```mermaid
@@ -124,14 +130,16 @@ flowchart TD
 ```
 
 1. **Bootstrap** – `npm install --omit=optional --no-audit --no-fund`.
-2. **Compile** – `npm run compile` (identical to CI).
-3. **Configure** – populate `deploy/config.mainnet.json`. Fields:
+2. **Lint** – `npm run lint:sol` to catch Solidity regressions locally before CI.
+3. **Compile** – `npm run compile` (identical to CI).
+4. **Configure** – populate `deploy/config.mainnet.json`. Fields:
    - `ownerSafe`, `guardianSafe`, `treasury`
    - `params.platformFeeBps`, `params.minStakeWei`, `params.validatorQuorum`, etc.
    - `identity` ENS roots (`agentRootNode`, `clubRootNode`) are standard ENS names; the migration auto-namehashes them.
-4. **Migrate** – `DEPLOY_CONFIG=$(pwd)/deploy/config.mainnet.json npx truffle migrate --network mainnet --f 1 --to 3`.
-5. **Accept ownership** – two-step contracts (`IdentityRegistry`, `AttestationRegistry`, any CoreOwnable2Step surfaces) must call `acceptOwnership` from the owner Safe.
-6. **Verify** – `npm run verify:mainnet` after confirmations.
+5. **Governance audit** – `npm run ci:governance` to assert owner setters and `$AGIALPHA` wiring before broadcasting.
+6. **Migrate** – `DEPLOY_CONFIG=$(pwd)/deploy/config.mainnet.json npx truffle migrate --network mainnet --f 1 --to 3`.
+7. **Accept ownership** – two-step contracts (`IdentityRegistry`, `AttestationRegistry`, any CoreOwnable2Step surfaces) must call `acceptOwnership` from the owner Safe.
+8. **Verify** – `npm run verify:mainnet` after confirmations.
 
 The migration writes `manifests/addresses.mainnet.json` capturing module addresses, guardians, and treasury routes for downstream automation.
 
@@ -140,6 +148,7 @@ The migration writes `manifests/addresses.mainnet.json` capturing module address
 - **Module upgrade:** deploy replacement, transfer ownership to `SystemPause`, then call `setModules` with new address.
 - **Parameter tuning:** invoke `SystemPause.executeGovernanceCall(target, abi.encodeWithSignature(...))` from the owner Safe to reach any setter.
 - **Treasury routing:** `StakeManager.setTreasuryAllowlist` + `setTreasury` configure slashing payouts; `FeePool.setGovernance` remains pointed at `SystemPause` so withdrawals travel through governance.
+- **Governance matrix audit:** run `npm run ci:governance` whenever modules change to auto-verify that every owner setter, pauser, and `$AGIALPHA` constant matches the production config.
 
 ## Telemetry Signals
 - `SystemPause.ModulesUpdated`, `PausersUpdated` – canonical wiring events.

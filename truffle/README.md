@@ -15,13 +15,15 @@ Profiles live in [`truffle-config.js`](../truffle-config.js). Each pulls RPC URL
 ## Core Commands
 | Action | Command |
 | --- | --- |
+| Lint Solidity | `npm run lint:sol` |
 | Compile with Solidity 0.8.30 (via IR) | `npm run compile` (same command invoked by the `Sovereign Compile` GitHub Action) |
+| Audit governance surfaces | `npm run ci:governance` (requires fresh `npm run compile`) |
 | Launch local console | `npx truffle develop` |
 | Execute migrations | `npx truffle migrate --network <profile>` |
 | Run custom script | `npx truffle exec scripts/<file>.js --network <profile>` |
 | Inspect contract | `truffle console --network <profile>` |
 
-`migrations/1_deploy_kernel.js` expects `DEPLOY_CONFIG` to point at a JSON configuration (see [`deploy/README.md`](../deploy/README.md)). The migration automatically writes manifests under `manifests/` and enforces `$AGIALPHA`'s 18-decimal discipline at runtime.
+`migrations/1_deploy_kernel.js` expects `DEPLOY_CONFIG` to point at a JSON configuration (see [`deploy/README.md`](../deploy/README.md)). The migration automatically writes manifests under `manifests/`, enforces `$AGIALPHA`'s 18-decimal discipline at runtime, and is now coupled with `scripts/check-governance-matrix.mjs` so you can prove every owner setter remains reachable before signing.
 
 ## Artifact Hygiene
 Compiled ABIs/bytecode live in `build/contracts/`. When modifying compiler settings or pulling fresh sources, clear the folder:
