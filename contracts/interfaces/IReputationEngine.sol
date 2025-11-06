@@ -60,6 +60,12 @@ interface IReputationEngine {
     /// @return True if the user is blacklisted
     function isBlacklisted(address user) external view returns (bool);
 
+    /// @notice Retrieve the stake weight applied in operator scoring
+    function stakeWeight() external view returns (uint256);
+
+    /// @notice Retrieve the reputation weight applied in operator scoring
+    function reputationWeight() external view returns (uint256);
+
     /// @notice Determine whether a user meets the premium access threshold
     /// @param user Address to query
     /// @return True if the user's reputation meets or exceeds the threshold

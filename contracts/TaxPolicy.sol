@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {Ownable2Step} from "./utils/Ownable2Step.sol";
+import {CoreOwnable2Step} from "./utils/CoreOwnable2Step.sol";
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 
 /// @title TaxPolicy
@@ -12,7 +12,7 @@ import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 /// provides only an on-chain pointer for off-chain responsibilities. AGI
 /// Employers, AGI Agents, and Validators bear all tax obligations while the
 /// infrastructure and its owner remain perpetually exempt.
-contract TaxPolicy is Ownable2Step, ITaxPolicy {
+contract TaxPolicy is CoreOwnable2Step, ITaxPolicy {
     /// @notice Off-chain document describing tax responsibilities.
     string private _policyURI;
 
@@ -67,7 +67,7 @@ contract TaxPolicy is Ownable2Step, ITaxPolicy {
     /// @param allowed True if the address is allowed to acknowledge for others.
     event AcknowledgerUpdated(address indexed acknowledger, bool allowed);
 
-    constructor(string memory uri, string memory ack) Ownable2Step(msg.sender) {
+    constructor(string memory uri, string memory ack) CoreOwnable2Step(msg.sender) {
         _policyURI = uri;
         _acknowledgement = ack;
         _version = 1;

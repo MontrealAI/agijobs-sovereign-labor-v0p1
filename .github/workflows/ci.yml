@@ -1,23 +1,50 @@
 name: compile
-on: [push, pull_request]
+
+on:
+  push:
+    branches:
+      - main
+      - "release/**"
+      - "feature/**"
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: compile-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash --noprofile --norc -eo pipefail {0}
 
 jobs:
   compile:
+    name: Compile smart contracts
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: true
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'   # no cache key needed without a lockfile
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
 
-      - name: Cache npm dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+      - name: Install dependencies
+        run: npm install --omit=optional --no-audit --no-fund
 
-      - run: npm install --no-audit --no-fund
-      - run: npm run compile
+      - name: Compile contracts
+        run: npm run compile
+
+      - name: Summarize compiler versions
+        run: |
+          npx truffle version
