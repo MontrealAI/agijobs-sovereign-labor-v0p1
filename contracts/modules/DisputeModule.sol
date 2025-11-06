@@ -119,6 +119,14 @@ contract DisputeModule is Governable, Pausable {
     error UnauthorizedResolver(address caller);
     error NotGovernanceOrPauser();
     error NotGovernanceOrPauserManager();
+    error NotJobRegistry();
+    error DisputeAlreadyRaised();
+    error EmptyReason();
+    error InvalidClaimant();
+    error DisputeWindowOpen();
+    error NotParticipant();
+    error EvidenceOrReasonRequired();
+    error EtherNotAccepted();
 
     /// @param _jobRegistry Address of the JobRegistry contract.
     /// @param _disputeFee Initial dispute fee in token units (18 decimals); defaults to TOKEN_SCALE.
@@ -150,7 +158,7 @@ contract DisputeModule is Governable, Pausable {
 
     /// @notice Restrict functions to the JobRegistry.
     modifier onlyJobRegistry() {
-        require(msg.sender == address(jobRegistry), "not registry");
+        if (msg.sender != address(jobRegistry)) revert NotJobRegistry();
         _;
     }
 
@@ -306,18 +314,16 @@ contract DisputeModule is Governable, Pausable {
         bytes32 evidenceHash,
         string calldata reason
     ) external onlyJobRegistry whenNotPaused {
-        require(
-            evidenceHash != bytes32(0) || bytes(reason).length != 0,
-            "evidence"
-        );
+        if (evidenceHash == bytes32(0) && bytes(reason).length == 0) {
+            revert EvidenceOrReasonRequired();
+        }
         Dispute storage d = disputes[jobId];
-        require(d.raisedAt == 0, "disputed");
+        if (d.raisedAt != 0) revert DisputeAlreadyRaised();
 
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
-        require(
-            claimant == job.agent || claimant == job.employer,
-            "not participant"
-        );
+        if (claimant != job.agent && claimant != job.employer) {
+            revert NotParticipant();
+        }
 
         IStakeManager sm = _stakeManager();
         if (address(sm) != address(0)) {
@@ -349,16 +355,16 @@ contract DisputeModule is Governable, Pausable {
         onlyGovernance
         whenNotPaused
     {
-        require(bytes(reason).length != 0, "reason");
+        if (bytes(reason).length == 0) revert EmptyReason();
         Dispute storage d = disputes[jobId];
-        require(d.raisedAt == 0, "disputed");
+        if (d.raisedAt != 0) revert DisputeAlreadyRaised();
 
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
         address claimant = job.employer;
         if (claimant == address(0)) {
             claimant = job.agent;
         }
-        require(claimant != address(0), "job");
+        if (claimant == address(0)) revert InvalidClaimant();
 
         d.claimant = claimant;
         d.raisedAt = block.timestamp;
@@ -399,8 +405,8 @@ contract DisputeModule is Governable, Pausable {
     ) external whenNotPaused {
         if (signatures.length == 0) revert InvalidModeratorWeight();
         Dispute storage d = disputes[jobId];
-        require(d.raisedAt != 0 && !d.resolved, "no dispute");
-        require(block.timestamp >= d.raisedAt + disputeWindow, "window");
+        if (d.raisedAt == 0 || d.resolved) revert NoActiveDispute();
+        if (block.timestamp < d.raisedAt + disputeWindow) revert DisputeWindowOpen();
 
         uint96 totalWeight = totalModeratorWeight;
         if (totalWeight == 0) revert NoModeratorsConfigured();
@@ -514,8 +520,8 @@ contract DisputeModule is Governable, Pausable {
 
     function _resolve(uint256 jobId, bool employerWins, address resolver) internal {
         Dispute storage d = disputes[jobId];
-        require(d.raisedAt != 0 && !d.resolved, "no dispute");
-        require(block.timestamp >= d.raisedAt + disputeWindow, "window");
+        if (d.raisedAt == 0 || d.resolved) revert NoActiveDispute();
+        if (block.timestamp < d.raisedAt + disputeWindow) revert DisputeWindowOpen();
 
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
         (address[] memory validators, bool[] memory votes) =
@@ -590,11 +596,11 @@ contract DisputeModule is Governable, Pausable {
 
     /// @dev Reject direct ETH transfers; all fees are handled in tokens.
     receive() external payable {
-        revert("DisputeModule: no ether");
+        revert EtherNotAccepted();
     }
 
     /// @dev Reject calls with unexpected calldata or funds.
     fallback() external payable {
-        revert("DisputeModule: no ether");
+        revert EtherNotAccepted();
     }
 }

@@ -54,6 +54,7 @@ error AlreadyTallied();
 error RevealPending();
 error UnauthorizedCaller();
 error NotOwnerOrPauserManager();
+error NotOwnerOrPauser();
 error ValidatorBanned();
 error InvalidPenalty();
 error InvalidForceFinalizeGrace();
@@ -61,6 +62,7 @@ error InvalidFailoverAction();
 error RevealExtensionRequired();
 error FailoverEscalated();
 error NoActiveRound();
+error EtherNotAccepted();
 
 /// @title ValidationModule
 /// @notice Handles validator selection and commit–reveal voting for jobs.
@@ -247,10 +249,9 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     );
 
     modifier onlyOwnerOrPauser() {
-        require(
-            msg.sender == owner() || msg.sender == pauser,
-            "owner or pauser only"
-        );
+        if (msg.sender != owner() && msg.sender != pauser) {
+            revert NotOwnerOrPauser();
+        }
         _;
     }
 
@@ -1866,12 +1867,12 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
     /// @dev Prevent accidental ETH deposits; the module never holds funds.
     receive() external payable {
-        revert("ValidationModule: no ether");
+        revert EtherNotAccepted();
     }
 
     /// @dev Reject calls with unexpected calldata or funds.
     fallback() external payable {
-        revert("ValidationModule: no ether");
+        revert EtherNotAccepted();
     }
 }
 

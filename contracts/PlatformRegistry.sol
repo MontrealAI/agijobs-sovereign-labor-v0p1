@@ -16,6 +16,14 @@ import {TOKEN_SCALE} from "./Constants.sol";
 ///      use 18 decimals via the `StakeManager`.
 contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     error NotOwnerOrPauserManager();
+    error NotOwnerOrPauser();
+    error StakeManagerNotSet();
+    error AlreadyRegistered();
+    error OperatorBlacklisted();
+    error StakeTooLow();
+    error NotRegistered();
+    error NotRegistrar();
+    error EtherNotAccepted();
     uint256 public constant DEFAULT_MIN_PLATFORM_STAKE = TOKEN_SCALE;
 
     IStakeManager public stakeManager;
@@ -74,10 +82,9 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     );
 
     modifier onlyOwnerOrPauser() {
-        require(
-            msg.sender == owner() || msg.sender == pauser,
-            "owner or pauser only"
-        );
+        if (msg.sender != owner() && msg.sender != pauser) {
+            revert NotOwnerOrPauser();
+        }
         _;
     }
 
@@ -95,7 +102,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
 
     function _requireStakeManager() internal view returns (IStakeManager manager) {
         manager = stakeManager;
-        require(address(manager) != address(0), "stake manager not set");
+        if (address(manager) == address(0)) revert StakeManagerNotSet();
     }
 
     /// @notice Deploys the PlatformRegistry.
@@ -134,12 +141,12 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     }
 
     function _register(address operator) internal {
-        require(!registered[operator], "registered");
-        require(!blacklist[operator], "blacklisted");
+        if (registered[operator]) revert AlreadyRegistered();
+        if (blacklist[operator]) revert OperatorBlacklisted();
         IStakeManager manager = _requireStakeManager();
         uint256 stake = manager.stakeOf(operator, IStakeManager.Role.Platform);
         if (operator != owner()) {
-            require(stake >= minPlatformStake, "stake");
+            if (stake < minPlatformStake) revert StakeTooLow();
         }
         registered[operator] = true;
         emit Registered(operator);
@@ -152,7 +159,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
 
     /// @notice Remove caller from the registry.
     function deregister() external whenNotPaused nonReentrant {
-        require(registered[msg.sender], "not registered");
+        if (!registered[msg.sender]) revert NotRegistered();
         registered[msg.sender] = false;
         emit Deregistered(msg.sender);
     }
@@ -164,8 +171,8 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
      * @param amount Stake amount in $AGIALPHA with 18 decimals.
      */
     function stakeAndRegister(uint256 amount) external whenNotPaused nonReentrant {
-        require(!registered[msg.sender], "registered");
-        require(!blacklist[msg.sender], "blacklisted");
+        if (registered[msg.sender]) revert AlreadyRegistered();
+        if (blacklist[msg.sender]) revert OperatorBlacklisted();
         IStakeManager manager = _requireStakeManager();
         manager.depositStakeFor(
             msg.sender,
@@ -200,10 +207,10 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
      *      implicitly accepts the current tax policy if it has not been
      *      acknowledged yet.
      * @param amount Stake amount in $AGIALPHA with 18 decimals.
-     */
+    */
     function acknowledgeStakeAndRegister(uint256 amount) external whenNotPaused nonReentrant {
-        require(!registered[msg.sender], "registered");
-        require(!blacklist[msg.sender], "blacklisted");
+        if (registered[msg.sender]) revert AlreadyRegistered();
+        if (blacklist[msg.sender]) revert OperatorBlacklisted();
         IStakeManager manager = _requireStakeManager();
         address registry = manager.jobRegistry();
         if (registry != address(0)) {
@@ -224,7 +231,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
      *      the associated `JobRegistry` when set.
      */
     function acknowledgeAndDeregister() external whenNotPaused nonReentrant {
-        require(registered[msg.sender], "not registered");
+        if (!registered[msg.sender]) revert NotRegistered();
         IStakeManager manager = _requireStakeManager();
         address registry = manager.jobRegistry();
         if (registry != address(0)) {
@@ -237,7 +244,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     /// @notice Register an operator on their behalf.
     function registerFor(address operator) external whenNotPaused nonReentrant {
         if (msg.sender != operator) {
-            require(registrars[msg.sender], "registrar");
+            if (!registrars[msg.sender]) revert NotRegistrar();
         }
         _register(operator);
     }
@@ -253,7 +260,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
      */
     function acknowledgeAndRegisterFor(address operator) external whenNotPaused nonReentrant {
         if (msg.sender != operator) {
-            require(registrars[msg.sender], "registrar");
+            if (!registrars[msg.sender]) revert NotRegistrar();
         }
         IStakeManager manager = _requireStakeManager();
         address registry = manager.jobRegistry();
@@ -277,10 +284,10 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
         uint256 amount
     ) external whenNotPaused nonReentrant {
         if (msg.sender != operator) {
-            require(registrars[msg.sender], "registrar");
+            if (!registrars[msg.sender]) revert NotRegistrar();
         }
-        require(!registered[operator], "registered");
-        require(!blacklist[operator], "blacklisted");
+        if (registered[operator]) revert AlreadyRegistered();
+        if (blacklist[operator]) revert OperatorBlacklisted();
         IStakeManager manager = _requireStakeManager();
         address registry = manager.jobRegistry();
         if (registry != address(0)) {
@@ -476,11 +483,11 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     // ---------------------------------------------------------------
 
     receive() external payable {
-        revert("PlatformRegistry: no ether");
+        revert EtherNotAccepted();
     }
 
     fallback() external payable {
-        revert("PlatformRegistry: no ether");
+        revert EtherNotAccepted();
     }
 
     function _setPauser(address _pauser) internal {
