@@ -7,6 +7,7 @@
 flowchart TD
     subgraph Build
         A[Lock dependencies]
+        L[npm run lint:sol]
         B[npm run compile]
     end
     subgraph Provision
@@ -15,14 +16,15 @@ flowchart TD
         E[npx truffle migrate --f 1 --to 3]
     end
     subgraph Post
-        F[Safe acceptOwnership calls]
-        G[npm run verify:mainnet]
-        H[Publish manifests]
+        F[npm run ci:governance]
+        G[Safe acceptOwnership calls]
+        H[npm run verify:mainnet]
+        I[Publish manifests]
     end
-    A --> B --> C --> D --> E --> F --> G --> H
+    A --> L --> B --> C --> D --> E --> F --> G --> H --> I
 ```
 
-The compilation step mirrors CI: Node.js 20.x, `npm ci --omit=optional --no-audit --no-fund`, then `npm run compile` so bytecode stays deterministic between local and automated runs.
+The compilation step mirrors CI: Node.js 20.x, `npm ci --omit=optional --no-audit --no-fund`, a full `npm run lint:sol` sweep, and then `npm run compile` so bytecode stays deterministic between local and automated runs. Follow compilation with `npm run ci:governance` to double-check owner setters and `$AGIALPHA` wiring before spending gas.
 
 ## Environment Variables
 | Variable | Description |
@@ -57,6 +59,12 @@ export DEPLOY_CONFIG=$(pwd)/deploy/config.mainnet.json
 ```bash
 npx truffle migrate --network mainnet --f 1 --to 3 --skip-dry-run --compile-all
 ```
+
+Pre-flight gates:
+
+- `npm run lint:sol`
+- `npm run compile`
+- `npm run ci:governance`
 
 ### What the migration does
 1. Deploys `OwnerConfigurator`, `TaxPolicy`, `StakeManager`, `FeePool`, `ReputationEngine`, `PlatformRegistry`, `AttestationRegistry`, `IdentityRegistry`, `CertificateNFT`, `ValidationModule`, `DisputeModule`, `JobRegistry`, `ArbitratorCommittee`, and `SystemPause`.

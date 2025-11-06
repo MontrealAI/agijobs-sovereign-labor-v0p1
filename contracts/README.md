@@ -86,6 +86,7 @@ graph LR
 - **Upgrade:** Deploy replacement contract → `transferOwnership(SystemPause)` → `SystemPause.setModules` with new address.
 - **Parameter change:** Encode calldata and call `SystemPause.executeGovernanceCall(target, data)` from the owner Safe.
 - **Emergency pause:** Guardian Safe invokes `SystemPause.pauseAll()`; resume with `unpauseAll()`.
+- **Automated verification:** Run `npm run ci:governance` after compiling to assert that every owner setter, pauser, and `$AGIALPHA` pointer is still exposed through the latest artifacts.
 
 ## Storage & Bytecode Discipline
 - All contracts use custom errors, unchecked arithmetic where safe, and shared libraries from `libraries/` to stay under EIP-170 limits.

@@ -59,5 +59,4 @@ jobs:
       - name: Validate branch name pattern
         env:
           BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
-          SUMMARY_FILE: ${{ github.step_summary }}
         run: node scripts/check-branch-name.mjs "$BRANCH_NAME"

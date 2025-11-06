@@ -25,8 +25,46 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  lint:
+    name: Solidity lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      FORCE_COLOR: "1"
+      NPM_CONFIG_FUND: "false"
+      NPM_CONFIG_AUDIT: "false"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --omit=optional --no-audit --no-fund
+
+      - name: Lint Solidity contracts
+        run: npm run lint:sol
+
+      - name: Publish lint summary
+        if: always()
+        run: |
+          cat <<'EOF' >> "$GITHUB_STEP_SUMMARY"
+          ### ✅ Solidity lint
+
+          Command: `npm run lint:sol`
+          EOF
+
   compile:
     name: Compile smart contracts
+    needs: lint
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -73,6 +111,53 @@ jobs:
       - name: Verify compiled artifacts
         run: node scripts/verify-artifacts.js
 
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: truffle-build
+          path: build/contracts
+
       - name: Generate compile metadata summary
         if: always()
         run: node scripts/write-compile-summary.js
+
+  governance-audit:
+    name: Governance surface audit
+    needs: compile
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Download compiled artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: truffle-build
+          path: build/contracts
+
+      - name: Validate governance matrix
+        run: npm run ci:governance
+
+  workflow-hygiene:
+    name: Workflow hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Run actionlint
+        uses: rhysd/actionlint@v1.7.1
+        with:
+          args: -color
