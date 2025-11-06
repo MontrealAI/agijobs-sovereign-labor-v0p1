@@ -65,12 +65,12 @@ jobs:
             status_label="Solidity lint failed"
           fi
 
-          cat <<'EOF' >> "$GITHUB_STEP_SUMMARY"
+          cat <<EOF >> "$GITHUB_STEP_SUMMARY"
           ### $status_icon Solidity lint
 
           $status_label
 
-          Command: `npm run lint:sol`
+          Command: \`npm run lint:sol\`
           EOF
 
   compile:
