@@ -44,6 +44,7 @@ contract TaxPolicy is CoreOwnable2Step, ITaxPolicy {
 
     /// @notice Thrown when attempting to revoke acknowledgement for the zero address.
     error ZeroUserAddress();
+    error EtherNotAccepted();
 
     /// @notice Emitted when the tax policy URI is updated.
     event TaxPolicyURIUpdated(string uri);
@@ -282,12 +283,12 @@ contract TaxPolicy is CoreOwnable2Step, ITaxPolicy {
 
     /// @dev Rejects any incoming ether.
     receive() external payable {
-        revert("TaxPolicy: no ether");
+        revert EtherNotAccepted();
     }
 
     /// @dev Rejects calls with unexpected calldata or funds.
     fallback() external payable {
-        revert("TaxPolicy: no ether");
+        revert EtherNotAccepted();
     }
 }
 

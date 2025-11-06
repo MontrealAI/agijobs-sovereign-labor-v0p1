@@ -14,6 +14,14 @@ import {TOKEN_SCALE} from "./Constants.sol";
 ///      owner ever custodies assets or incurs tax liabilities.
 contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
     error NotOwnerOrPauserManager();
+    error NotOwnerOrPauser();
+    error InvalidStakeManager();
+    error IncompatibleVersion();
+    error UnauthorizedCaller();
+    error InvalidPercentage();
+    error BlacklistedAgent();
+    error InsufficientReputation();
+    error EtherNotAccepted();
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
 
@@ -69,10 +77,9 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
     error ArrayLengthMismatch();
 
     modifier onlyOwnerOrPauser() {
-        require(
-            msg.sender == owner() || msg.sender == pauser,
-            "owner or pauser only"
-        );
+        if (msg.sender != owner() && msg.sender != pauser) {
+            revert NotOwnerOrPauser();
+        }
         _;
     }
 
@@ -89,15 +96,15 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
         emit PauserManagerUpdated(manager);
     }
     constructor(IStakeManager _stakeManager) Ownable(msg.sender) {
-        require(address(_stakeManager) != address(0), "invalid stake manager");
-        require(_stakeManager.version() == 2, "incompatible version");
+        if (address(_stakeManager) == address(0)) revert InvalidStakeManager();
+        if (_stakeManager.version() != 2) revert IncompatibleVersion();
         stakeManager = _stakeManager;
         emit StakeManagerUpdated(address(_stakeManager));
         emit ModulesUpdated(address(_stakeManager));
     }
 
     modifier onlyCaller() {
-        require(callers[msg.sender], "not authorized");
+        if (!callers[msg.sender]) revert UnauthorizedCaller();
         _;
     }
 
@@ -118,8 +125,8 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
 
     /// @notice Set the StakeManager used for stake lookups.
     function setStakeManager(IStakeManager manager) external onlyOwner {
-        require(address(manager) != address(0), "invalid stake manager");
-        require(manager.version() == 2, "incompatible version");
+        if (address(manager) == address(0)) revert InvalidStakeManager();
+        if (manager.version() != 2) revert IncompatibleVersion();
         stakeManager = manager;
         emit StakeManagerUpdated(address(manager));
         emit ModulesUpdated(address(manager));
@@ -136,7 +143,7 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
 
     /// @notice Set percentage of agent gain given to validators.
     function setValidationRewardPercentage(uint256 percentage) external onlyOwner {
-        require(percentage <= PERCENTAGE_SCALE, "invalid percentage");
+        if (percentage > PERCENTAGE_SCALE) revert InvalidPercentage();
         validationRewardPercentage = percentage;
         emit ValidationRewardPercentageUpdated(percentage);
     }
@@ -263,8 +270,8 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
 
     /// @notice Ensure an applicant meets premium requirements and is not blacklisted.
     function onApply(address user) external view onlyCaller whenNotPaused {
-        require(!blacklisted[user], "Blacklisted agent");
-        require(reputation[user] >= premiumThreshold, "insufficient reputation");
+        if (blacklisted[user]) revert BlacklistedAgent();
+        if (reputation[user] < premiumThreshold) revert InsufficientReputation();
     }
 
     /// @notice Finalise a job and update reputation using v1 formulas.
@@ -445,12 +452,12 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
 
     /// @dev Reject direct ETH transfers to keep the contract tax neutral.
     receive() external payable {
-        revert("ReputationEngine: no ether");
+        revert EtherNotAccepted();
     }
 
     /// @dev Reject calls with unexpected calldata or funds.
     fallback() external payable {
-        revert("ReputationEngine: no ether");
+        revert EtherNotAccepted();
     }
 }
 

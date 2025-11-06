@@ -22,7 +22,13 @@ module.exports = {
           enabled: true,
           runs: 5
         },
-        viaIR: true
+        viaIR: true,
+        metadata: {
+          bytecodeHash: "none"
+        },
+        debug: {
+          revertStrings: "strip"
+        }
       }
     }
   },

@@ -82,6 +82,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     error MaxActiveJobsReached(uint256 limit);
     error InvalidEscalationState(uint8 state);
     error EmptySubdomain();
+    error EtherNotAccepted();
 
     enum State {
         None,
@@ -2670,12 +2671,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /// and cannot accrue tax liabilities. All value flows through the
     /// StakeManager or DisputeModule according to participant actions.
     receive() external payable {
-        revert("JobRegistry: no ether");
+        revert EtherNotAccepted();
     }
 
     /// @dev Reject calls with unexpected calldata or funds.
     fallback() external payable {
-        revert("JobRegistry: no ether");
+        revert EtherNotAccepted();
     }
 }
 

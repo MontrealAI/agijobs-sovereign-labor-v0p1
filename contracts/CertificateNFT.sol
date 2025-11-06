@@ -38,6 +38,7 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
     error BaseURIAlreadySet();
     error BaseURIUnset();
     error BaseURIAlreadyLocked();
+    error EtherNotAccepted();
 
     address public jobRegistry;
     mapping(uint256 => bytes32) public tokenHashes;
@@ -222,12 +223,12 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
     /// @dev Reject direct ETH transfers to keep the contract and its owner
     /// tax neutral.
     receive() external payable {
-        revert("CertificateNFT: no ether");
+        revert EtherNotAccepted();
     }
 
     /// @dev Reject calls with unexpected calldata or funds.
     fallback() external payable {
-        revert("CertificateNFT: no ether");
+        revert EtherNotAccepted();
     }
 }
 
