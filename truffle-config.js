@@ -22,7 +22,7 @@ module.exports = {
           enabled: true,
           runs: 5
         },
-        viaIR: true,
+        viaIR: process.env.SOLC_VIA_IR === 'false' ? false : true,
         metadata: {
           bytecodeHash: "none"
         },
