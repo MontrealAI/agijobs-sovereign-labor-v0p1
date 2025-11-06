@@ -2,10 +2,13 @@
 
 [![Sovereign Compile](https://img.shields.io/github/actions/workflow/status/AGIJobs/agijobs-sovereign-labor-v0p1/ci.yml?label=Sovereign%20Compile&logo=github&style=for-the-badge)](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
 [![Branch Gatekeeper](https://img.shields.io/github/actions/workflow/status/AGIJobs/agijobs-sovereign-labor-v0p1/branch-checks.yml?label=Branch%20Gatekeeper&logo=github&style=for-the-badge)](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml)
+[![Governance Surface Audit](https://img.shields.io/badge/Check-Governance%20Surface-3ecf8e?logo=githubactions&style=for-the-badge)](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
+[![Workflow Hygiene](https://img.shields.io/badge/Check-Workflow%20Hygiene-1f8feb?logo=githubactions&style=for-the-badge)](https://github.com/AGIJobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 ![Node.js](https://img.shields.io/badge/Node.js-20.x-339933?logo=node.js&logoColor=white&style=for-the-badge)
 ![Solidity](https://img.shields.io/badge/Solidity-0.8.30-363636?logo=solidity&style=for-the-badge)
 ![Truffle](https://img.shields.io/badge/Truffle-5.11.5-5e464d?logo=truffle&style=for-the-badge)
+![Ethereum Mainnet](https://img.shields.io/badge/Network-Mainnet-black?logo=ethereum&style=for-the-badge)
 
 > The sovereign labor intelligence lattice engineered for absolute owner command, auditable economics, and immediate redeployability.
 
@@ -17,6 +20,7 @@
 - [Architecture Maps](#architecture-maps)
 - [Continuous Integration Spine](#continuous-integration-spine)
 - [Mainnet Deployment Runway](#mainnet-deployment-runway)
+- [CI Activation Protocol](#ci-activation-protocol)
 - [Operations Playbook](#operations-playbook)
 - [Telemetry & Audit Signals](#telemetry--audit-signals)
 - [Directory Atlas](#directory-atlas)
@@ -71,6 +75,11 @@ flowchart TB
     id --> job
     att --> id
     cert --> job
+
+    classDef core fill:#0d1b2a,stroke:#3a506b,color:#fff;
+    classDef gov fill:#1b263b,stroke:#5bc0be,color:#fff;
+    class owner,guardian,configurator,pause gov;
+    class job,stake,validate,dispute,platform,fee,rep,arb,tax,id,att,cert core;
 ```
 
 Every module routed through `SystemPause` can be retuned by owner-executed calls. Identity-facing contracts transfer to the owner Safe so acceptances happen within a familiar Safe interface.
@@ -116,6 +125,7 @@ flowchart LR
     compile --> artifacts[[Upload build/contracts]]
     governance --> summary[[GitHub Step Summary]]
     lint --> summary
+    summary --> badge[Badges & Required Checks]
 ```
 
 ## Continuous Integration Spine
@@ -133,6 +143,32 @@ flowchart LR
   5. `Branch Gatekeeper / Validate branch naming conventions`
   6. Require ≥1 approving review and up-to-date merges before allowing PR merges.
 - **Badge status.** Badges above reflect current GitHub Actions signals so stakeholders can audit CI health instantly.
+
+## CI Activation Protocol
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Admin as GitHub Admin
+    participant UI as GitHub UI
+    participant CI as Required Checks
+    Admin->>UI: Settings → Branches → main
+    UI->>CI: Register required status checks
+    CI-->>UI: Sovereign Compile jobs
+    CI-->>UI: Branch Gatekeeper
+    Admin->>UI: Enable “Require branches to be up to date”
+    Admin->>UI: Enforce signed commits (optional)
+    Admin->>UI: Save changes
+    UI-->>Admin: Branch protections confirmed
+```
+
+1. **Settings → Branches.** Add branch protection for `main` (and `develop` if used) and tick each job listed in the checklist above.
+2. **Require green CI.** Enable “Require status checks to pass before merging” and “Require branches to be up to date before merging”.
+3. **Lock PR discipline.** Require at least one approving review, disallow bypassing pull requests, and optionally enforce signed commits and conversation resolution.
+4. **Visibility.** Toggle “Allow anyone to view workflow run logs” so auditors can confirm the full log chain for every check directly from the PR UI.
+5. **Periodic audit.** Quarterly, export the repository branch protection settings (`gh api repos/:owner/:repo/branches/main/protection`) and archive them alongside CI run manifests.
+
+Once protections are saved, every PR advertises the full status panel (`Sovereign Compile` fan-out + `Branch Gatekeeper`) and cannot merge without a completely green dashboard.
 
 ## Mainnet Deployment Runway
 A non-technical operator can broadcast the system using the guided flow below.
@@ -155,9 +191,44 @@ flowchart TD
 
 ### Operator checklist
 1. **Clone & install.** `git clone ... && cd agijobs-sovereign-labor-v0p1 && npm ci --omit=optional --no-audit --no-fund`.
-2. **Fill `deploy/config.mainnet.json`.** Use Safe addresses, treasury wallet, and confirm `$AGIALPHA` token (already set).
-3. **Run local validation.** Execute `npm run lint:sol`, `npm run compile`, `node scripts/verify-artifacts.js`, and `npm run ci:governance`.
-4. **Broadcast migration.** `DEPLOY_CONFIG=$(pwd)/deploy/config.mainnet.json npx truffle migrate --network mainnet --f 1 --to 3`.
+2. **Fill `deploy/config.mainnet.json`.** Use checksum Safe addresses, treasury wallet, and confirm `$AGIALPHA` token (already set to `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`).
+3. **Dry-run the controls.** Execute `npm run lint:sol`, `npm run compile`, `node scripts/verify-artifacts.js`, and `npm run ci:governance`; keep the terminal open for later screenshots.
+4. **Broadcast migration.** `DEPLOY_CONFIG=$(pwd)/deploy/config.mainnet.json npx truffle migrate --network mainnet --f 1 --to 3 --compile-all`.
+5. **Accept ownership in Safe.** Use the Safe UI to execute queued `acceptOwnership` calls (IdentityRegistry, AttestationRegistry, CertificateNFT if reassigned).
+6. **Verify + archive.** `npm run verify:mainnet`, copy `manifests/addresses.mainnet.json`, CI logs, and Safe transaction hashes into your runbook.
+
+#### Canonical migration script (Mainnet)
+
+```javascript
+// migrations/1_deploy_kernel.js (excerpt)
+module.exports = async function (deployer, network, accounts) {
+  const cfg = resolveConfig();
+  const chainId = await web3.eth.getChainId();
+  if (chainId !== cfg.chainId) {
+    throw new Error(`Config chainId ${cfg.chainId} != network ${chainId}`);
+  }
+
+  const ownerSafe = cfg.ownerSafe;
+  const guardianSafe = cfg.guardianSafe || ownerSafe;
+  const treasury = cfg.treasury || ZERO_ADDRESS;
+
+  // … deploy StakeManager, FeePool, IdentityRegistry, ValidationModule, JobRegistry, SystemPause …
+  await pause.setModules(
+    job.address,
+    stake.address,
+    validation.address,
+    dispute.address,
+    platform.address,
+    feePool.address,
+    reputation.address,
+    committee.address
+  );
+  await pause.setGlobalPauser(guardianSafe);
+  await pause.transferOwnership(ownerSafe);
+};
+```
+
+The migration enforces `$AGIALPHA` wiring, Safe addresses, pauser delegation, manifest emission, and two-step ownership handoffs so the operator simply follows the terminal prompts.
 5. **Approve Safe steps.** Through the Safe app, execute queued `acceptOwnership` calls for `IdentityRegistry`, `AttestationRegistry`, and (if needed) `OwnerConfigurator`.
 6. **Etherscan verification.** `npm run verify:mainnet` once transactions are final.
 7. **Record manifest.** Capture `manifests/addresses.mainnet.json` and attach to deployment logs.
