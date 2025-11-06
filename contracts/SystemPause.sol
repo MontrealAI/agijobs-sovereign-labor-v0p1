@@ -10,6 +10,7 @@ import {PlatformRegistry} from "./PlatformRegistry.sol";
 import {FeePool} from "./FeePool.sol";
 import {ReputationEngine} from "./ReputationEngine.sol";
 import {ArbitratorCommittee} from "./ArbitratorCommittee.sol";
+import {TaxPolicy} from "./TaxPolicy.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @title SystemPause
@@ -25,6 +26,7 @@ contract SystemPause is Governable, ReentrancyGuard {
     FeePool public feePool;
     ReputationEngine public reputationEngine;
     ArbitratorCommittee public arbitratorCommittee;
+    TaxPolicy public taxPolicy;
 
     /// @notice Tracks the currently delegated pauser address used across all modules.
     address public activePauser;
@@ -43,6 +45,7 @@ contract SystemPause is Governable, ReentrancyGuard {
     error UnknownGovernanceTarget(address target);
     error GovernanceCallFailed(address target, bytes data);
     error MissingSelector();
+    error InvalidTaxPolicy(address module);
 
     event ModulesUpdated(
         address jobRegistry,
@@ -79,6 +82,7 @@ contract SystemPause is Governable, ReentrancyGuard {
         FeePool _feePool,
         ReputationEngine _reputationEngine,
         ArbitratorCommittee _arbitratorCommittee,
+        TaxPolicy _taxPolicy,
         address _governance
     ) Governable(_governance) {
         if (
@@ -111,6 +115,8 @@ contract SystemPause is Governable, ReentrancyGuard {
             address(_arbitratorCommittee) == address(0) ||
             address(_arbitratorCommittee).code.length == 0
         ) revert InvalidArbitratorCommittee(address(_arbitratorCommittee));
+        if (address(_taxPolicy) == address(0) || address(_taxPolicy).code.length == 0)
+            revert InvalidTaxPolicy(address(_taxPolicy));
 
         jobRegistry = _jobRegistry;
         stakeManager = _stakeManager;
@@ -120,6 +126,7 @@ contract SystemPause is Governable, ReentrancyGuard {
         feePool = _feePool;
         reputationEngine = _reputationEngine;
         arbitratorCommittee = _arbitratorCommittee;
+        taxPolicy = _taxPolicy;
     }
 
     function setModules(
@@ -431,7 +438,8 @@ contract SystemPause is Governable, ReentrancyGuard {
             target == address(platformRegistry) ||
             target == address(feePool) ||
             target == address(reputationEngine) ||
-            target == address(arbitratorCommittee);
+            target == address(arbitratorCommittee) ||
+            target == address(taxPolicy);
     }
 }
 

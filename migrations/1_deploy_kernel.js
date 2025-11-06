@@ -200,6 +200,7 @@ module.exports = async function (deployer, network, accounts) {
         feePool.address,
         reputation.address,
         committee.address,
+        tax.address,
         deployerAccount
       )
       .then(() => SystemPause.deployed())
