@@ -33,6 +33,10 @@ on:
       - codex/**
   workflow_dispatch:
 
+concurrency:
+  group: branch-gatekeeper-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: read
 
@@ -41,40 +45,16 @@ jobs:
     name: Validate branch naming conventions
     runs-on: ubuntu-latest
     steps:
-      - name: Check branch name pattern
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate branch name pattern
         env:
           BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          readonly SUMMARY_FILE="${GITHUB_STEP_SUMMARY:-/tmp/branch-check-summary}"
-          readonly ALLOWED_PATTERNS="\`main\`, \`develop\`, \`<type>/<descriptor>\` where <type> is one of \`release\`, \`feature\`, \`bugfix\`, \`hotfix\`, \`chore\`, \`docs\`, \`test\`, \`refactor\`, \`dependabot\`, \`renovate\`, or \`codex\`."
-
-          if [[ -z "${BRANCH_NAME:-}" ]]; then
-            {
-              echo "### Branch name validation failed"
-              echo "- Unable to determine a branch name for event \`${GITHUB_EVENT_NAME:-unknown}\`."
-            } >> "${SUMMARY_FILE}"
-            echo "Branch Gatekeeper could not determine the branch name." >&2
-            exit 1
-          fi
-
-          echo "Validating branch name: ${BRANCH_NAME}"
-
-          if [[ "${BRANCH_NAME}" =~ ^(main|develop|((release|feature|bugfix|hotfix|chore|docs|test|refactor|dependabot|renovate|codex)/[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*))$ ]]; then
-            {
-              echo "### Branch name validation"
-              echo "- Branch: \`${BRANCH_NAME}\`"
-              echo "- Status: ✅ Pass"
-            } >> "${SUMMARY_FILE}"
-            exit 0
-          fi
-
-          {
-            echo "### Branch name validation failed"
-            echo "- Branch: \`${BRANCH_NAME}\`"
-            echo "- Allowed patterns: ${ALLOWED_PATTERNS}"
-          } >> "${SUMMARY_FILE}"
-          echo "Branch name '${BRANCH_NAME}' does not match any allowed pattern." >&2
-          exit 1
+          SUMMARY_FILE: ${{ github.step_summary }}
+        run: node scripts/check-branch-name.mjs
