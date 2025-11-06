@@ -56,11 +56,11 @@ jobs:
       - name: Publish lint summary
         if: always()
         run: |
-          {
-            echo '### ✅ Solidity lint';
-            echo;
-            echo 'Command: `npm run lint:sol`';
-          } >> "$GITHUB_STEP_SUMMARY"
+          cat <<'EOF' >> "$GITHUB_STEP_SUMMARY"
+          ### ✅ Solidity lint
+
+          Command: `npm run lint:sol`
+          EOF
 
   compile:
     name: Compile smart contracts
