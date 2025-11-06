@@ -158,6 +158,6 @@ jobs:
           persist-credentials: false
 
       - name: Run actionlint
-        uses: rhysd/actionlint@v1
+        uses: rhysd/actionlint@v1.7.1
         with:
           args: -color
