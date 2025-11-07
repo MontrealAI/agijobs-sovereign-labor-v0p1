@@ -4,6 +4,8 @@ pragma solidity >=0.6.2 <0.9.0;
 pragma experimental ABIEncoderV2;
 
 import {IMulticall3} from "./interfaces/IMulticall3.sol";
+import {MockERC20} from "./mocks/MockERC20.sol";
+import {MockERC721} from "./mocks/MockERC721.sol";
 import {VmSafe} from "./Vm.sol";
 
 abstract contract StdUtils {
@@ -95,6 +97,7 @@ abstract contract StdUtils {
     }
 
     /// @dev Compute the address a contract will be deployed at for a given deployer address and nonce
+    /// @notice adapted from Solmate implementation (https://github.com/Rari-Capital/solmate/blob/main/src/utils/LibRLP.sol)
     function computeCreateAddress(address deployer, uint256 nonce) internal pure virtual returns (address) {
         console2_log_StdUtils("computeCreateAddress is deprecated. Please use vm.computeCreateAddress instead.");
         return vm.computeCreateAddress(deployer, nonce);
@@ -114,6 +117,21 @@ abstract contract StdUtils {
     function computeCreate2Address(bytes32 salt, bytes32 initCodeHash) internal pure returns (address) {
         console2_log_StdUtils("computeCreate2Address is deprecated. Please use vm.computeCreate2Address instead.");
         return vm.computeCreate2Address(salt, initCodeHash);
+    }
+
+    /// @dev returns an initialized mock ERC20 contract
+    function deployMockERC20(string memory name, string memory symbol, uint8 decimals)
+        internal
+        returns (MockERC20 mock)
+    {
+        mock = new MockERC20();
+        mock.initialize(name, symbol, decimals);
+    }
+
+    /// @dev returns an initialized mock ERC721 contract
+    function deployMockERC721(string memory name, string memory symbol) internal returns (MockERC721 mock) {
+        mock = new MockERC721();
+        mock.initialize(name, symbol);
     }
 
     /// @dev returns the hash of the init code (creation code + no args) used in CREATE2 with no constructor arguments

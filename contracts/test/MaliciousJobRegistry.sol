@@ -37,7 +37,7 @@ contract MaliciousJobRegistry is IJobRegistryTax, IJobRegistryAck {
         return _policy;
     }
 
-    function acknowledgeTaxPolicy() external override returns (string memory) {
+    function acknowledgeTaxPolicy() external pure override returns (string memory) {
         return "ack";
     }
 
@@ -59,5 +59,9 @@ contract MaliciousJobRegistry is IJobRegistryTax, IJobRegistryAck {
             }
         }
         return "ack";
+    }
+
+    function version() external pure returns (uint256) {
+        return 2;
     }
 }

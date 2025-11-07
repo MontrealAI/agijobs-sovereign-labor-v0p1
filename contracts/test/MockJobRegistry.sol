@@ -25,4 +25,8 @@ contract MockJobRegistry is IJobRegistryTax, IJobRegistryAck {
     function acknowledgeFor(address) external pure override returns (string memory) {
         return "ack";
     }
+
+    function version() external pure returns (uint256) {
+        return 2;
+    }
 }

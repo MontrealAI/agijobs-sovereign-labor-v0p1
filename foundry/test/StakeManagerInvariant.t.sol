@@ -2,15 +2,18 @@
 pragma solidity ^0.8.25;
 
 import "forge-std/Test.sol";
+import "forge-std/StdCheats.sol";
 import "forge-std/StdInvariant.sol";
 
+import {StakeManager} from "contracts/StakeManager.sol";
 import {StakeManagerHarness} from "contracts/test/StakeManagerHarness.sol";
 import {MockJobRegistry} from "contracts/test/MockJobRegistry.sol";
 import {MockAGIAlpha} from "contracts/test/MockAGIAlpha.sol";
+import {MockDisputeModule} from "contracts/test/MockDisputeModule.sol";
 import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
 import {AGIALPHA} from "contracts/Constants.sol";
 
-contract StakeManagerHandler is StdCheats {
+contract StakeManagerHandler is Test {
 
     StakeManagerHarness public immutable stakeManager;
     MockJobRegistry public immutable jobRegistry;
@@ -51,7 +54,7 @@ contract StakeManagerHandler is StdCheats {
         vm.startPrank(staker);
         token.approve(address(stakeManager), amount);
         bool paused = stakeManager.paused();
-        try stakeManager.depositStake(StakeManagerHarness.Role.Agent, amount) {
+        try stakeManager.depositStake(StakeManager.Role.Agent, amount) {
             if (paused) {
                 mutationWhilePaused = true;
             }
@@ -76,7 +79,7 @@ contract StakeManagerHandler is StdCheats {
 
         bool paused = stakeManager.paused();
         vm.startPrank(address(jobRegistry));
-        try stakeManager.slash(staker, StakeManagerHarness.Role.Agent, amount, employer) {
+        try stakeManager.slash(staker, StakeManager.Role.Agent, amount, employer) {
             if (paused) {
                 mutationWhilePaused = true;
             }
@@ -123,7 +126,7 @@ contract StakeManagerHandler is StdCheats {
     }
 
     function _ensureStake(address staker, uint256 target) internal {
-        uint256 current = stakeManager.stakes(staker, StakeManagerHarness.Role.Agent);
+        uint256 current = stakeManager.stakes(staker, StakeManager.Role.Agent);
         if (current >= target) {
             return;
         }
@@ -133,7 +136,7 @@ contract StakeManagerHandler is StdCheats {
         token.approve(address(stakeManager), delta);
         vm.stopPrank();
         vm.prank(address(jobRegistry));
-        stakeManager.depositStakeFor(staker, StakeManagerHarness.Role.Agent, delta);
+        stakeManager.depositStakeFor(staker, StakeManager.Role.Agent, delta);
     }
 }
 
@@ -143,6 +146,7 @@ contract StakeManagerInvariantTest is StdInvariant, Test {
     MockAGIAlpha private token;
     TimelockController private timelock;
     StakeManagerHandler private handler;
+    MockDisputeModule private disputeModule;
     address private pauser = address(0xBEEF);
 
     function setUp() public {
@@ -168,8 +172,9 @@ contract StakeManagerInvariantTest is StdInvariant, Test {
         );
 
         jobRegistry = new MockJobRegistry();
+        disputeModule = new MockDisputeModule();
         vm.prank(address(timelock));
-        stakeManager.setModules(address(jobRegistry), address(0));
+        stakeManager.setModules(address(jobRegistry), address(disputeModule));
         vm.prank(address(timelock));
         stakeManager.setPauserManager(pauser);
         vm.prank(address(timelock));
@@ -179,11 +184,11 @@ contract StakeManagerInvariantTest is StdInvariant, Test {
         targetContract(address(handler));
     }
 
-    function invariant_noStateChangeWhilePaused() public {
+    function invariant_noStateChangeWhilePaused() public view {
         assertFalse(handler.mutationWhilePaused(), "state mutation detected while paused");
     }
 
-    function invariant_slashAccountingConservesAmount() public {
+    function invariant_slashAccountingConservesAmount() public view {
         uint256 amount = handler.lastSlashAmount();
         if (amount == 0) {
             return;

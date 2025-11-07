@@ -326,7 +326,7 @@ abstract contract StdCheatsSafe {
         vm.assume(addr < address(0x1) || addr > address(0xff));
 
         // forgefmt: disable-start
-        if (chainId == 10 || chainId == 420 || chainId == 11155420) {
+        if (chainId == 10 || chainId == 420) {
             // https://github.com/ethereum-optimism/optimism/blob/eaa371a0184b56b7ca6d9eb9cb0a2b78b2ccd864/op-bindings/predeploys/addresses.go#L6-L21
             vm.assume(addr < address(0x4200000000000000000000000000000000000000) || addr > address(0x4200000000000000000000000000000000000800));
         } else if (chainId == 42161 || chainId == 421613) {
@@ -347,18 +347,6 @@ abstract contract StdCheatsSafe {
             addr != address(vm) && addr != 0x000000000000000000636F6e736F6c652e6c6f67
                 && addr != 0x4e59b44847b379578588920cA78FbF26c0B4956C
         );
-    }
-
-    function assumeUnusedAddress(address addr) internal view virtual {
-        uint256 size;
-        assembly {
-            size := extcodesize(addr)
-        }
-        vm.assume(size == 0);
-
-        assumeNotPrecompile(addr);
-        assumeNotZeroAddress(addr);
-        assumeNotForgeAddress(addr);
     }
 
     function readEIP1559ScriptArtifact(string memory path)
@@ -715,7 +703,6 @@ abstract contract StdCheats is StdCheatsSafe {
     }
 
     function changePrank(address msgSender, address txOrigin) internal virtual {
-        console2_log_StdCheats("changePrank is deprecated. Please use vm.startPrank instead.");
         vm.stopPrank();
         vm.startPrank(msgSender, txOrigin);
     }

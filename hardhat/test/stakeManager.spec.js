@@ -36,12 +36,18 @@ async function deployStakeManagerFixture() {
   const jobRegistry = await JobRegistry.deploy();
   await jobRegistry.waitForDeployment();
 
+  const DisputeModule = await ethers.getContractFactory("MockDisputeModule");
+  const disputeModule = await DisputeModule.deploy();
+  await disputeModule.waitForDeployment();
+
   const timelockSigner = await impersonate(await timelock.getAddress());
-  await stakeManager.connect(timelockSigner).setModules(await jobRegistry.getAddress(), ethers.ZeroAddress);
+  await stakeManager
+    .connect(timelockSigner)
+    .setModules(await jobRegistry.getAddress(), await disputeModule.getAddress());
   await stakeManager.connect(timelockSigner).setPauserManager(await timelock.getAddress());
   await stakeManager.connect(timelockSigner).setPauser(await timelock.getAddress());
 
-  return { owner, user, other, token, timelock, timelockSigner, stakeManager };
+  return { owner, user, other, token, timelock, timelockSigner, stakeManager, disputeModule };
 }
 
 describe("StakeManager governance surface", function () {
@@ -52,9 +58,11 @@ describe("StakeManager governance surface", function () {
   let timelock;
   let timelockSigner;
   let stakeManager;
+  let disputeModule;
 
   beforeEach(async function () {
-    ({ owner, user, other, token, timelock, timelockSigner, stakeManager } = await deployStakeManagerFixture());
+    ({ owner, user, other, token, timelock, timelockSigner, stakeManager, disputeModule } =
+      await deployStakeManagerFixture());
   });
 
   it("rejects stake deposits while paused", async function () {
@@ -88,7 +96,9 @@ describe("StakeManager governance surface", function () {
     const malicious = await Malicious.deploy(await stakeManager.getAddress());
     await malicious.waitForDeployment();
 
-    await stakeManager.connect(timelockSigner).setModules(await malicious.getAddress(), ethers.ZeroAddress);
+    await stakeManager
+      .connect(timelockSigner)
+      .setModules(await malicious.getAddress(), await disputeModule.getAddress());
 
     const attacker = other;
     const amount = ethers.parseEther("5");
