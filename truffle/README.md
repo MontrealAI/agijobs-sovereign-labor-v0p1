@@ -44,6 +44,11 @@ node scripts/verify-artifacts.js
 
 Truffle build artifacts are uploaded from CI (`Sovereign Compile` job) so auditors and operators can inspect them without rebuilding.
 
+## CI Mirror & Step Summaries
+- `Sovereign Compile / Compile smart contracts` runs this toolchain on every PR and push.
+- `node scripts/write-compile-summary.js` posts the Node.js, npm, Truffle, and Solidity versions into the GitHub summary.
+- Artifacts land under `build/contracts` and are published as workflow artifacts for reproducibility.
+
 ## Debugging Toolkit
 
 - `truffle console --network <profile>` – Interactive console with contract instances.
