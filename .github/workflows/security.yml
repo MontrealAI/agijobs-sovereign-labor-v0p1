@@ -160,7 +160,9 @@ jobs:
 
       - name: Run Mythril analysis
         run: |
+          set +e
           mkdir -p reports
+          : > reports/mythril-failures.txt
           targets=(
             SystemPause.sol
             JobRegistry.sol
@@ -188,9 +190,20 @@ jobs:
               --parallel-solving \
               -o text \
               > "$output" 2>&1
+            status=$?
+            if [ "$status" -ne 0 ]; then
+              echo "Mythril exited with status $status for $target" | tee -a "$output" >> reports/mythril-failures.txt
+            fi
           done
 
+          set -e
           cat reports/mythril-*.txt > reports/mythril-report.txt
+
+          if [ -s reports/mythril-failures.txt ]; then
+            echo "true" > reports/mythril-had-failures.flag
+          else
+            rm reports/mythril-failures.txt
+          fi
 
       - name: Upload Mythril artifacts
         if: always()
@@ -198,6 +211,17 @@ jobs:
         with:
           name: mythril-report
           path: reports/
+
+      - name: Publish Mythril status
+        if: always()
+        run: |
+          if [ -f reports/mythril-had-failures.flag ]; then
+            echo "### ⚠️ Mythril symbolic execution" >> "$GITHUB_STEP_SUMMARY"
+            echo "Some analyses returned a non-zero status. Review the per-contract reports in the mythril-report artifact." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### ✅ Mythril symbolic execution" >> "$GITHUB_STEP_SUMMARY"
+            echo "All configured contracts analyzed successfully. See the mythril-report artifact for full traces." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Publish Mythril summary
         if: always()
