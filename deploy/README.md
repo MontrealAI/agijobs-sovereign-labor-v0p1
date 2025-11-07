@@ -18,15 +18,17 @@
 2. [Capability Highlights](#capability-highlights)
 3. [Repository Atlas](#repository-atlas)
 4. [Operational Flow (Mermaid)](#operational-flow-mermaid)
-5. [Continuous Integration & Branch Enforcement](#continuous-integration--branch-enforcement)
-6. [Toolchain & Pre-Flight Checklist](#toolchain--pre-flight-checklist)
-7. [Launch Playbook for Non-Technical Operators](#launch-playbook-for-non-technical-operators)
-8. [Ethereum Mainnet Migration Suite](#ethereum-mainnet-migration-suite)
-9. [Owner Command Authority](#owner-command-authority)
-10. [Post-Deployment Acceptance](#post-deployment-acceptance)
-11. [Emergency Recovery Spiral](#emergency-recovery-spiral)
-12. [Immutable Evidence Archive](#immutable-evidence-archive)
-13. [Reference Command Matrix](#reference-command-matrix)
+5. [Observability Telemetry (Mermaid)](#observability-telemetry-mermaid)
+6. [Continuous Integration & Branch Enforcement](#continuous-integration--branch-enforcement)
+7. [Toolchain & Pre-Flight Checklist](#toolchain--pre-flight-checklist)
+8. [Launch Playbook for Non-Technical Operators](#launch-playbook-for-non-technical-operators)
+9. [Ethereum Mainnet Migration Suite](#ethereum-mainnet-migration-suite)
+10. [Owner Command Authority](#owner-command-authority)
+11. [Owner Mutation Console](#owner-mutation-console)
+12. [Post-Deployment Acceptance](#post-deployment-acceptance)
+13. [Emergency Recovery Spiral](#emergency-recovery-spiral)
+14. [Immutable Evidence Archive](#immutable-evidence-archive)
+15. [Reference Command Matrix](#reference-command-matrix)
 
 ---
 
@@ -91,7 +93,7 @@ Every module orbits the owner’s Safe. Configuration, pausing, treasury routing
 | [`migrations/`](../migrations) | Truffle migrations that materialise the lattice on-chain and wire governance. |
 | [`deploy/config.mainnet.json`](./config.mainnet.json) | Canonical deployment manifest consumed by migrations (owner Safe, guardian Safe, treasury, parameters, ENS data). |
 | [`deploy/README.md`](./README.md) | This deployment codex—keep it versioned with every release. |
-| [`scripts/`](../scripts) | Automation utilities (`verify-artifacts.js`, `check-governance-matrix.mjs`, `write-compile-summary.js`, etc.). |
+| [`scripts/`](../scripts) | Automation utilities (`verify-artifacts.js`, `check-governance-matrix.mjs`, `write-compile-summary.js`, `owner-set-treasury.js`). |
 | [`manifests/`](../manifests) | Deployment evidence (addresses, transactions, toolchain digests). |
 | [`truffle-config.js`](../truffle-config.js) | Compiler, optimizer, and network configuration (Solidity 0.8.30 viaIR, Node 20, HD wallet provider). |
 | [`.github/workflows/`](../.github/workflows) | GitHub Actions (`Sovereign Compile`, `Branch Gatekeeper`) enforcing lint, compile, governance, and workflow hygiene. |
@@ -118,6 +120,27 @@ sequenceDiagram
 ```
 
 This is the loop that keeps CI green, documentation honest, and deployment reproducible even for non-technical operators.
+
+---
+
+## Observability Telemetry (Mermaid)
+
+```mermaid
+flowchart LR
+    Commit[(Signed Commit)] --> LocalCI
+    LocalCI["Local Mirror\n(lint ▸ compile ▸ governance)"] --> Artifacts{{"Build Artifacts"}}
+    LocalCI --> EvidenceQueue[(Evidence Bundle)]
+    Artifacts --> ActionsCI["GitHub Actions\nSovereign Compile"]
+    ActionsCI --> BadgeBoard[[Status Badges]]
+    ActionsCI --> Vault[(Artifacts Vault)]
+    BadgeBoard --> BranchPolicy{Branch Protection}
+    Vault --> EvidenceVault["Evidence Archive\n(manifests, Safe tx, logs)"]
+    EvidenceQueue --> EvidenceVault
+    BranchPolicy --> Operators{Operator Console}
+    EvidenceVault --> Operators
+```
+
+Every executed workflow emits artefacts, manifests, and signed logs into the same archive that the owner Safe reviews before authorising governance calls. Branch protection consumes the CI signals in real time, ensuring that the badges on this codex reflect the live truth of the machine.
 
 ---
 
@@ -844,6 +867,83 @@ The owner can reconfigure, pause, unpause, or reroute incentives across the enti
 
 ---
 
+## Owner Mutation Console
+
+```mermaid
+flowchart TD
+    Safe[Owner Safe UI] -->|configureBatch| Configurator
+    Configurator[OwnerConfigurator] -->|executeGovernanceCall| Pause
+    Pause[SystemPause lattice] -->|delegatecall| Modules[[Target module setters]]
+    Modules --> Telemetry{ParameterUpdated events}
+    Telemetry --> EvidenceVault
+    EvidenceVault --> Safe
+```
+
+### Safe UI flow (canonical path)
+1. In the owner Safe, add `OwnerConfigurator` (`ParameterUpdated` ABI is auto-detected from the verified contract on Etherscan).
+2. Stage one or more `configure`/`configureBatch` calls with the encoded setter calldata produced by the Safe transaction builder.
+3. The Safe executes a single transaction: `OwnerConfigurator` emits `ParameterUpdated` while the `SystemPause` lattice forwards the setter to the target module.
+4. Export the Safe transaction hash, decoded parameters, and `ParameterUpdated` log for the Evidence Archive.
+
+### CLI mirror (Truffle exec) — produces identical calldata for offline review
+
+Save the following helper as `scripts/owner-set-treasury.js` whenever you need to refresh the StakeManager treasury. It logs the calldata that the Safe must approve and replays the `ParameterUpdated` event locally.
+
+```javascript
+// scripts/owner-set-treasury.js
+const OwnerConfigurator = artifacts.require('OwnerConfigurator');
+const StakeManager = artifacts.require('StakeManager');
+
+module.exports = async function (callback) {
+  try {
+    const newTreasury = process.env.NEW_TREASURY;
+    if (!newTreasury) {
+      throw new Error('NEW_TREASURY environment variable is required');
+    }
+
+    const configurator = await OwnerConfigurator.deployed();
+    const stake = await StakeManager.deployed();
+
+    const moduleKey = web3.utils.keccak256('STAKE_MANAGER');
+    const parameterKey = web3.utils.keccak256('TREASURY');
+
+    const currentTreasury = await stake.treasury();
+    const calldata = stake.contract.methods.setTreasury(newTreasury).encodeABI();
+
+    const receipt = await configurator.configure(
+      stake.address,
+      calldata,
+      moduleKey,
+      parameterKey,
+      web3.eth.abi.encodeParameter('address', currentTreasury),
+      web3.eth.abi.encodeParameter('address', newTreasury)
+    );
+
+    console.log(`configure() transaction: ${receipt.tx}`);
+    for (const log of receipt.logs.filter((log) => log.event === 'ParameterUpdated')) {
+      console.log(`ParameterUpdated ⇒ module=${log.args.module} parameter=${log.args.parameter}`);
+    }
+  } catch (error) {
+    console.error(error);
+  }
+
+  callback();
+};
+```
+
+Run it with your signer that mirrors the Safe decision (or inside a Safe simulation):
+
+```bash
+MAINNET_RPC=https://mainnet.infura.io/v3/<project> \
+NEW_TREASURY=0xNewTreasurySafeAddressHere \
+DEPLOYER_PK=<owner-representative-private-key> \
+  npx truffle exec scripts/owner-set-treasury.js --network mainnet
+```
+
+Swap the ABI call in the snippet to mutate any other module parameter (`configureBatch` can queue multiple setters). Always replicate the resulting calldata and `ParameterUpdated` log inside the Safe so on-chain governance events remain contiguous.
+
+---
+
 ## Post-Deployment Acceptance
 
 1. Execute `acceptOwnership` for IdentityRegistry, AttestationRegistry, CertificateNFT, SystemPause, StakeManager, FeePool, JobRegistry, and any other modules that expose pending ownership.
@@ -903,5 +1003,6 @@ Archive copies in cold storage plus an encrypted vault accessible to the owner S
 | ABI manifest export | `node scripts/write-abi-manifest.js` |
 | Mainnet verification | `npm run verify:mainnet` |
 | Branch hygiene (pre-push) | `node scripts/check-branch-name.mjs` |
+| Treasury retarget (example) | `NEW_TREASURY=0x... npx truffle exec scripts/owner-set-treasury.js --network mainnet` |
 
 Deploy with precision. Steward the lattice responsibly. Once it is online, economic gravity reorients around its operator.
