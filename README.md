@@ -4,6 +4,7 @@
 <a href="../../actions/workflows/branch-checks.yml"><img alt="Branch Gatekeeper" src="../../actions/workflows/branch-checks.yml/badge.svg?branch=main&label=Branch%20Gatekeeper" /></a>
 <a href="../../actions/workflows/ci.yml"><img alt="Governance Surface Audit" src="../../actions/workflows/ci.yml/badge.svg?branch=main&job=Governance%20surface%20audit&label=Governance%20Audit" /></a>
 <a href="../../actions/workflows/ci.yml"><img alt="Workflow Hygiene" src="../../actions/workflows/ci.yml/badge.svg?branch=main&job=Workflow%20hygiene&label=Workflow%20Hygiene" /></a>
+<a href="../../actions/workflows/ci.yml"><img alt="Multi-runtime Tests" src="../../actions/workflows/ci.yml/badge.svg?branch=main&job=Test%20suites&label=Multi-runtime%20Tests" /></a>
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)
 ![Node.js](https://img.shields.io/badge/Node.js-20.x-339933?logo=node.js&logoColor=white&style=for-the-badge)
@@ -21,6 +22,7 @@
 - [Owner Control Surfaces](#owner-control-surfaces)
 - [AGIALPHA Economic Spine](#agialpha-economic-spine)
 - [Continuous Integration Spine](#continuous-integration-spine)
+- [Testing Flight Systems](#testing-flight-systems)
 - [Branch Protection Flightplan](#branch-protection-flightplan)
 - [Mainnet Launch Procedure](#mainnet-launch-procedure)
 - [Operations Telemetry](#operations-telemetry)
@@ -132,9 +134,29 @@ flowchart LR
 | Compile & artifact verify | `Sovereign Compile` | `npm run compile` with cached solc, `scripts/verify-artifacts.js`, compile summary upload, artifact upload. | `Sovereign Compile / Compile smart contracts` |
 | Governance audit | `Sovereign Compile` | [`scripts/check-governance-matrix.mjs`](scripts/check-governance-matrix.mjs) ensures every owner/pauser surface still exists. | `Sovereign Compile / Governance surface audit` |
 | Workflow hygiene | `Sovereign Compile` | `actionlint` against all workflows. | `Sovereign Compile / Workflow hygiene` |
+| Multi-runtime tests | `Sovereign Compile` | Truffle unit tests, Hardhat job-surface simulations, Foundry invariants & fuzzing. | `Sovereign Compile / Test suites` |
 | Branch taxonomy | `Branch Gatekeeper` | [`scripts/check-branch-name.mjs`](scripts/check-branch-name.mjs) rejects branches outside `<type>/<descriptor>` + root allowlist. | `Branch Gatekeeper / Validate branch naming conventions` |
 
 Every job writes to the GitHub Step Summary so reviewers and auditors see lint, compile, artifact, and governance snapshots directly in the PR UI.
+
+## Testing Flight Systems
+
+```mermaid
+graph TD
+    A[Truffle npm test] -->|happy-path smoke| B(StakeManagerHarness fixtures)
+    A --> C(ConstantsHarness)
+    D[Hardhat test] -->|guardian routing| B
+    D --> E(MaliciousJobRegistry)
+    F[Foundry invariant] -->|pause invariants| B
+    F --> G(Randomized slash splits)
+    G --> H[Accounting conservation]
+```
+
+- **Truffle (`npm test`).** Smoke-level Mocha specs boot `ConstantsHarness` and `StakeManagerHarness` so non-technical operators can validate deployments with the familiar `truffle test` shell.
+- **Hardhat (`npm run test:hardhat`).** Uses `hardhat_setCode` to emulate `$AGIALPHA`, impersonates the timelock Safe, and proves privileged setters, pause semantics, and the `MaliciousJobRegistry` reentrancy probe all behave as intended.
+- **Foundry (`npm run test:foundry`).** High-entropy invariant suite fuzzes stake magnitudes from wei to 10³⁰, toggles pausers, and checks slashing fixed-point math through the exposed harness without tolerating drift.
+
+> Operators may choose whichever toolchain matches their muscle memory—each suite is production-ready, deterministic, and reported in CI so nothing merges without a fully green dashboard.
 
 ## Branch Protection Flightplan
 1. **Settings → Branches → `main`.** Enable “Require a pull request before merging”, “Require approvals”, and “Require branches to be up to date”.
