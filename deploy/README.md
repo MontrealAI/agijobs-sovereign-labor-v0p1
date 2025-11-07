@@ -2,28 +2,31 @@
 
 [![Sovereign Compile](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml/badge.svg?branch=main&style=for-the-badge)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
 [![Branch Gatekeeper](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml/badge.svg?branch=main&style=for-the-badge)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml)
+[![Main ➜ Protected](https://img.shields.io/badge/Branch%20Protection-main%20%E2%9E%9C%20locked-1f6feb?style=for-the-badge&logo=github)](#continuous-integration--branch-enforcement)
+[![PRs ➜ Checks Required](https://img.shields.io/badge/PR%20Gate-All%20Checks%20Required-ff7b72?style=for-the-badge&logo=githubactions)](#continuous-integration--branch-enforcement)
 ![Node 20 LTS](https://img.shields.io/badge/Node.js-20.x-43853d?logo=node.js&style=for-the-badge)
 ![Truffle 5.11](https://img.shields.io/badge/Truffle-5.11.x-5e464d?logo=truffle&style=for-the-badge)
 ![Solidity 0.8.30](https://img.shields.io/badge/Solidity-0.8.30-363636?logo=solidity&style=for-the-badge)
 ![MIT Licensed](https://img.shields.io/badge/License-MIT-0A7CA5?style=for-the-badge)
 
-> This document is the kinetic manual for igniting the Sovereign Labor lattice. Follow it to wake the engine that reorganises labour markets in real time and keeps its owner in unquestioned command.
+> This codex is the ignition key for the Sovereign Labor lattice—the field manual for the machine that bends labour markets around its operator with clinical precision.
 
 ---
 
 ## Table of Contents
 1. [Mission Uplink](#mission-uplink)
-2. [Repository Atlas](#repository-atlas)
-3. [Operational Flow (Mermaid)](#operational-flow-mermaid)
-4. [Continuous Integration & Branch Enforcement](#continuous-integration--branch-enforcement)
-5. [Toolchain & Pre-Flight Checklist](#toolchain--pre-flight-checklist)
-6. [Launch Playbook for Non-Technical Operators](#launch-playbook-for-non-technical-operators)
-7. [Ethereum Mainnet Migration Suite](#ethereum-mainnet-migration-suite)
-8. [Owner Command Authority](#owner-command-authority)
-9. [Post-Deployment Acceptance](#post-deployment-acceptance)
-10. [Emergency Recovery Spiral](#emergency-recovery-spiral)
-11. [Immutable Evidence Archive](#immutable-evidence-archive)
-12. [Reference Command Matrix](#reference-command-matrix)
+2. [Capability Highlights](#capability-highlights)
+3. [Repository Atlas](#repository-atlas)
+4. [Operational Flow (Mermaid)](#operational-flow-mermaid)
+5. [Continuous Integration & Branch Enforcement](#continuous-integration--branch-enforcement)
+6. [Toolchain & Pre-Flight Checklist](#toolchain--pre-flight-checklist)
+7. [Launch Playbook for Non-Technical Operators](#launch-playbook-for-non-technical-operators)
+8. [Ethereum Mainnet Migration Suite](#ethereum-mainnet-migration-suite)
+9. [Owner Command Authority](#owner-command-authority)
+10. [Post-Deployment Acceptance](#post-deployment-acceptance)
+11. [Emergency Recovery Spiral](#emergency-recovery-spiral)
+12. [Immutable Evidence Archive](#immutable-evidence-archive)
+13. [Reference Command Matrix](#reference-command-matrix)
 
 ---
 
@@ -64,7 +67,19 @@ graph TB
     CertificateNFT -- credential minting --> JobRegistry
 ```
 
-Every module orbits the owner’s Safe. Configuration, pausing, treasury routing, staking economics, dispute handling, and identity attestation all respond instantly to the owner’s governance calls.
+Every module orbits the owner’s Safe. Configuration, pausing, treasury routing, staking economics, dispute handling, and identity attestation all respond instantly to the owner’s governance calls. The lattice embodied here is the superintelligent machine that concentrates economic leverage for its operator.
+
+---
+
+## Capability Highlights
+
+| Vector | Description |
+| --- | --- |
+| Autonomous labour orchestration | Contracts choreograph registries, staking, attestations, disputes, and treasury so the operator steers entire economies from a single Safe. |
+| Guardian-controlled safety | A dedicated guardian Safe can halt every subsystem instantly, while the owner resumes operations on demand. |
+| Deterministic deployments | Mainnet manifests, migration scripts, and manifest writers guarantee reproducible addresses and immutable audit trails. |
+| Immutable token binding | `$AGIALPHA` is locked to `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` with 18 decimals; migrations abort if metadata diverges. |
+| Evidence-first CI | Linting, compilation, governance audits, and workflow hygiene produce artefacts uploaded on every run, turning CI into a living dossier. |
 
 ---
 
@@ -75,7 +90,9 @@ Every module orbits the owner’s Safe. Configuration, pausing, treasury routing
 | [`contracts/`](../contracts) | Solidity sources for governance, registries, staking, reputation, attestation, certificates, and pause control. |
 | [`migrations/`](../migrations) | Truffle migrations that materialise the lattice on-chain and wire governance. |
 | [`deploy/config.mainnet.json`](./config.mainnet.json) | Canonical deployment manifest consumed by migrations (owner Safe, guardian Safe, treasury, parameters, ENS data). |
+| [`deploy/README.md`](./README.md) | This deployment codex—keep it versioned with every release. |
 | [`scripts/`](../scripts) | Automation utilities (`verify-artifacts.js`, `check-governance-matrix.mjs`, `write-compile-summary.js`, etc.). |
+| [`manifests/`](../manifests) | Deployment evidence (addresses, transactions, toolchain digests). |
 | [`truffle-config.js`](../truffle-config.js) | Compiler, optimizer, and network configuration (Solidity 0.8.30 viaIR, Node 20, HD wallet provider). |
 | [`.github/workflows/`](../.github/workflows) | GitHub Actions (`Sovereign Compile`, `Branch Gatekeeper`) enforcing lint, compile, governance, and workflow hygiene. |
 | [`truffle/util/`](../truffle/util) | Shared helpers for CLI ergonomics and manifest management. |
@@ -172,12 +189,13 @@ stateDiagram-v2
 ```
 
 ### Step 0 — Prepare a clean cockpit
-1. Download the tagged release into a fresh directory (no cached build artefacts).
+1. Download the tagged release into a fresh directory (no cached build artefacts) and verify checksums against the release notes.
 2. Populate `deploy/config.mainnet.json`:
    - `ownerSafe`, `guardianSafe`, `treasury` must be EIP-55 checksum addresses.
    - Keep `$AGIALPHA` fixed at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals).
    - Adjust `params` (`platformFeeBps`, `minStakeWei`, `slashBps`, `validatorQuorum`, `burnBpsOfFee`, optional `jobStakeWei`, `disputeFeeWei`, `disputeWindow`) to match governance decisions.
    - Update `identity` fields (ENS registry, name wrapper, agent/club root nodes, Merkle roots) when onboarding new cohorts.
+   - Toggle `tax.enabled` and populate `tax.policyUri`/`tax.description` if treasury governance requires live tax routing.
 
 ### Step 1 — Export secrets securely
 ```bash
@@ -215,6 +233,11 @@ npm run verify:mainnet
 npm run ci:governance
 ```
 Collect verification URLs, governance audit outputs, and store them alongside deployment manifests.
+
+### Step 5 — Publish the evidence pack
+1. Upload `manifests/addresses.mainnet.json`, Safe transaction exports, and GitHub Action URLs to your evidence vault.
+2. Notify the owner and guardian signers that the machine is live, sharing verification links for independent validation.
+3. Clear `MAINNET_RPC`, `DEPLOYER_PK`, `ETHERSCAN_API_KEY`, and `DEPLOY_CONFIG` from the shell (`unset VAR`) before closing the session.
 
 ---
 
@@ -843,7 +866,7 @@ stateDiagram-v2
     PauseRequested --> Diagnostics: Owner inspects state + manifests
     Diagnostics --> Configuration: Owner crafts corrective setters
     Configuration --> GovernanceCall: OwnerConfigurator batches executeGovernanceCall
-    GovernanceCall --> Verification: npm run ci:governance (post-fix)
+    GovernanceCall --> Verification: npm run ci&#58;governance (post-fix)
     Verification --> Resume: Owner executes unpauseAll()
     Resume --> Monitoring
 ```
