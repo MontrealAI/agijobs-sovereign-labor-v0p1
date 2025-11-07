@@ -1,0 +1,209 @@
+name: Security Scans
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'release/**'
+      - 'feature/**'
+      - 'hotfix/**'
+      - 'chore/**'
+      - 'bugfix/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+      - 'release/**'
+  schedule:
+    - cron: '17 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  slither:
+    name: Slither static analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install Foundry toolchain
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Show Foundry versions
+        run: |
+          forge --version
+          cast --version
+
+      - name: Install Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install JavaScript dependencies
+        run: npm ci --omit=optional --no-audit --no-fund
+
+      - name: Build Foundry artifacts
+        run: forge build --build-info --skip '*/foundry/test/**' '*/script/**' --force
+
+      - name: Link Foundry out directory
+        run: |
+          mkdir -p foundry/out
+          ln -sfn "${{ github.workspace }}/foundry/out" "${{ github.workspace }}/out"
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Slither
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install \
+            'slither-analyzer==0.11.3' \
+            'crytic-compile==0.3.10'
+
+      - name: Run Slither
+        run: |
+          mkdir -p reports
+          slither . \
+            --config-file slither.config.json \
+            --sarif reports/slither.sarif \
+            --fail-high \
+            --foundry-out-directory foundry/out
+
+      - name: Copy SARIF artifact
+        if: always()
+        run: |
+          if [ -f reports/slither.sarif ]; then
+            cp reports/slither.sarif ./slither.sarif
+          else
+            echo "⚠️ No Slither SARIF report generated" >> "$GITHUB_STEP_SUMMARY"
+            echo '{}' > slither.sarif
+          fi
+
+      - name: Upload Slither SARIF
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: slither-report
+          path: slither.sarif
+
+      - name: Publish Slither summary
+        if: always()
+        run: |
+          cat <<'SUMMARY' >> "$GITHUB_STEP_SUMMARY"
+          ### 🛡️ Slither static analysis
+
+          - SARIF: `slither.sarif`
+          - Fail on findings: `high`
+          SUMMARY
+
+  mythril:
+    name: Mythril symbolic execution
+    needs: slither
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Mythril dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install mythril
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Install Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install JavaScript dependencies
+        run: npm ci --omit=optional --no-audit --no-fund
+
+      - name: Install solc 0.8.30
+        run: |
+          curl -L https://github.com/ethereum/solidity/releases/download/v0.8.30/solc-static-linux -o solc
+          sudo mv solc /usr/local/bin/solc
+          sudo chmod +x /usr/local/bin/solc
+
+      - name: Display analyzer versions
+        run: |
+          myth version || myth --version
+          solc --version
+
+      - name: Run Mythril analysis
+        run: |
+          mkdir -p reports
+          targets=(
+            SystemPause.sol
+            JobRegistry.sol
+            StakeManager.sol
+            ValidationModule.sol
+            PlatformRegistry.sol
+            FeePool.sol
+            ReputationEngine.sol
+            ArbitratorCommittee.sol
+            TaxPolicy.sol
+            IdentityRegistry.sol
+            ENSIdentityVerifier.sol
+            AttestationRegistry.sol
+          )
+
+          for target in "${targets[@]}"; do
+            echo "Analyzing $target"
+            myth analyze "contracts/$target" \
+              --solv 0.8.30 \
+              --allow-paths contracts,node_modules \
+              --solc-remaps @openzeppelin=node_modules/@openzeppelin \
+              --execution-timeout 900 \
+              --max-depth 32 \
+              --parallel-solving \
+              --out "reports/mythril-${target%.sol}.txt"
+          done
+
+          cat reports/mythril-*.txt > reports/mythril-report.txt
+
+      - name: Upload Mythril artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mythril-report
+          path: reports/
+
+      - name: Publish Mythril summary
+        if: always()
+        run: |
+          cat <<'SUMMARY' >> "$GITHUB_STEP_SUMMARY"
+          ### 🔍 Mythril symbolic execution
+
+          - Report: `reports/mythril-report.txt`
+          - Timeout (s): 900
+          - Max depth: 32
+          SUMMARY
