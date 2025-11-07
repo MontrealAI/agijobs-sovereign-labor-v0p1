@@ -1,12 +1,4 @@
 {
-  "filter_paths": "node_modules|foundry/test|contracts/test",
-  "detectors_to_exclude": [
-    "reentrancy-eth",
-    "reentrancy-no-eth",
-    "reentrancy-vulnerabilities-2",
-    "reentrancy-vulnerabilities-3",
-    "arbitrary-from-in-transferfrom",
-    "weak-prng"
-  ],
-  "excluded_decorators": []
+  "filter_paths": "node_modules,foundry/test,foundry/lib,contracts/test",
+  "detectors_to_exclude": "arbitrary-send-erc20,reentrancy-eth,reentrancy-no-eth"
 }
