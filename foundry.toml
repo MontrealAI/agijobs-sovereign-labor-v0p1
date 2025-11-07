@@ -1,0 +1,21 @@
+[profile.default]
+src = 'contracts'
+test = 'foundry/test'
+libs = ['foundry/lib']
+cache_path = 'foundry/cache'
+out = 'foundry/out'
+solc_version = '0.8.30'
+auto_detect_solc = false
+optimizer = true
+optimizer_runs = 5
+via_ir = true
+evm_version = 'paris'
+bytecode_hash = 'none'
+remappings = [
+    '@openzeppelin/=node_modules/@openzeppelin/',
+    'forge-std/=foundry/lib/forge-std/src/'
+]
+
+[fmt]
+line_length = 120
+multiline_func_header = 'params_first'
