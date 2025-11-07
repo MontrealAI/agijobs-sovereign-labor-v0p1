@@ -166,7 +166,7 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         _requireOwned(tokenId);
         if (!_baseURISet) revert BaseURIUnset();
-        return string(abi.encodePacked(_baseTokenURI, tokenId.toString()));
+        return string.concat(_baseTokenURI, tokenId.toString());
     }
 
     function list(uint256 tokenId, uint256 price) external whenNotPaused {
