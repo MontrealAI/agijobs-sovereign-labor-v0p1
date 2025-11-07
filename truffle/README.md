@@ -259,7 +259,7 @@ This is the control plane that keeps the machine obedient to its operator—rapi
 
 After migrations, confirm the chain matches expectations:
 
-1. `npx truffle exec scripts/verify-artifacts.js --network mainnet` – Confirms ABI/bytecode on disk align with deployed contracts.
+1. `node scripts/verify-artifacts.js` – Confirms ABI/bytecode on disk align with deployed contracts.
 2. `npx truffle console --network mainnet` → check pointers:
    ```javascript
    (await (await SystemPause.deployed()).feePool()) === (await FeePool.deployed()).address
