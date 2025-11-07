@@ -74,7 +74,13 @@ jobs:
 
       - name: Copy SARIF artifact
         if: always()
-        run: cp reports/slither.sarif ./slither.sarif
+        run: |
+          if [ -f reports/slither.sarif ]; then
+            cp reports/slither.sarif ./slither.sarif
+          else
+            echo "⚠️ No Slither SARIF report generated" >> "$GITHUB_STEP_SUMMARY"
+            echo '{}' > slither.sarif
+          fi
 
       - name: Upload Slither SARIF
         if: always()
