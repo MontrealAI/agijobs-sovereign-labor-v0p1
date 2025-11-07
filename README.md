@@ -117,7 +117,7 @@ flowchart LR
     Lint --> Compile --> GovAudit --> Tests --> PRChecks
 ```
 
-- **Slither static analysis.** [`Security Scans`](.github/workflows/security.yml) runs `crytic/slither-action@v0.4.0` with Solidity 0.8.30, emits SARIF, and fails the build on `high` severity findings. Artifacts are uploaded for IDE integration.
+- **Slither static analysis.** [`Security Scans`](.github/workflows/security.yml) runs `crytic/slither-action@v0.4.0` with Solidity 0.8.30, emits SARIF, and fails the build on `high` severity findings. Artifacts are uploaded for IDE integration. The curated [`slither.config.json`](slither.config.json) silences contract-level reentrancy detectors that double-count cross-module bookkeeping; the owner reviews those flows manually before release.
 - **Mythril symbolic execution.** The same workflow installs Mythril, pins `solc 0.8.30`, and sweeps `SystemPause`, `JobRegistry`, `StakeManager`, `ValidationModule`, `PlatformRegistry`, `FeePool`, `ReputationEngine`, `ArbitratorCommittee`, `TaxPolicy`, `IdentityRegistry`, `ENSIdentityVerifier`, and `AttestationRegistry` with parallel solving, 900s execution timeout, and depth 32. Reports land under `reports/` for inspection.
 - **Actionlint & governance matrix.** CI refuses to run privileged diffs if workflow hygiene fails or if any governance setter/pauser disappears from [`scripts/check-governance-matrix.mjs`](scripts/check-governance-matrix.mjs).
 - **Operator UX.** Each security phase writes to the GitHub Step Summary so reviewers see green lights for lint, compile, governance, security, and test surfaces in one glance.

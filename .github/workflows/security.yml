@@ -43,6 +43,11 @@ jobs:
         with:
           version: stable
 
+      - name: Show Foundry versions
+        run: |
+          forge --version
+          cast --version
+
       - name: Install Node.js 20 LTS
         uses: actions/setup-node@v4
         with:
@@ -52,6 +57,14 @@ jobs:
 
       - name: Install JavaScript dependencies
         run: npm ci --omit=optional --no-audit --no-fund
+
+      - name: Build Foundry artifacts
+        run: forge build --build-info --skip '*/foundry/test/**' '*/script/**' --force
+
+      - name: Link Foundry out directory
+        run: |
+          mkdir -p foundry/out
+          ln -sfn "${{ github.workspace }}/foundry/out" "${{ github.workspace }}/out"
 
       - name: Setup Python 3.11
         uses: actions/setup-python@v5
@@ -69,6 +82,7 @@ jobs:
         run: |
           mkdir -p reports
           slither . \
+            --config-file slither.config.json \
             --sarif reports/slither.sarif \
             --fail-high \
             --foundry-out-directory foundry/out

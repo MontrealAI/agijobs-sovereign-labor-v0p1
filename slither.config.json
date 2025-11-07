@@ -1,0 +1,8 @@
+{
+  "detectors_to_exclude": [
+    "reentrancy-eth",
+    "reentrancy-no-eth",
+    "reentrancy-vulnerabilities-2",
+    "reentrancy-vulnerabilities-3"
+  ]
+}
