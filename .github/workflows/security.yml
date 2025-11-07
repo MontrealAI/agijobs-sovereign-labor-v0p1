@@ -70,7 +70,8 @@ jobs:
           mkdir -p reports
           slither . \
             --sarif reports/slither.sarif \
-            --fail-high
+            --fail-high \
+            --foundry-out-directory foundry/out
 
       - name: Copy SARIF artifact
         if: always()
