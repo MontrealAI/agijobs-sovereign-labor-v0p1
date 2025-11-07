@@ -155,7 +155,7 @@ jobs:
 
       - name: Display analyzer versions
         run: |
-          myth --version
+          myth version
           solc --version
 
       - name: Run Mythril analysis
