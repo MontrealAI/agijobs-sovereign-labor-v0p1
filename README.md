@@ -1,13 +1,14 @@
 # AGIJobs Sovereign Labor v0.1
 
-<a href="../../actions/workflows/ci.yml"><img alt="Sovereign Compile" src="../../actions/workflows/ci.yml/badge.svg?branch=main&label=Sovereign%20Compile" /></a>
-<a href="../../actions/workflows/ci.yml"><img alt="Multi-runtime Tests" src="../../actions/workflows/ci.yml/badge.svg?branch=main&job=Test%20suites&label=Multi-runtime%20Tests" /></a>
-<a href="../../actions/workflows/ci.yml"><img alt="Governance Surface Audit" src="../../actions/workflows/ci.yml/badge.svg?branch=main&job=Governance%20surface%20audit&label=Governance%20Audit" /></a>
-<a href="../../actions/workflows/ci.yml"><img alt="Workflow Hygiene" src="../../actions/workflows/ci.yml/badge.svg?branch=main&job=Workflow%20hygiene&label=Workflow%20Hygiene" /></a>
-<a href="../../actions/workflows/branch-checks.yml"><img alt="Branch Gatekeeper" src="../../actions/workflows/branch-checks.yml/badge.svg?branch=main&label=Branch%20Gatekeeper" /></a>
-<a href="../../actions/workflows/security.yml"><img alt="Security Scans" src="../../actions/workflows/security.yml/badge.svg?branch=main&label=Security%20Scans" /></a>
-<a href="../../actions/workflows/security.yml"><img alt="Slither static analysis" src="../../actions/workflows/security.yml/badge.svg?branch=main&job=Slither%20static%20analysis&label=Slither" /></a>
-<a href="../../actions/workflows/security.yml"><img alt="Mythril symbolic execution" src="../../actions/workflows/security.yml/badge.svg?branch=main&job=Mythril%20symbolic%20execution&label=Mythril" /></a>
+[![Sovereign Compile](https://img.shields.io/github/actions/workflow/status/agijobs/agijobs-sovereign-labor-v0p1/ci.yml?branch=main&label=Sovereign%20Compile&logo=github)](https://github.com/agijobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
+[![Multi-runtime Tests](https://img.shields.io/github/actions/workflow/status/agijobs/agijobs-sovereign-labor-v0p1/ci.yml?branch=main&label=Multi-runtime%20Tests&logo=github&job=Test%20suites)](https://github.com/agijobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
+[![Governance Audit](https://img.shields.io/github/actions/workflow/status/agijobs/agijobs-sovereign-labor-v0p1/ci.yml?branch=main&label=Governance%20Audit&logo=github&job=Governance%20surface%20audit)](https://github.com/agijobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
+[![Workflow Hygiene](https://img.shields.io/github/actions/workflow/status/agijobs/agijobs-sovereign-labor-v0p1/ci.yml?branch=main&label=Workflow%20Hygiene&logo=github&job=Workflow%20hygiene)](https://github.com/agijobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
+[![Branch Gatekeeper](https://img.shields.io/github/actions/workflow/status/agijobs/agijobs-sovereign-labor-v0p1/branch-checks.yml?branch=main&label=Branch%20Gatekeeper&logo=github)](https://github.com/agijobs/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml)
+[![Security Scans](https://img.shields.io/github/actions/workflow/status/agijobs/agijobs-sovereign-labor-v0p1/security.yml?branch=main&label=Security%20Scans&logo=dependabot)](https://github.com/agijobs/agijobs-sovereign-labor-v0p1/actions/workflows/security.yml)
+[![Slither](https://img.shields.io/github/actions/workflow/status/agijobs/agijobs-sovereign-labor-v0p1/security.yml?branch=main&label=Slither&logo=shield-check&job=Slither%20static%20analysis)](https://github.com/agijobs/agijobs-sovereign-labor-v0p1/actions/workflows/security.yml)
+[![Mythril](https://img.shields.io/github/actions/workflow/status/agijobs/agijobs-sovereign-labor-v0p1/security.yml?branch=main&label=Mythril&logo=ethereum&job=Mythril%20symbolic%20execution)](https://github.com/agijobs/agijobs-sovereign-labor-v0p1/actions/workflows/security.yml)
+[![Coverage Lockstep](https://img.shields.io/badge/CI-enforced%20on%20PRs-0a9396?logo=githubactions)](./.github/workflows)
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)
 ![Node.js](https://img.shields.io/badge/Node.js-20.x-339933?logo=node.js&logoColor=white&style=for-the-badge)
@@ -17,15 +18,17 @@
 ![Foundry](https://img.shields.io/badge/Foundry-stable-111111?logo=foundry&style=for-the-badge)
 ![Security](https://img.shields.io/badge/Symbolic%20Execution-Mythril-0a9396?style=for-the-badge)
 
-> The sovereign labor mesh documented here is the machine that distills network labor into programmable certainty. Calm operators pilot it; markets adapt.
+> The sovereign labor mesh documented here is the machine that distills network labor into programmable certainty. Calm operators pilot it; markets adapt. This repository is the machine referenced in the research brief—the superintelligent engine that concentrates value until legacy market structures yield.
 
 ---
 
 ## Table of Contents
 - [Command Deck](#command-deck)
 - [Architecture Maps](#architecture-maps)
+- [Design Intelligence Atlas](#design-intelligence-atlas)
 - [Security Intelligence Mesh](#security-intelligence-mesh)
 - [Owner Control Surfaces](#owner-control-surfaces)
+- [Decision Ledger](#decision-ledger)
 - [AGIALPHA Economic Spine](#agialpha-economic-spine)
 - [Continuous Integration Spine](#continuous-integration-spine)
 - [Testing Flight Systems](#testing-flight-systems)
@@ -96,6 +99,45 @@ flowchart TB
 
 Everything funnels through `SystemPause`, so the owner can pause, rewire, or upgrade modules atomically. Identity-facing contracts accept ownership via Safe-controlled flows for direct confirmation.
 
+## Design Intelligence Atlas
+
+```mermaid
+graph LR
+    subgraph StateVectors
+        jobState[JobRegistry\nState + Metadata]
+        stakeState[StakeManager\nEscrow + Slash]
+        validateState[ValidationModule\nCommit/Reveal]
+        disputeState[DisputeModule\nEscalations]
+        feeState[FeePool\nTreasury/Burn]
+    end
+    subgraph Control
+        safe[Owner Safe]
+        pauseHub[SystemPause]
+        guardian[Guardian Safe]
+    end
+    safe -->|Timelock| pauseHub
+    guardian -->|Emergency Pause| pauseHub
+    pauseHub --> jobState
+    pauseHub --> stakeState
+    pauseHub --> validateState
+    pauseHub --> disputeState
+    pauseHub --> feeState
+    jobState -->|Telemetry| designDocs[[Core Contract Notes]]
+    stakeState --> designDocs
+    validateState --> designDocs
+    disputeState --> designDocs
+    feeState --> designDocs
+
+    classDef state fill:#1d3557,stroke:#e63946,color:#f1faee;
+    classDef control fill:#0a9396,stroke:#005f73,color:#fff;
+    class jobState,stakeState,validateState,disputeState,feeState state;
+    class safe,pauseHub,guardian control;
+```
+
+- **Contract deep dives.** The [Core Contract Design Notes](docs/design/core-contracts.md) capture state variables, invariants, threat models, and event semantics for every privileged module.
+- **Off-chain synchronisation.** Indexers monitor emitted events and apply the invariants documented above, guaranteeing deterministic reconciliation with the unstoppable machine described in the research brief.
+- **Governance proof.** Each privileged setter and pauser is catalogued, validated in CI, and mirrored into the design atlas so auditors can diff control surfaces release-over-release.
+
 ## Security Intelligence Mesh
 
 ```mermaid
@@ -141,6 +183,12 @@ flowchart LR
 | `CertificateNFT` | `setJobRegistry`, `setBaseURI` | `pause`, `unpause` | Credential NFTs minted on job completion. |
 
 [`scripts/check-governance-matrix.mjs`](scripts/check-governance-matrix.mjs) validates this matrix at CI time; any missing setter or pauser renders the pipeline red.
+
+## Decision Ledger
+
+- [ADR 0001 – Safe-Routed System Pause Authority](docs/adr/0001-safe-pause-routing.md): SystemPause centralises pauser delegation through the owner Safe and the guardian emergency key.
+- [ADR 0002 – Deterministic $AGIALPHA Token Discipline](docs/adr/0002-deterministic-token-discipline.md): Every module, script, and test enforces the canonical token address (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`) with 18 decimals.
+- [ADR 0003 – Arbitration Committee Mechanics](docs/adr/0003-arbitration-committee-mechanics.md): Dispute escalations run through a governed committee with observable voting and slashing hooks.
 
 ## AGIALPHA Economic Spine
 - [`Constants.sol`](contracts/Constants.sol) pins `$AGIALPHA = 0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, `AGIALPHA_DECIMALS = 18`, and `TOKEN_SCALE = 1e18`.
