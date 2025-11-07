@@ -3,18 +3,21 @@
 [![Sovereign Compile](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
 [![Branch Gatekeeper](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml/badge.svg?branch=main)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml)
 [![Node.js 20.x](https://img.shields.io/badge/Node.js-20.x-339933?logo=node.js&logoColor=white&style=for-the-badge)](https://nodejs.org/)
+[![Truffle Suite](https://img.shields.io/badge/Truffle-5.11-5E464D?logo=truffle&logoColor=white&style=for-the-badge)](https://trufflesuite.com/)
+[![Solidity 0.8.30](https://img.shields.io/badge/Solidity-0.8.30-363636?logo=solidity&logoColor=white&style=for-the-badge)](https://docs.soliditylang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-0aa6d6?style=for-the-badge)](../LICENSE)
 [![$AGIALPHA Spine](https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-5522aa?style=for-the-badge)](https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa)
 
-The `scripts/` arsenal is the command lattice that keeps the Sovereign Labor platform obedient to its owner Safe. Each utility
-monitors a distinct control surface so production staking treasuries, governance manifolds, and the immutable
-$AGIALPHA (ERC-20 at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) remain perfectly aligned. These workflows stay **green** at all times:
+The `scripts/` lattice is the precision interface that keeps the Sovereign Labor platform obedient to the owner Safe. Every utility calibrates a critical subsystem so production staking treasuries, governance matrices, and the immutable $AGIALPHA (ERC-20 at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) stay synchronized. This repository is the sovereign machine that concentrates outsized economic leverage; the automation contract below ensures it stays unstoppable, operator-friendly, and continuously verified.
 
-- `Sovereign Compile` (`ci.yml`) – lint, compile, verify artifacts, audit governance.
-- `Branch Gatekeeper` (`branch-checks.yml`) – enforce disciplined branch naming on every push and PR.
+These workflows **must** remain green:
 
-Both workflows are required checks on `main`, `develop`, and every protected branch. Branch protection is non-negotiable—any PR that
-does not satisfy the automation contract is blocked before a merge button ever appears.
+- **Sovereign Compile** (`ci.yml`) – lint, compile, verify, and audit every governance surface before artifacts ship.
+- **Branch Gatekeeper** (`branch-checks.yml`) – disallows undisciplined branch names from entering the review surface.
+
+Both workflows are required checks on `main`, `develop`, and every protected branch. Required status checks, required reviews, and up-to-date-merge protection *must* be enabled in the repository settings so merges cannot bypass the automation covenant.
+
+---
 
 ## Table of contents
 
@@ -26,6 +29,8 @@ does not satisfy the automation contract is blocked before a merge button ever a
 6. [Diagnostics matrix](#diagnostics-matrix)
 7. [Extending the lattice](#extending-the-lattice)
 
+---
+
 ## Systems atlas
 
 ```mermaid
@@ -33,10 +38,10 @@ flowchart TD
   subgraph DevFlow["Operator push / PR"]
     Dev(Developer)
   end
-  subgraph BranchOps["Branch Gatekeeper<br/>branch-checks.yml"]
+  subgraph BranchOps["Branch Gatekeeper\nbranch-checks.yml"]
     Naming["Validate naming policy"]
   end
-  subgraph SovereignCI["Sovereign Compile<br/>ci.yml"]
+  subgraph SovereignCI["Sovereign Compile\nci.yml"]
     Lint["solhint --max-warnings=0"]
     Compile["truffle compile\nverify-artifacts.js"]
     GovAudit["check-governance-matrix.mjs"]
@@ -53,8 +58,9 @@ flowchart TD
   FeePool -->|Rewards| Dev
 ```
 
-Every run surfaces GitHub Step Summaries so reviewers, auditors, and the owner Safe immediately see what changed, which
-modules were touched, and how the economic rails respond. No unchecked drift reaches production.
+Each run writes GitHub Step Summaries so reviewers, auditors, and the owner Safe see precisely what changed, which modules were touched, and how the economic rails react. No unchecked drift reaches production.
+
+---
 
 ## Launch checklist
 
@@ -66,15 +72,16 @@ node scripts/verify-artifacts.js
 node scripts/check-governance-matrix.mjs
 ```
 
-> **Recommendation:** Execute the full checklist locally before opening a PR. The console tables emitted by the scripts match the
-> CI job summaries, making discrepancies obvious.
+> **Recommendation:** Execute the full checklist locally before opening a PR. Console tables emitted by the scripts mirror the CI job summaries, so any discrepancy is obvious.
+
+---
 
 ## Script playbook
 
 | Script | Surface | Guarantees | Usage |
 | --- | --- | --- | --- |
 | [`check-branch-name.mjs`](check-branch-name.mjs) | Branch hygiene | Enforces `main`, `develop`, or `<type>/<descriptor>` with curated types (`feature`, `release`, `docs`, `dependabot`, `renovate`, `codex`, …). Writes GitHub Step Summaries and fails fast on invalid characters. | `node scripts/check-branch-name.mjs "feature/treasury-upgrade"` |
-| [`verify-artifacts.js`](verify-artifacts.js) | Compile surface | Confirms Truffle artifacts exist for 13 production contracts, contain non-empty bytecode, were compiled with `solc 0.8.30`, and are fresher than their Solidity sources. Emits a Markdown size table for gas analysts. | `node scripts/verify-artifacts.js` |
+| [`verify-artifacts.js`](verify-artifacts.js) | Compile surface | Confirms Truffle artifacts exist for production contracts, contain non-empty bytecode, were compiled with `solc 0.8.30`, and are fresher than their Solidity sources. Emits a Markdown size table for gas analysts. | `node scripts/verify-artifacts.js` |
 | [`write-compile-summary.js`](write-compile-summary.js) | Toolchain telemetry | Captures Node.js, npm, Truffle, and Solidity versions plus the evaluated branch and runner OS. Appends the information to the job summary for audit trails. | `node scripts/write-compile-summary.js` *(executed automatically in CI)* |
 | [`check-governance-matrix.mjs`](check-governance-matrix.mjs) | Governance lattice | Parses `build/contracts` ABIs to ensure every owner + pauser function remains available on `SystemPause`, `StakeManager`, `JobRegistry`, `ValidationModule`, `DisputeModule`, `PlatformRegistry`, `FeePool`, `ReputationEngine`, and `ArbitratorCommittee`. Verifies `$AGIALPHA` constants and decimals (`18`) match [`contracts/Constants.sol`](../contracts/Constants.sol) and [`deploy/config.mainnet.json`](../deploy/config.mainnet.json). | `node scripts/check-governance-matrix.mjs` *(after `npm run compile`)* |
 | [`owner-set-treasury.js`](owner-set-treasury.js) | Treasury rotation | Allows the owner Safe (via `OwnerConfigurator`) to rotate the `StakeManager` treasury through `SystemPause.executeGovernanceCall`. Emits transaction hash plus `ParameterUpdated` events so the change is fully auditable. | `NEW_TREASURY=0xYourSafe node scripts/owner-set-treasury.js` |
@@ -88,13 +95,14 @@ node scripts/check-governance-matrix.mjs
 ├─────────────────────────┼──────────────────────┼────────────────┤
 │ System Pause lattice    │ —                    │ —              │
 │ Stake Manager           │ —                    │ —              │
-│ …                       │ …                    │ …              │
+│ …                       │                      │ …              │
 └─────────────────────────┴──────────────────────┴────────────────┘
 ✅ Governance surfaces are present. Owner and pauser controls are intact across the deployment lattice.
 ```
 
-Any missing function or event fails the job and lists the offenders. The script aborts the moment `$AGIALPHA` stops pointing at
-`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` or decimals drift away from `18`.
+Any missing function or event fails the job and lists the offenders. The script aborts the moment `$AGIALPHA` deviates from `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` or decimals drift away from `18`.
+
+---
 
 ## Continuous integration covenant
 
@@ -121,10 +129,12 @@ stateDiagram-v2
 
 **Enforcement ritual:**
 
-1. Enable **Require status checks to pass before merging** with every check above selected.
+1. Enable **Require status checks to pass before merging** with every check above selected and marked **Required**.
 2. Enable **Require branches to be up to date before merging** so the compiled artifacts match `main` at merge time.
 3. Enable **Include administrators** to keep human and automated guardians aligned.
-4. Lock merge methods to squash or rebase only if your governance board demands immutable history—CI summaries remain intact either way.
+4. Lock merge methods to squash or rebase only if the governance board demands immutable history—CI summaries remain intact either way.
+
+---
 
 ## Owner prerogatives
 
@@ -135,9 +145,9 @@ The automation suite affirms that the contract owner can reconfigure every criti
 - **Module wiring:** `setGovernance`, `setTaxPolicy`, `setValidationModule`, `setDisputeModule`, `setIdentityRegistry`, `setReputationEngine`, `setCommittee`, and more—each checked by `check-governance-matrix.mjs`.
 - **Ownership:** Every core contract exposes `transferOwnership` and `owner()`; the scripts fail if any of these signatures disappear.
 
-`owner-set-treasury.js` demonstrates the pattern: the owner Safe issues a governance call via `OwnerConfigurator.configure`, routing
-through `SystemPause` so pauser safeguards and event trails stay intact. Extend the approach for other parameters by swapping
-`moduleKey`, `parameterKey`, and calldata encoders.
+`owner-set-treasury.js` demonstrates the pattern: the owner Safe issues a governance call via `OwnerConfigurator.configure`, routing through `SystemPause` so pauser safeguards and event trails stay intact. Extend the approach for other parameters by swapping `moduleKey`, `parameterKey`, and calldata encoders.
+
+---
 
 ## Diagnostics matrix
 
@@ -149,13 +159,11 @@ through `SystemPause` so pauser safeguards and event trails stay intact. Extend 
 | `Artifact older than its source` | Solidity file edited without refreshing artifacts. | Execute `npm run compile` to refresh Truffle output. |
 | `NEW_TREASURY environment variable is required` | Treasury rotation invoked without a destination Safe address. | Export `NEW_TREASURY=0x...` prior to running `owner-set-treasury.js`. |
 
+---
+
 ## Extending the lattice
 
-1. Mirror the precision: every new script must describe inputs, exit codes, and summary output. If it touches governance, write
-   a table comparable to `check-governance-matrix.mjs`.
-2. Encode `$AGIALPHA` invariants everywhere. Scripts should reject any token that is not `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`
-   with `18` decimals.
+1. Mirror the precision: every new script must describe inputs, exit codes, and summary output. If it touches governance, craft a table comparable to `check-governance-matrix.mjs`.
+2. Encode `$AGIALPHA` invariants everywhere. Scripts should reject any token that is not `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` with `18` decimals.
 3. When adding workflows, publish badges here and mark each job as a **required** status check before merging.
 4. Prefer Node.js 20.x and `npm ci` to keep deterministic lockfile installs across developers and CI runners.
-
-Follow these practices and the automation fabric stays production-hardened, owner-aligned, and perpetually luminous.
