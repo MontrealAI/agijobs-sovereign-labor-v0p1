@@ -2,10 +2,10 @@
 
 ![Solidity](https://img.shields.io/badge/Solidity-0.8.30-363636?logo=solidity&style=for-the-badge)
 ![AGIALPHA](https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-5522aa?style=for-the-badge)
-![Governance Surface](https://img.shields.io/badge/Governance-Surfaces-green?style=for-the-badge)
+![Governance Surface](https://img.shields.io/badge/Governance-Surfaces-1f8feb?style=for-the-badge)
 ![Pause Mesh](https://img.shields.io/badge/SystemPause-Orbit-0d1b2a?style=for-the-badge)
 
-> Every contract orbits `SystemPause`, giving the owner Safe absolute leverage over pausing, reconfiguration, and upgrades.
+> Every contract orbits `SystemPause`, giving the owner Safe full command over pausing, reconfiguration, and upgrades while preserving an auditable spine.
 
 ---
 
@@ -35,7 +35,7 @@ flowchart LR
     classDef identity fill:#3a0ca3,stroke:#4cc9f0,color:#fff;
 ```
 
-Identity-facing contracts transfer to the owner Safe for direct Safe-level governance while staying wired into the pause mesh. All other surfaces remain under `SystemPause` custody for synchronized pausing and upgrade routing.
+Identity contracts transfer to the owner Safe so operators accept ownership directly through Safe UI flows. All other modules remain under `SystemPause` to guarantee coordinated pause/unpause and upgrade execution.
 
 ## Owner Surfaces by Module
 
@@ -43,58 +43,42 @@ Identity-facing contracts transfer to the owner Safe for direct Safe-level gover
 | --- | --- | --- |
 | `SystemPause` | Governance router, pause switch, upgrade dispatcher. | `setModules`, `setGlobalPauser`, `refreshPausers`, `executeGovernanceCall`, `pauseAll`, `unpauseAll`, `transferOwnership`, `owner`. |
 | `JobRegistry` | Job lifecycle, staking orchestration, dispute hooks. | `setValidationModule`, `setIdentityRegistry`, `setDisputeModule`, `setFeePool`, `setTaxPolicy`, `setStakeManager`, `setPauser`, `setPauserManager`, `applyConfiguration`, `pause`, `unpause`, `transferOwnership`, `owner`. |
-| `StakeManager` | `$AGIALPHA` staking, slashing, treasury routing. | `setFeePool`, `setJobRegistry`, `setValidationModule`, `setDisputeModule`, `setTreasury`, `setTreasuryAllowlist`, `setRoleMinimums`, `applyConfiguration`, `pause`, `unpause`, `transferOwnership`, `owner`. |
+| `StakeManager` | `$AGIALPHA` staking, slashing, treasury routing. | `setFeePool`, `setDisputeModule`, `setValidationModule`, `setJobRegistry`, `setTreasury`, `setTreasuryAllowlist`, `setRoleMinimums`, `applyConfiguration`, `pause`, `unpause`, `transferOwnership`, `owner`. |
 | `ValidationModule` | Validator selection, commit/reveal governance, failovers. | `setStakeManager`, `setIdentityRegistry`, `setReputationEngine`, `setRandaoCoordinator`, `setSelectionStrategy`, `setPauser`, `setPauserManager`, `pause`, `unpause`, `transferOwnership`, `owner`. |
-| `DisputeModule` | Dispute economics and committee linkage. | `setStakeManager`, `setJobRegistry`, `setCommittee`, `setTaxPolicy`, `setDisputeFee`, `setDisputeWindow`, `setPauser`, `setPauserManager`, `pause`, `unpause`, `transferOwnership`, `owner`. |
-| `PlatformRegistry` | Platform onboarding, staking minimums, registrar control. | `setStakeManager`, `setReputationEngine`, `setMinPlatformStake`, `setRegistrar`, `setBlacklist`, `applyConfiguration`, `setPauser`, `setPauserManager`, `pause`, `unpause`, `transferOwnership`, `owner`. |
-| `FeePool` | Fee custody, burns, treasury payouts. | `setGovernance`, `setStakeManager`, `setTaxPolicy`, `setTreasury`, `setTreasuryAllowlist`, `setRewardRole`, `applyConfiguration`, `setPauser`, `setPauserManager`, `pause`, `unpause`, `transferOwnership`, `owner`. |
+| `DisputeModule` | Arbitration economics and committee coordination. | `setStakeManager`, `setJobRegistry`, `setCommittee`, `setTaxPolicy`, `setDisputeFee`, `setDisputeWindow`, `setPauser`, `setPauserManager`, `pause`, `unpause`, `transferOwnership`, `owner`. |
+| `PlatformRegistry` | Platform onboarding, staking minimums, registrar authority. | `setStakeManager`, `setReputationEngine`, `setMinPlatformStake`, `setRegistrar`, `setBlacklist`, `applyConfiguration`, `setPauser`, `setPauserManager`, `pause`, `unpause`, `transferOwnership`, `owner`. |
+| `FeePool` | Fee custody, burns, treasury payouts. | `applyConfiguration`, `setGovernance`, `setStakeManager`, `setTaxPolicy`, `setTreasury`, `setTreasuryAllowlist`, `setRewardRole`, `setPauser`, `setPauserManager`, `pause`, `unpause`, `transferOwnership`, `owner`. |
 | `ReputationEngine` | Reputation weighting and validator incentives. | `setCaller`, `setStakeManager`, `setScoringWeights`, `setBlacklist`, `setValidationRewardPercentage`, `setPauser`, `setPauserManager`, `pause`, `unpause`, `transferOwnership`, `owner`. |
 | `ArbitratorCommittee` | Commit/reveal windows, juror governance. | `setDisputeModule`, `setCommitRevealWindows`, `setAbsenteeSlash`, `setPauser`, `setPauserManager`, `pause`, `unpause`, `transferOwnership`, `owner`. |
-| `TaxPolicy` | Policy metadata and acknowledgement registry. | `setPolicyURI`, `setAcknowledgement`, `setPolicy`, `setAcknowledger`, `setAcknowledgers`, `revokeAcknowledgement`, `transferOwnership`, `owner`. |
-| `IdentityRegistry` | ENS-integrated identity proofs. | Owner Safe accepts ownership; setters include `setAttestationRegistry`, `setAgentMerkleRoot`, `setValidatorMerkleRoot`, `setClubMerkleRoot`. |
-| `AttestationRegistry` | ENS-backed attestations. | Owner Safe controls `setENSRegistry`, `setNameWrapper`, `setController`, `transferOwnership`, `owner`. |
-| `CertificateNFT` | Credential NFT minted on job completion. | Owner Safe can `setJobRegistry`, `setBaseURI`, `transferOwnership`, `owner`. |
+| `TaxPolicy` | Policy metadata and acknowledgement registry. | `setPolicyURI`, `setPolicy`, `setAcknowledgement`, `setAcknowledger`, `setAcknowledgers`, `revokeAcknowledgement`, `transferOwnership`, `owner`. |
+| `IdentityRegistry` | ENS-integrated identity proofs. | Owner Safe accepts ownership; setters include `setAttestationRegistry`, `setAgentMerkleRoot`, `setValidatorMerkleRoot`, `setClubMerkleRoot`, `pause`, `unpause`, `transferOwnership`, `owner`. |
+| `AttestationRegistry` | ENS-backed attestations. | Owner Safe controls `setENSRegistry`, `setNameWrapper`, `setController`, `pause`, `unpause`, `transferOwnership`, `owner`. |
+| `CertificateNFT` | Credential NFT minted on job completion. | Owner Safe can `setJobRegistry`, `setBaseURI`, `pause`, `unpause`, `transferOwnership`, `owner`. |
 
-Every entry in the table is enforced by `scripts/check-governance-matrix.mjs`; CI fails if ABI changes remove an owner or pauser surface.
+[`scripts/check-governance-matrix.mjs`](../scripts/check-governance-matrix.mjs) asserts this table inside CI so any missing setter or pauser fails `Sovereign Compile`.
 
 ## `$AGIALPHA` Discipline
+- [`Constants.sol`](Constants.sol) hardcodes `$AGIALPHA` with 18 decimals (`TOKEN_SCALE = 1e18`).
+- `StakeManager` and `FeePool` validate `IERC20Metadata.decimals()` during construction and refuse mismatched tokens.
+- `FeePool` burns and redistributes fees using accumulator math with `ACCUMULATOR_SCALE = 1e12` for precise payouts.
+- Migrations (`1_deploy_kernel.js` and `3_mainnet_finalize.js`) check the FeePool token against the config and block deployment if a wrong address appears.
 
-- `Constants.sol` hardcodes `$AGIALPHA = 0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` with `AGIALPHA_DECIMALS = 18` and `TOKEN_SCALE = 1e18`.
-- `StakeManager` and `FeePool` validate ERC-20 decimals at runtime, rejecting tokens that are not 18-decimal `$AGIALPHA`.
-- Migrations enforce configuration parity between on-chain constants and `deploy/config.mainnet.json`.
-- Accounting flows (`StakeManager`, `JobRegistry`, `FeePool`) apply the `TOKEN_SCALE` multiplier so all balances align with ERC-20 expectations.
+## Identity & Attestation Orbit
+- `IdentityRegistry` wires ENS (`ensRegistry`, `nameWrapper`), merkle roots, and attestation registry; Safe acceptance is required for final ownership.
+- `AttestationRegistry` exposes `setController` so the owner can rotate controllers without redeploying.
+- `CertificateNFT` inherits from OpenZeppelin ERC721 and restricts minting to `JobRegistry`; the owner can update metadata via `setBaseURI`.
 
-## Libraries & Directories
+## Pause & Upgrade Playbook
+1. **Emergency pause.** Guardian Safe calls `SystemPause.pauseAll()`. Resume with the owner Safe via `unpauseAll()` once mitigations land.
+2. **Parameter tuning.** Encode setter calldata (e.g., `StakeManager.setTreasury`) and send through `OwnerConfigurator.configure` or `SystemPause.executeGovernanceCall`.
+3. **Module upgrade.** Deploy the replacement module, transfer its ownership to `SystemPause`, call `setModules`, and confirm `ModulesUpdated` + `PausersUpdated` events.
+4. **Treasury rotation.** Allowlist the new treasury in `StakeManager` and `FeePool` (`setTreasuryAllowlist`) before switching `setTreasury`.
 
-- [`utils/`](utils) – `CoreOwnable2Step`, guards, and helper primitives for ownership/pauser control.
-- [`libraries/`](libraries) – Math and encoding libraries reused across modules.
-- [`interfaces/`](interfaces) – ABI definitions for cross-module calls (staking, identity, taxation, reputation, disputes).
-- [`modules/`](modules) – Specialized module implementations referenced by registries.
-- [`admin/`](admin) – `OwnerConfigurator`, the Safe-friendly batching facade that emits `ParameterUpdated` events.
+## Directory Signals
+- [`admin/`](admin) – `OwnerConfigurator` and future governance helpers.
+- [`interfaces/`](interfaces) – ABI surfaces used by cross-module calls and migrations.
+- [`libraries/`](libraries) – Math/util libraries (e.g., `TaxAcknowledgement`).
+- [`modules/`](modules) – Specialized module implementations (e.g., `DisputeModule`).
+- [`utils/`](utils) – Ownership primitives such as `CoreOwnable2Step`.
 
-## Compilation & Verification
-
-1. `npm run lint:sol`
-2. `npm run compile`
-3. `node scripts/verify-artifacts.js`
-4. `npm run ci:governance`
-
-GitHub Actions runs the same sequence (`Sovereign Compile` workflow) and uploads artifacts for auditors.
-
-## Owner Reaction Playbook
-
-```mermaid
-graph TD
-    Incident[Incident detected] --> Pause(SystemPause.pauseAll)
-    Pause --> Diagnose[On-chain + off-chain diagnostics]
-    Diagnose --> Adjust{Parameter change needed?}
-    Adjust -- Yes --> Config[OwnerConfigurator.configureBatch]
-    Config --> Execute[SystemPause.executeGovernanceCall]
-    Execute --> Resume(SystemPause.unpauseAll)
-    Adjust -- No --> Resume
-    Resume --> Audit[Archive GovernanceCallExecuted & ParameterUpdated]
-```
-
-- **Emergency pause.** Guardian Safe hits `pauseAll`; resume via owner Safe after mitigations.
-- **Parameter update.** Encode setter calldata (e.g., `JobRegistry.setValidationModule`) and dispatch through `OwnerConfigurator` or direct Safe transactions targeting `SystemPause.executeGovernanceCall`.
-- **Audit trail.** Capture `GovernanceCallExecuted` + `ParameterUpdated` events per change; file them with runbooks for compliance and after-action reviews.
+The contract layer is designed so the owner can redirect any vector (pause state, parameters, treasuries, identity controls) with a single Safe transaction, and every change emits structured events for downstream analytics.

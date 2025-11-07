@@ -5,7 +5,7 @@
 ![Safe Friendly](https://img.shields.io/badge/Execution-Safe%20Friendly-7f5af0?style=for-the-badge)
 ![CI Mirror](https://img.shields.io/badge/CI-Parity-34d399?style=for-the-badge)
 
-> This playbook lets a non-technical operator deploy the Sovereign Labor lattice to Ethereum mainnet with the exact sequence CI enforces.
+> This playbook lets a non-technical operator deploy the Sovereign Labor lattice to Ethereum mainnet using the exact sequence CI enforces.
 
 ---
 
@@ -20,7 +20,7 @@ flowchart TD
     compile[5. Compile\n`npm run compile`] --> artifacts
     artifacts[6. Verify artifacts\n`node scripts/verify-artifacts.js`] --> governance
     governance[7. Governance audit\n`npm run ci:governance`] --> migrate
-    migrate[8. Migrate\n`DEPLOY_CONFIG=... npx truffle migrate --network mainnet --f 1 --to 3 --compile-all`] --> finalize
+    migrate[8. Migrate\n`DEPLOY_CONFIG=... npx truffle migrate --network mainnet --f 1 --to 3 --compile-all --skip-dry-run`] --> finalize
     finalize[9. Safe acceptOwnership\nExecute queued Safe transactions.] --> verify
     verify[10. Verify bytecode\n`npm run verify:mainnet`] --> archive
     archive[11. Archive manifest\nStore manifests/addresses.mainnet.json.]
