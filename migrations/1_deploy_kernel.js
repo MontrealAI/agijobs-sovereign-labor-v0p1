@@ -19,6 +19,31 @@ const FeePool = artifacts.require('FeePool');
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const ZERO_BYTES32 = '0x0000000000000000000000000000000000000000000000000000000000000000';
+const CANONICAL_AGIALPHA = '0xa61a3b3a130a9c20768eebf97e21515a6046a1fa';
+
+const ERC20_METADATA_ABI = [
+  {
+    constant: true,
+    inputs: [],
+    name: 'decimals',
+    outputs: [{ name: '', type: 'uint8' }],
+    type: 'function'
+  },
+  {
+    constant: true,
+    inputs: [],
+    name: 'symbol',
+    outputs: [{ name: '', type: 'string' }],
+    type: 'function'
+  },
+  {
+    constant: true,
+    inputs: [],
+    name: 'name',
+    outputs: [{ name: '', type: 'string' }],
+    type: 'function'
+  }
+];
 
 function resolveConfig() {
   const cfgPath = process.env.DEPLOY_CONFIG || path.join(__dirname, '../deploy/config.mainnet.json');
@@ -37,6 +62,33 @@ module.exports = async function (deployer, network, accounts) {
   if (chainId !== cfg.chainId) {
     throw new Error(`Config chainId ${cfg.chainId} != network ${chainId}`);
   }
+
+  if (!cfg.tokens?.agi) {
+    throw new Error('deploy config must include tokens.agi');
+  }
+
+  const configuredAgi = cfg.tokens.agi.toLowerCase();
+  if (chainId === 1 && configuredAgi !== CANONICAL_AGIALPHA) {
+    throw new Error(`Mainnet AGIALPHA must be ${CANONICAL_AGIALPHA}, received ${configuredAgi}`);
+  }
+
+  const agiMetadata = new web3.eth.Contract(ERC20_METADATA_ABI, configuredAgi);
+  const agiDecimals = Number(await agiMetadata.methods.decimals().call());
+  if (agiDecimals !== 18) {
+    throw new Error(`$AGIALPHA decimals must equal 18, detected ${agiDecimals}`);
+  }
+
+  const agiSymbol = await agiMetadata.methods.symbol().call().catch(() => '');
+  if (agiSymbol && agiSymbol !== 'AGIALPHA') {
+    console.warn(`⚠️  Expected $AGIALPHA symbol to be AGIALPHA, observed ${agiSymbol}`);
+  }
+
+  const agiName = await agiMetadata.methods.name().call().catch(() => '');
+  if (agiName && agiName.toLowerCase().includes('test')) {
+    throw new Error(`$AGIALPHA metadata indicates a test token (${agiName}); aborting.`);
+  }
+
+  console.log(`💎 Using $AGIALPHA token ${configuredAgi} (${agiSymbol || 'AGIALPHA'}) with ${agiDecimals} decimals`);
 
   const ownerSafe = cfg.ownerSafe;
   const guardianSafe = cfg.guardianSafe || ownerSafe;
