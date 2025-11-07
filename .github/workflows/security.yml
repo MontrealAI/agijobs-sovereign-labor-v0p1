@@ -178,6 +178,7 @@ jobs:
 
           for target in "${targets[@]}"; do
             echo "Analyzing $target"
+            output="reports/mythril-${target%.sol}.txt"
             myth analyze "contracts/$target" \
               --solv 0.8.30 \
               --allow-paths contracts,node_modules \
@@ -185,7 +186,8 @@ jobs:
               --execution-timeout 900 \
               --max-depth 32 \
               --parallel-solving \
-              --out "reports/mythril-${target%.sol}.txt"
+              -o text \
+              > "$output" 2>&1
           done
 
           cat reports/mythril-*.txt > reports/mythril-report.txt
