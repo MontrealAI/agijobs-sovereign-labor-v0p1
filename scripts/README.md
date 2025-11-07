@@ -6,16 +6,16 @@
 [![Truffle Suite](https://img.shields.io/badge/Truffle-5.11-5E464D?logo=truffle&logoColor=white&style=for-the-badge)](https://trufflesuite.com/)
 [![Solidity 0.8.30](https://img.shields.io/badge/Solidity-0.8.30-363636?logo=solidity&logoColor=white&style=for-the-badge)](https://docs.soliditylang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-0aa6d6?style=for-the-badge)](../LICENSE)
-[![$AGIALPHA Spine](https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-5522aa?style=for-the-badge)](https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa)
+[![$AGIALPHA Core](https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-5522aa?style=for-the-badge)](https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa)
 
-The `scripts/` lattice is the precision interface that keeps the Sovereign Labor platform obedient to the owner Safe. Every utility calibrates a critical subsystem so production staking treasuries, governance matrices, and the immutable $AGIALPHA (ERC-20 at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) stay synchronized. This repository is the sovereign machine that concentrates outsized economic leverage; the automation contract below ensures it stays unstoppable, operator-friendly, and continuously verified.
+The `scripts/` lattice is the composable command center that keeps the Sovereign Labor platform perfectly aligned with the owner Safe. Every utility enforces one more invariant so staking treasuries, governance matrices, deployment artifacts, and the immutable $AGIALPHA token at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals) remain synchronized. This repository is the wealth-compounding automation machine described in the project brief; the utilities below guarantee it stays unstoppable, operator-friendly, and continuously auditable.
 
-These workflows **must** remain green:
+These workflows **must** remain green and required:
 
 - **Sovereign Compile** (`ci.yml`) – lint, compile, verify, and audit every governance surface before artifacts ship.
 - **Branch Gatekeeper** (`branch-checks.yml`) – disallows undisciplined branch names from entering the review surface.
 
-Both workflows are required checks on `main`, `develop`, and every protected branch. Required status checks, required reviews, and up-to-date-merge protection *must* be enabled in the repository settings so merges cannot bypass the automation covenant.
+Enable required status checks, required reviews, administrator enforcement, and the "require branches to be up to date" switch on `main`, `develop`, and every protected branch so merges cannot bypass the automation covenant.
 
 ---
 
@@ -24,10 +24,12 @@ Both workflows are required checks on `main`, `develop`, and every protected bra
 1. [Systems atlas](#systems-atlas)
 2. [Launch checklist](#launch-checklist)
 3. [Script playbook](#script-playbook)
-4. [Continuous integration covenant](#continuous-integration-covenant)
-5. [Owner prerogatives](#owner-prerogatives)
-6. [Diagnostics matrix](#diagnostics-matrix)
-7. [Extending the lattice](#extending-the-lattice)
+4. [Control surface choreography](#control-surface-choreography)
+5. [Continuous integration covenant](#continuous-integration-covenant)
+6. [Owner prerogatives](#owner-prerogatives)
+7. [Observability and telemetry](#observability-and-telemetry)
+8. [Diagnostics matrix](#diagnostics-matrix)
+9. [Extending the lattice](#extending-the-lattice)
 
 ---
 
@@ -36,7 +38,7 @@ Both workflows are required checks on `main`, `develop`, and every protected bra
 ```mermaid
 flowchart TD
   subgraph DevFlow["Operator push / PR"]
-    Dev(Developer)
+    Dev(Contributor)
   end
   subgraph BranchOps["Branch Gatekeeper\nbranch-checks.yml"]
     Naming["Validate naming policy"]
@@ -49,16 +51,19 @@ flowchart TD
   end
   subgraph Owner["Owner Safe"]
     Treasury["owner-set-treasury.js"]
+    Modules["Governance parameter setters"]
   end
   Dev -->|push| BranchOps -->|✅ disciplined branch| SovereignCI
   SovereignCI -->|artifacts + governance summaries| Owner
   Owner -->|parameter dial| Treasury
-  Treasury -->|GovernanceCall| StakeManager
+  Owner -->|module orchestration| Modules
+  Modules -->|GovernanceCall| SystemPause
+  SystemPause -->|Executes| StakeManager
   StakeManager -->|AGIALPHA flows| FeePool
   FeePool -->|Rewards| Dev
 ```
 
-Each run writes GitHub Step Summaries so reviewers, auditors, and the owner Safe see precisely what changed, which modules were touched, and how the economic rails react. No unchecked drift reaches production.
+Every run writes GitHub Step Summaries so reviewers, auditors, and the owner Safe see precisely what changed, which modules were touched, and how the economic rails react. No unchecked drift reaches production.
 
 ---
 
@@ -86,21 +91,33 @@ node scripts/check-governance-matrix.mjs
 | [`check-governance-matrix.mjs`](check-governance-matrix.mjs) | Governance lattice | Parses `build/contracts` ABIs to ensure every owner + pauser function remains available on `SystemPause`, `StakeManager`, `JobRegistry`, `ValidationModule`, `DisputeModule`, `PlatformRegistry`, `FeePool`, `ReputationEngine`, and `ArbitratorCommittee`. Verifies `$AGIALPHA` constants and decimals (`18`) match [`contracts/Constants.sol`](../contracts/Constants.sol) and [`deploy/config.mainnet.json`](../deploy/config.mainnet.json). | `node scripts/check-governance-matrix.mjs` *(after `npm run compile`)* |
 | [`owner-set-treasury.js`](owner-set-treasury.js) | Treasury rotation | Allows the owner Safe (via `OwnerConfigurator`) to rotate the `StakeManager` treasury through `SystemPause.executeGovernanceCall`. Emits transaction hash plus `ParameterUpdated` events so the change is fully auditable. | `NEW_TREASURY=0xYourSafe node scripts/owner-set-treasury.js` |
 
-### Governance matrix output
+---
 
-```text
-🔍 Governance control surface audit
-┌─────────────────────────┬──────────────────────┬────────────────┐
-│ Surface                 │ Missing functions    │ Missing events │
-├─────────────────────────┼──────────────────────┼────────────────┤
-│ System Pause lattice    │ —                    │ —              │
-│ Stake Manager           │ —                    │ —              │
-│ …                       │                      │ …              │
-└─────────────────────────┴──────────────────────┴────────────────┘
-✅ Governance surfaces are present. Owner and pauser controls are intact across the deployment lattice.
+## Control surface choreography
+
+```mermaid
+sequenceDiagram
+    participant OwnerSafe as Owner Safe
+    participant Configurator as OwnerConfigurator
+    participant Pause as SystemPause
+    participant Module as StakeManager / FeePool / Modules
+
+    OwnerSafe->>Configurator: configure(moduleKey, parameterKey, calldata)
+    Configurator->>Pause: executeGovernanceCall(target, calldata)
+    Pause-->>Module: target.setX(newValue)
+    Module-->>Pause: emits ParameterUpdated / ModulesUpdated
+    Pause-->>Configurator: GovernanceCallExecuted
+    Configurator-->>OwnerSafe: tx hash, summaries, event log
 ```
 
-Any missing function or event fails the job and lists the offenders. The script aborts the moment `$AGIALPHA` deviates from `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` or decimals drift away from `18`.
+The automation suite affirms that the contract owner can reconfigure every critical parameter without leaving the Safe:
+
+- **Treasury & routing controls:** `StakeManager.setTreasury`, `StakeManager.setFeePool`, `StakeManager.setTreasuryAllowlist`, `FeePool.setTreasury`, `FeePool.setTreasuryAllowlist`, `FeePool.setRewarder`.
+- **Pausing:** `SystemPause.pauseAll` / `unpauseAll`, plus individual module `pause` / `unpause` functions surfaced in the governance matrix.
+- **Module wiring:** `setGovernance`, `setTaxPolicy`, `setValidationModule`, `setDisputeModule`, `setIdentityRegistry`, `setReputationEngine`, `setCommittee`, and more—each checked by `check-governance-matrix.mjs`.
+- **Ownership discipline:** Every core contract exposes `transferOwnership` and `owner()`; the scripts fail if any of these signatures disappear.
+
+Extend `owner-set-treasury.js` by swapping `moduleKey`, `parameterKey`, and calldata encoders to target any other setter. The owner retains absolute command over configuration, routing, and circuit-breakers while the public interfaces stay immutable.
 
 ---
 
@@ -131,21 +148,37 @@ stateDiagram-v2
 
 1. Enable **Require status checks to pass before merging** with every check above selected and marked **Required**.
 2. Enable **Require branches to be up to date before merging** so the compiled artifacts match `main` at merge time.
-3. Enable **Include administrators** to keep human and automated guardians aligned.
-4. Lock merge methods to squash or rebase only if the governance board demands immutable history—CI summaries remain intact either way.
+3. Enable **Require a pull request before merging** and **Require approvals** to keep human and automated guardians aligned.
+4. Enable **Include administrators** so no privileged merge can bypass the safety lattice.
+5. Optionally restrict merge methods (squash / rebase) if the governance board demands immutable history—CI summaries remain intact either way.
 
 ---
 
 ## Owner prerogatives
 
-The automation suite affirms that the contract owner can reconfigure every critical parameter without leaving the Safe:
+| Module | Privileges guaranteed | Source |
+| --- | --- | --- |
+| `SystemPause` | `pauseAll`, `unpauseAll`, `refreshPausers`, `setModules`, `setGlobalPauser`, `executeGovernanceCall`, `transferOwnership`, `owner` | [`contracts/SystemPause.sol`](../contracts/SystemPause.sol) |
+| `StakeManager` | `setFeePool`, `setDisputeModule`, `setValidationModule`, `setJobRegistry`, `setTreasury`, `setTreasuryAllowlist`, `setRoleMinimums`, `applyConfiguration`, `pause`, `unpause`, `transferOwnership`, `owner` | [`contracts/StakeManager.sol`](../contracts/StakeManager.sol) |
+| `FeePool` | `setTreasury`, `setTreasuryAllowlist`, `setRewarder`, `setTaxPolicy`, `setGovernance`, `setStakeManager`, `pause`, `unpause`, `transferOwnership`, `owner` | [`contracts/FeePool.sol`](../contracts/FeePool.sol) |
+| `JobRegistry` | `setJobParameters`, `setTaxPolicy`, `setStakeManager`, `setIdentityRegistry`, `setValidationModule`, `setDisputeModule`, `setFeePool`, `applyConfiguration`, `pause`, `unpause`, `transferOwnership`, `owner` | [`contracts/JobRegistry.sol`](../contracts/JobRegistry.sol) |
+| `ValidationModule` | `setStakeManager`, `setIdentityRegistry`, `setReputationEngine`, `setSelectionStrategy`, `setRandaoCoordinator`, `pause`, `unpause`, `transferOwnership`, `owner` | [`contracts/ValidationModule.sol`](../contracts/ValidationModule.sol) |
+| `DisputeModule` | `setCommittee`, `setTaxPolicy`, `setDisputeFee`, `setDisputeWindow`, `pause`, `unpause`, `setPauser`, `setPauserManager`, `transferOwnership`, `owner` | [`contracts/modules/DisputeModule.sol`](../contracts/modules/DisputeModule.sol) |
+| `PlatformRegistry` | `setStakeManager`, `setReputationEngine`, `setRegistrar`, `setBlacklist`, `setMinPlatformStake`, `applyConfiguration`, `pause`, `unpause`, `transferOwnership`, `owner` | [`contracts/PlatformRegistry.sol`](../contracts/PlatformRegistry.sol) |
+| `ReputationEngine` | `setStakeManager`, `setCaller`, `setScoringWeights`, `setValidationRewardPercentage`, `setPremiumThreshold`, `setBlacklist`, `pause`, `unpause`, `transferOwnership`, `owner` | [`contracts/ReputationEngine.sol`](../contracts/ReputationEngine.sol) |
+| `ArbitratorCommittee` | `setDisputeModule`, `setCommitRevealWindows`, `setAbsenteeSlash`, `pause`, `unpause`, `transferOwnership`, `owner` | [`contracts/ArbitratorCommittee.sol`](../contracts/ArbitratorCommittee.sol) |
 
-- **Treasuries & routing:** `StakeManager.setTreasury`, `FeePool.setTreasury`, `FeePool.setRewarder`, `StakeManager.setFeePool`.
-- **Pausing:** `SystemPause.pauseAll` / `unpauseAll`, plus individual module `pause` / `unpause` functions surfaced in the governance matrix.
-- **Module wiring:** `setGovernance`, `setTaxPolicy`, `setValidationModule`, `setDisputeModule`, `setIdentityRegistry`, `setReputationEngine`, `setCommittee`, and more—each checked by `check-governance-matrix.mjs`.
-- **Ownership:** Every core contract exposes `transferOwnership` and `owner()`; the scripts fail if any of these signatures disappear.
+`check-governance-matrix.mjs` fails immediately if any privilege, event, or `$AGIALPHA` invariant disappears, ensuring the owner retains total command to tune economics, route funds, and pause operations.
 
-`owner-set-treasury.js` demonstrates the pattern: the owner Safe issues a governance call via `OwnerConfigurator.configure`, routing through `SystemPause` so pauser safeguards and event trails stay intact. Extend the approach for other parameters by swapping `moduleKey`, `parameterKey`, and calldata encoders.
+---
+
+## Observability and telemetry
+
+- **Step summaries:** Every script emits Markdown tables into `$GITHUB_STEP_SUMMARY` so auditors can trace decisions without digging through raw logs.
+- **Artifact retention:** `ci.yml` uploads `build/contracts` to the workflow, giving reviewers bytecode parity proof for each PR.
+- **Version beacons:** `write-compile-summary.js` records Node.js, npm, Truffle, Solidity, runner OS, and branch metadata—crucial when reproducing deployments.
+- **Governance tables:** `check-governance-matrix.mjs` prints a table of surfaces, missing functions, and missing events. Any deviation fails CI and highlights the offending contract.
+- **Manual command parity:** Running the launch checklist locally produces the same tables and status icons seen in CI, empowering non-technical operators to validate changes before signing transactions.
 
 ---
 
@@ -163,7 +196,9 @@ The automation suite affirms that the contract owner can reconfigure every criti
 
 ## Extending the lattice
 
-1. Mirror the precision: every new script must describe inputs, exit codes, and summary output. If it touches governance, craft a table comparable to `check-governance-matrix.mjs`.
-2. Encode `$AGIALPHA` invariants everywhere. Scripts should reject any token that is not `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` with `18` decimals.
-3. When adding workflows, publish badges here and mark each job as a **required** status check before merging.
-4. Prefer Node.js 20.x and `npm ci` to keep deterministic lockfile installs across developers and CI runners.
+1. Build new governance scripts beside the existing utilities, mirroring their use of `GITHUB_STEP_SUMMARY` for transparent reporting.
+2. Update [`ci.yml`](../.github/workflows/ci.yml) to run the new script within the `Governance surface audit` job (or a dedicated job) so the check becomes a required status before merging.
+3. Add documentation to this README detailing the new controls, parameters, and operator commands.
+4. If the new script exercises on-chain state changes, mirror the `owner-set-treasury.js` pattern so the owner Safe can sign once and control every parameter.
+
+With these guardrails, the Sovereign Labor platform stays deployable by non-technical operators while concentrating massive economic leverage in a safe, fully auditable package.
