@@ -1,0 +1,4 @@
+{
+  "filter_paths": "node_modules|foundry/test|foundry/lib|contracts/test",
+  "detectors_to_exclude": "arbitrary-send-erc20,reentrancy-eth,reentrancy-no-eth,weak-prng,locked-ether,divide-before-multiply,uninitialized-local,timestamp,low-level-calls,dead-code,costly-loop,too-many-digits,conformance-to-solidity-naming-conventions,mapping-deletion-with-structure"
+}
