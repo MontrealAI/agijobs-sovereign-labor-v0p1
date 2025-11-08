@@ -241,7 +241,7 @@ graph TD
 ```
 
 - **Truffle (`npm test` locally · `npm run test:truffle:ci` in CI).** Smoke-level Mocha specs boot `ConstantsHarness` and `StakeManagerHarness` so operators can validate deployments with the familiar `truffle test` shell while CI reuses compile artifacts for a deterministic pass.
-- **Hardhat (`npm run test:hardhat`).** Uses `hardhat_setCode` to emulate `$AGIALPHA`, impersonates the timelock Safe, and proves privileged setters, pause semantics, and `MaliciousJobRegistry` reentrancy probes all behave as intended.
+- **Hardhat (`npm run test:hardhat`).** Uses `hardhat_setCode` to emulate `$AGIALPHA`, impersonates the timelock Safe, and now runs twin suites: legacy `StakeManager` harness checks plus the new `SystemPause governance lattice` spec that proves the owner Safe can reroute treasuries, rewrite the `TaxPolicy`, and delegate guardian pausers without ever touching raw calldata.
 - **Foundry (`npm run test:foundry`).** High-entropy invariant suite fuzzes stake magnitudes, toggles pausers, and checks slashing fixed-point math without tolerating drift.
 
 Operators may choose whichever toolchain matches their muscle memory—each suite is deterministic, production-ready, and reported in CI.

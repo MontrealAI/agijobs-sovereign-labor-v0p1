@@ -88,6 +88,8 @@ The [`docs/operations/owner-control.md`](owner-control.md) playbook provides nar
 - **Parameter tuning.** Adjust validator quorum, slash basis points, dispute windows, and identity roots using pre-built JSON manifests.
 - **Identity onboarding.** Publish new ENS nodes and Merkle roots with transparent event logs.
 
+Hardhat proof-of-control: running `npm run test:hardhat` executes the SystemPause governance lattice spec so operators confirm treasuries, TaxPolicy text, and guardian pausers remain under Safe control before executing production flows.
+
 Every sequence mirrors CI governance checks and reuses the same `$AGIALPHA` manifest validation.
 
 ---

@@ -210,6 +210,7 @@ contract DeployMainnet is Script {
             address(feePool),
             address(reputationEngine),
             address(committee),
+            address(taxPolicy),
             deployer
         );
 
@@ -277,7 +278,8 @@ contract DeployMainnet is Script {
             address(platformRegistry),
             address(feePool),
             address(reputationEngine),
-            address(committee)
+            address(committee),
+            address(taxPolicy)
         );
         systemPause.setGlobalPauser(guardianSafe);
         systemPause.transferOwnership(ownerSafe);

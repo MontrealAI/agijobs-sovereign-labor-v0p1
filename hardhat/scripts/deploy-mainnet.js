@@ -158,6 +158,7 @@ async function main() {
     feePool.target,
     reputationEngine.target,
     arbitratorCommittee.target,
+    taxPolicy.target,
     deployer.address
   );
   await systemPause.waitForDeployment();
@@ -234,7 +235,8 @@ async function main() {
     platformRegistry.target,
     feePool.target,
     reputationEngine.target,
-    arbitratorCommittee.target
+    arbitratorCommittee.target,
+    taxPolicy.target
   ));
 
   await label('SystemPause.setGlobalPauser', systemPause.setGlobalPauser(config.guardianSafe));
