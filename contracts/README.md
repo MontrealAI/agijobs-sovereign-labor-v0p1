@@ -137,11 +137,11 @@ flowchart TD
 
 ### Configure the Launch
 
-1. Duplicate [`deploy/config.template.json`](../deploy/config.template.json) to `deploy/config.mainnet.json`.
-2. Set `chainId` to `1` and provide Safe addresses for `ownerSafe`, `guardianSafe`, and `treasury`.
-3. Confirm `$AGIALPHA` address is present under `tokens.agi` (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`).
+1. Edit [`deploy/config.mainnet.json`](../deploy/config.mainnet.json) in a fresh working copy (this repository ships the file with placeholder Safe addresses).
+2. Set `chainId` to `1` and provide checksum Safe addresses for `ownerSafe`, `guardianSafe`, and `treasury`.
+3. Confirm `$AGIALPHA` remains locked to `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` and that decimals stay `18`.
 4. Tune governance parameters (`platformFeeBps`, `minStakeWei`, `disputeWindow`, etc.) as required by the launch playbook.
-5. Commit the config to a secure vault—never to version control.
+5. Store the updated JSON in a secure vault—never commit secrets or production Safe addresses to source control.
 
 ### Dry-Run on Sepolia
 

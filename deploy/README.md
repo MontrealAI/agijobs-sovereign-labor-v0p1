@@ -213,7 +213,7 @@ stateDiagram-v2
 
 ### Step 0 — Prepare a clean cockpit
 1. Download the tagged release into a fresh directory (no cached build artefacts) and verify checksums against the release notes.
-2. Populate `deploy/config.mainnet.json`:
+2. Populate `deploy/config.mainnet.json` (the repository ships placeholders so you always start from a clean slate):
    - `ownerSafe`, `guardianSafe`, `treasury` must be EIP-55 checksum addresses.
    - Keep `$AGIALPHA` fixed at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals).
    - Adjust `params` (`platformFeeBps`, `minStakeWei`, `slashBps`, `validatorQuorum`, `burnBpsOfFee`, optional `jobStakeWei`, `disputeFeeWei`, `disputeWindow`) to match governance decisions.

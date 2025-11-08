@@ -293,7 +293,7 @@ sequenceDiagram
 
 ### Deployment checklist
 1. **Prepare the workstation.** Install Node.js 20 LTS, clone this repository, and run `npm ci --omit=optional --no-audit --no-fund`.
-2. **Configure secrets.** Populate `.env` with RPC endpoints, mnemonic, and Etherscan API key. Verify `$AGIALPHA` entries across config files.
+2. **Configure secrets and manifests.** Populate `.env` with RPC endpoints, mnemonic, and Etherscan API key. Update `deploy/config.mainnet.json` with production Safe addresses (the repository ships placeholders) and archive the edited file in your secrets vault—never commit it back to source control. Verify `$AGIALPHA` entries across config files remain `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` with 18 decimals.
 3. **Dry-run governance.** Run `npm run ci:governance` and inspect the generated summaries before scheduling timelock transactions.
 4. **Migrate.** Execute the deployment autopilot of choice—Truffle (`npx truffle migrate ...`), Hardhat (`npm run deploy:hardhat:mainnet`), or Foundry (`npm run deploy:foundry:mainnet`). Each writes manifests and performs the same `$AGIALPHA`, ENS, and governance validations before signing transactions. Double-check `owner()` for every module equals the Safe.
 5. **Post-launch.** Run the full CI suite locally (`npm run test:ci`) and archive the passing summaries alongside Safe transaction hashes.
