@@ -41,7 +41,10 @@
 ├── hardhat/               # Hardhat executors, tests, and this command deck
 ├── migrations/            # Truffle migrations (canonical mainnet scripts)
 ├── scripts/               # CI utilities (branch naming, governance matrix)
+│   ├── deploy/            # Shared config loader for Hardhat/Truffle/Foundry
+│   └── verify-artifacts.js  # ABI + bytecode integrity checks reused by CI
 ├── truffle/               # Generated manifests & aux configs
+│   └── util/              # Manifest writers consumed by deployments
 └── docs/, README.md, ...  # Higher-level specs and reference notes
 ```
 
@@ -72,7 +75,7 @@ mindmap
       Thermostat & modules enforce policy gradients
 ```
 
-Every subsystem is reachable through `SystemPause`, granting the operator surgical control without redeploying contracts.
+Every subsystem is reachable through `SystemPause`, with the owner safe typically orchestrating updates through `OwnerConfigurator` to emit tamper-evident change logs.
 
 ---
 
@@ -84,6 +87,7 @@ flowchart LR
         Owner[[Owner Safe]]
         Guardian[[Guardian Safe]]
         Operators[[Operational Oracles]]
+        Configurator[[Owner Configurator]]
     end
     subgraph Kernel
         Pause[SystemPause]
@@ -109,7 +113,8 @@ flowchart LR
         Token[$AGIALPHA]
     end
 
-    Owner -->|governance| Pause
+    Owner -->|governance| Configurator
+    Configurator -->|batched setters| Pause
     Guardian -->|emergency pause| Pause
     Operators -->|curated updates| Pause
     Pause --> Jobs & Stake & Valid & Dispute & Platform & FeePool & Reputation & Committee & Tax
@@ -167,6 +172,7 @@ Keep `.env` out of version control (already excluded via `.gitignore`).
 
 | Capability | Command | Result |
 | --- | --- | --- |
+| Branch naming sentinel | `npm run lint:branch` | Enforces repo-wide branch naming policy before pushing. |
 | Compile (Truffle) | `npm run compile` | Generates canonical artifacts in `build/contracts`. |
 | Compile (Hardhat) | `npx hardhat compile` | Optional Hardhat-native build for debugging. |
 | Solidity lint | `npm run lint:sol` | Solhint audit (warnings fail the run). |
@@ -174,6 +180,7 @@ Keep `.env` out of version control (already excluded via `.gitignore`).
 | Tests (Hardhat) | `npm run test:hardhat` | Executes ethers/Hardhat suites. |
 | Tests (Foundry) | `npm run test:foundry` | Executes Forge fuzzing and invariants. |
 | Full CI parity | `npm run test:ci` | Runs Truffle, Hardhat, and Foundry sequentially. |
+| Artifact integrity | `node scripts/verify-artifacts.js` | Validates build outputs match ABI/hash expectations. |
 | Governance lattice audit | `npm run ci:governance` | Validates ownership & pauser topology. |
 | Mainnet deploy (Truffle) | `npm run deploy:truffle:mainnet` | Idempotent migration with guardrails. |
 | Mainnet deploy (Hardhat) | `npm run deploy:hardhat:mainnet` | Hardhat executor using the same manifest. |
@@ -235,6 +242,7 @@ The script:
 - Aborts if `chainId` ≠ `config.chainId`.
 - Verifies $AGIALPHA decimals (must equal 18) and metadata sanity.
 - Deploys kernel modules, transfers ownership to `SystemPause`, then assigns governance to `ownerSafe`/`guardianSafe`.
+- Boots `OwnerConfigurator` for batched parameter control by the owner safe.
 - Writes a manifest under `truffle/manifests/mainnet.json`.
 
 ### 5. Finalise governance handoff
@@ -309,6 +317,7 @@ Follow with `migrations/3_mainnet_finalize.js` to validate ownership, guardian w
 
 | Function | Module | Purpose |
 | --- | --- | --- |
+| `OwnerConfigurator.configure{Batch}()` | `OwnerConfigurator` | Batch forward arbitrary governance-approved setters while emitting `ParameterUpdated` for runbook telemetry. |
 | `SystemPause.setModules(...)` | `SystemPause` | Rewire JobRegistry, StakeManager, ValidationModule, DisputeModule, PlatformRegistry, FeePool, ReputationEngine, ArbitratorCommittee, and TaxPolicy after ownership verification. |
 | `SystemPause.setGlobalPauser(address)` / `refreshPausers()` | `SystemPause` | Rotate guardian safe or restore self-managed pausing across every module. |
 | `SystemPause.pauseAll()` / `unpauseAll()` | `SystemPause` | Freeze or resume every contract in one transaction. |
@@ -344,15 +353,17 @@ flowchart TD
     Status -->|Green checks required| Merge[Merge to main/develop]
 ```
 
-1. **`ci.yml`** – linting, compile verification, Truffle/Hardhat/Foundry tests, governance matrix validation.
+1. **`ci.yml`** – linting, compile verification, Truffle/Hardhat/Foundry tests, governance matrix validation, and Actionlint hygiene checks.
 2. **`branch-checks.yml`** – enforces branch naming conventions to keep audit logs coherent.
 3. **`security.yml`** – Slither static analysis, Mythril symbolic execution, and Foundry build invariants.
 
 **Local parity ritual**
 ```bash
+npm run lint:branch
 npm run lint:sol
 npm run test:ci
 npm run ci:governance
+node scripts/verify-artifacts.js
 ```
 
 **Enforce protections on GitHub**
