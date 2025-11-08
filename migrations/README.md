@@ -1,303 +1,156 @@
-# Sovereign Labor Migration Codex // Kernel Orchestration
+# Sovereign Labor Migration Codex
 
-[![Sovereign Compile](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml/badge.svg?branch=main&style=for-the-badge)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
-[![Branch Gatekeeper](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml/badge.svg?branch=main&style=for-the-badge)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml)
-[![Main ➜ Protected](https://img.shields.io/badge/Branch%20Protection-main%20%E2%9E%9C%20locked-1f6feb?style=for-the-badge&logo=github)](#continuous-integration--branch-enforcement)
-[![PRs ➜ Checks Required](https://img.shields.io/badge/PR%20Gate-All%20Checks%20Required-ff7b72?style=for-the-badge&logo=githubactions)](#continuous-integration--branch-enforcement)
-[![AGIALPHA Spine](https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-5522aa?style=for-the-badge)](https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa)
-![Node 20 LTS](https://img.shields.io/badge/Node.js-20.x-43853d?logo=node.js&style=for-the-badge)
-![Truffle 5.11](https://img.shields.io/badge/Truffle-5.11.x-5e464d?logo=truffle&style=for-the-badge)
+[![Sovereign Compile](https://img.shields.io/github/actions/workflow/status/agijobs/agijobs-sovereign-labor-v0p1/ci.yml?branch=main&label=Sovereign%20Compile&logo=github&style=for-the-badge)](https://github.com/agijobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
+[![Security Scans](https://img.shields.io/github/actions/workflow/status/agijobs/agijobs-sovereign-labor-v0p1/security.yml?branch=main&label=Security%20Scans&logo=dependabot&style=for-the-badge)](https://github.com/agijobs/agijobs-sovereign-labor-v0p1/actions/workflows/security.yml)
+[![Branch Gatekeeper](https://img.shields.io/github/actions/workflow/status/agijobs/agijobs-sovereign-labor-v0p1/branch-checks.yml?branch=main&label=Branch%20Gatekeeper&logo=github&style=for-the-badge)](https://github.com/agijobs/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml)
+![Truffle 5.11.5](https://img.shields.io/badge/Truffle-5.11.5-5e464d?logo=truffle&style=for-the-badge)
 ![Solidity 0.8.30](https://img.shields.io/badge/Solidity-0.8.30-363636?logo=solidity&style=for-the-badge)
-![MIT Licensed](https://img.shields.io/badge/License-MIT-0A7CA5?style=for-the-badge)
+![\$AGIALPHA](https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-5522aa?style=for-the-badge)
 
-> This codex is the owner’s flight deck for the Sovereign Labor lattice—the operational choreography that lets one Safe govern staking, disputes, attestations, and treasury with the calm certainty of an unstoppable machine.
+> The migration suite materialises the sovereign labor lattice on any network. It encodes the same invariants enforced by the Hardhat and Foundry autopilots, so whichever toolchain you select, the owner retains complete command.
 
 ---
 
 ## Table of Contents
 1. [Mission Signal](#mission-signal)
-2. [Constellation Snapshot (Mermaid)](#constellation-snapshot-mermaid)
-3. [Continuous Integration & Branch Enforcement](#continuous-integration--branch-enforcement)
-4. [Toolchain & Environment Prerequisites](#toolchain--environment-prerequisites)
-5. [Migration Pipeline Overview](#migration-pipeline-overview)
-6. [Step 0 – Preflight Integrity](#step-0--preflight-integrity)
-7. [Step 1 – `1_deploy_kernel.js`](#step-1--1_deploy_kerneljs)
-8. [Step 2 – `2_register_pause.js`](#step-2--2_register_pausejs)
-9. [Step 3 – `3_mainnet_finalize.js`](#step-3--3_mainnet_finalizejs)
-10. [Owner Command Authority](#owner-command-authority)
-11. [Validation Telemetry (Mermaid)](#validation-telemetry-mermaid)
-12. [Troubleshooting & Recovery Spiral](#troubleshooting--recovery-spiral)
-13. [Reference Command Matrix](#reference-command-matrix)
+2. [Constellation Snapshot](#constellation-snapshot)
+3. [Workflow Guard Rails](#workflow-guard-rails)
+4. [Preflight Integrity](#preflight-integrity)
+5. [Step 1 – `1_deploy_kernel.js`](#step-1--1_deploy_kerneljs)
+6. [Step 2 – `2_register_pause.js`](#step-2--2_register_pausejs)
+7. [Step 3 – `3_mainnet_finalize.js`](#step-3--3_mainnet_finalizejs)
+8. [Autopilot Parity](#autopilot-parity)
+9. [Diagnostics & Recovery](#diagnostics--recovery)
+10. [Reference Commands](#reference-commands)
 
 ---
 
 ## Mission Signal
-
-The migration suite crystallises the Sovereign Labor kernel on any EVM chain while keeping `$AGIALPHA = 0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals) wired through every module. Each script is deterministic, idempotent, and emits manifests that keep CI, governance, and audits in a single trust loop. The owner Safe retains unilateral authority to tune economics, pause flows, rotate modules, and evolve policy at line speed.
+- **Canonical economics.** Deployments halt if `$AGIALPHA` deviates from `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` or lacks 18 decimals.
+- **SystemPause supremacy.** All modules are transferred to `SystemPause`, which then hands control to the owner Safe. Guardian Safe becomes the delegated pauser.
+- **Manifest fidelity.** Percentages, quorums, ENS nodes, and Merkle roots are validated from `deploy/config.mainnet.json` before any contract is deployed.
+- **Evidence output.** Each migration writes manifests with chain ID, Safes, and contract addresses for audit trails.
 
 ---
 
-## Constellation Snapshot (Mermaid)
-
+## Constellation Snapshot
 ```mermaid
-flowchart LR
-    subgraph Stage0[Preflight & Evidence]
-        Config[deploy/config.mainnet.json]
-        Env[Secrets
-        MAINNET_RPC · SEPOLIA_RPC
-        DEPLOYER_PK · ETHERSCAN_API_KEY]
-        CI[GitHub Actions
-        Sovereign Compile ▸ Branch Gatekeeper]
+flowchart TB
+    subgraph Stage1[1_deploy_kernel.js]
+        deployOwner[OwnerConfigurator]
+        deployEconomics[StakeManager / FeePool / TaxPolicy]
+        deployLabor[JobRegistry / ValidationModule / DisputeModule]
+        deployIdentity[IdentityRegistry / AttestationRegistry / CertificateNFT]
+        deployPause[SystemPause]
+    end
+    subgraph Stage2[2_register_pause.js]
+        census[Ownership census]
+        guardian[Guardian registration]
+    end
+    subgraph Stage3[3_mainnet_finalize.js]
+        audit[Pointer & token audit]
+        manifest[Manifest write]
     end
 
-    subgraph Stage1[1_deploy_kernel]
-        OwnerCfg[OwnerConfigurator]
-        Pause[SystemPause]
-        Kernel[StakeManager · JobRegistry · ValidationModule · DisputeModule · PlatformRegistry · ReputationEngine]
-        IdentityMesh[IdentityRegistry · AttestationRegistry · CertificateNFT]
-        Treasury[FeePool · TaxPolicy]
-    end
-
-    subgraph Stage2[2_register_pause]
-        Snapshot[Ownership Snapshot]
-        Guardian[Active Pauser]
-    end
-
-    subgraph Stage3[3_mainnet_finalize]
-        Checks[Ownership & Pointer Checks]
-        TokenAudit[$AGIALPHA Token Audit]
-        FinalReport[Final Validation Log]
-    end
-
-    Config --> Stage1
-    Env --> Stage1
-    CI --> Stage1
-    Stage1 --> Manifest[Deployment Manifest]
-    Stage1 --> Stage2
-    Stage2 --> Stage3
-    Stage3 --> FinalReport
-    Manifest --> Evidence[(Evidence Archive)]
-    FinalReport --> Evidence
-    Evidence --> OwnerSafe[[Owner Safe]]
-    OwnerSafe --> Pause
-    Pause --> Kernel
-    Pause --> IdentityMesh
-    Pause --> Treasury
+    deployOwner --> deployPause
+    deployEconomics --> deployPause
+    deployLabor --> deployPause
+    deployIdentity --> deployPause
+    deployPause --> census --> audit --> manifest
 ```
 
-Everything flows through the owner’s Safe: migrations only complete when every subsystem reports to `SystemPause`, the guardian Safe holds the live pause key, and `$AGIALPHA` remains the immutable economic spine.
-
 ---
 
-## Continuous Integration & Branch Enforcement
-
-| Check | Workflow | Trigger | Command Surface |
-| --- | --- | --- | --- |
-| Solidity lint | [`ci.yml`](../.github/workflows/ci.yml) | push, PR, manual | `npm run lint:sol` |
-| Compile + artifact verify | [`ci.yml`](../.github/workflows/ci.yml) | push, PR, manual | `npm run compile`, `node scripts/verify-artifacts.js`, `node scripts/write-compile-summary.js` |
-| Governance surface audit | [`ci.yml`](../.github/workflows/ci.yml) | push, PR, manual | `npm run ci:governance` |
-| Workflow hygiene | [`ci.yml`](../.github/workflows/ci.yml) | push, PR, manual | `actionlint -color` |
-| Branch naming gate | [`branch-checks.yml`](../.github/workflows/branch-checks.yml) | push, PR, manual | `node scripts/check-branch-name.mjs` |
-
-**Branch protection (mirror on `main` and `develop`):** require status checks `Sovereign Compile` & `Branch Gatekeeper`, enforce up-to-date branches, forbid force-pushes/deletions, demand ≥1 approving review, and prefer signed commits. Use the [`gh api` recipe](../deploy/README.md#continuous-integration--branch-enforcement) to automate enforcement so the badges above always reflect live protections.
-
----
-
-## Toolchain & Environment Prerequisites
-
-| Requirement | Why | Verification |
+## Workflow Guard Rails
+| Check | Workflow | Purpose |
 | --- | --- | --- |
-| Node 20.x & npm 10.x | Matches GitHub Actions and `package-lock.json`. | `node --version`, `npm --version` |
-| Truffle 5.11.x | Aligns with `truffle-config.js` (`solc 0.8.30`, viaIR, optimizer runs = 5). | `npx truffle version` |
-| Network access | `MAINNET_RPC` & `SEPOLIA_RPC` endpoints for deployments and dry-runs. | `cast chain --rpc $MAINNET_RPC` |
-| Deployer key | `DEPLOYER_PK` exported with gas budget to execute all migrations. | `cast balance $DEPLOYER --rpc $MAINNET_RPC` |
-| Etherscan API | Optional but required for `npm run verify:mainnet`. | `echo $ETHERSCAN_API_KEY | wc -c` |
-| Config manifest | `deploy/config.mainnet.json` or alternate path via `DEPLOY_CONFIG`. | `jq '.' deploy/config.mainnet.json` |
-| Evidence vault | Repository write access to commit `manifests/<network>.json` outputs from migrations. | `git status` |
-
-Non-technical operators can run everything through `npx truffle` plus the commands listed; the scripts are deterministic and halt on any misconfiguration before gas is spent.
+| `ci.yml / Solidity lint` | `npm run lint:sol` | Zero-warning policy for Solidity sources. |
+| `ci.yml / Compile smart contracts` | `npm run compile`, `node scripts/verify-artifacts.js` | Deterministic artifacts for migrations. |
+| `ci.yml / Governance surface audit` | `npm run ci:governance` | Confirms every privileged setter remains available. |
+| `ci.yml / Test suites` | `npm run test:truffle:ci`, `npm run test:hardhat`, `npm run test:foundry` | Confirms runtime behaviour matches expectations. |
+| `security.yml` jobs | Slither + Mythril | Static and symbolic analysis of privileged contracts. |
+| `branch-checks.yml` | `node scripts/check-branch-name.mjs` | Enforces branch taxonomy before merging migration changes. |
 
 ---
 
-## Migration Pipeline Overview
-
-```mermaid
-gantt
-    title Sovereign Labor Migration Timeline
-    dateFormat  HH:mm
-    axisFormat  %H:%M
-    section Preflight
-    Validate config & env       :done,    a1, 00:00, 00:10
-    Dry-run CI locally          :active,  a2, 00:10, 00:15
-    section Deployment
-    1_deploy_kernel.js          :        b1, 00:15, 00:25
-    Ownership acceptance (Safe) :        b2, 00:25, 00:05
-    2_register_pause.js         :        b3, 00:30, 00:05
-    3_mainnet_finalize.js       :        b4, 00:35, 00:05
-    Evidence commit & sign-off  :        b5, 00:40, 00:10
-```
-
-The durations are indicative—gas costs are minimised by batching safe confirmations while the scripts enforce every invariant before proceeding.
-
----
-
-## Step 0 – Preflight Integrity
-
-1. **Clone & install:** `npm ci --omit=optional --no-audit --no-fund`.
-2. **Mirror CI locally:**
-   ```bash
-   npm run lint:sol
-   npm run compile
-   node scripts/verify-artifacts.js
-   npm run ci:governance
-   npm run test:truffle:ci
-   npm run test:hardhat
-   npm run test:foundry
-   ```
-3. **Sanity-check config:**
-   ```bash
-   jq '.' deploy/config.mainnet.json
-   cast resolve-name agent.agi.eth --rpc $MAINNET_RPC
-   cast resolve-name club.agi.eth --rpc $MAINNET_RPC
-   ```
-4. **Load secrets:** export `MAINNET_RPC`, `DEPLOYER_PK`, `ETHERSCAN_API_KEY`, and optionally `DEPLOY_CONFIG` if using a bespoke JSON manifest.
-5. **Stage manifest directory:** migrations append to `manifests/` via `truffle/util/writeManifest.js`.
-6. **Cue Safe signers:** queue `acceptOwnership` for IdentityRegistry and AttestationRegistry; the owner Safe completes these off-chain right after Step 1.
-
-If any command diverges from CI output, stop and reconcile before touching mainnet.
+## Preflight Integrity
+1. Install dependencies (`npm ci --omit=optional --no-audit --no-fund`).
+2. Export environment variables: `MAINNET_RPC`, `SEPOLIA_RPC`, `DEPLOYER_PK`, `ETHERSCAN_API_KEY`, optional `DEPLOY_CONFIG`.
+3. Update `deploy/config.mainnet.json` with production addresses and parameters.
+4. Mirror CI locally (lint, compile, verify artifacts, governance audit, all tests).
+5. `cast chain --rpc $MAINNET_RPC` and `cast balance $(cast wallet address $DEPLOYER_PK)` to verify connectivity and funding.
+6. Stage evidence directories for manifests and Safe transaction receipts.
 
 ---
 
 ## Step 1 – `1_deploy_kernel.js`
+- Deploys `OwnerConfigurator`, `TaxPolicy`, `StakeManager`, `FeePool`, `ReputationEngine`, `PlatformRegistry`, `IdentityRegistry`, `AttestationRegistry`, `CertificateNFT`, `ValidationModule`, `DisputeModule`, `JobRegistry`, `ArbitratorCommittee`, and `SystemPause`.
+- Validates chain ID, `$AGIALPHA` metadata (symbol, decimals), percentage multiples, identity roots, and treasury addresses.
+- Wires every module together via `set*` calls.
+- Transfers module ownership to `SystemPause`, sets the guardian as global pauser, and transfers SystemPause + identity modules to the owner Safe.
+- Writes interim manifest entries.
 
-`npx truffle migrate --network <net> --f 1 --to 1 --skip-dry-run`
-
-| Guarantee | Implementation |
-| --- | --- |
-| **Chain identity lock** | Halts when `cfg.chainId` mismatches `web3.eth.getChainId()`. |
-| **Immutable `$AGIALPHA`** | Requires `cfg.tokens.agi === 0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` on mainnet and checks ERC-20 `decimals == 18`, `symbol == AGIALPHA`, rejects “test” names. |
-| **Parameter hygiene** | Validates `platformFeeBps`, `burnBpsOfFee`, `slashBps`, quorum, and ENS/merkle roots before any deployment. |
-| **Module deployment** | Spins up `OwnerConfigurator`, `TaxPolicy`, `StakeManager`, `FeePool`, `ReputationEngine`, `PlatformRegistry`, `AttestationRegistry`, `IdentityRegistry`, `CertificateNFT`, `ValidationModule`, `DisputeModule`, `JobRegistry`, and `ArbitratorCommittee`. |
-| **Wiring discipline** | Invokes all `set*` governance setters to link staking, disputes, validation, reputation, certificates, tax policy, fee routing, and identity proofs. |
-| **Treasury control** | Grants allowlist, assigns treasury Safe, and sets burn percentages. |
-| **Governance lattice** | Transfers ownership of every module to `SystemPause`, delegates TaxPolicy acceptance, assigns guardian Safe as global pauser, then hands `SystemPause`, Identity, Attestation, and Certificate control to the owner Safe. |
-| **Manifest logging** | Calls `truffle/util/writeManifest` with deployed addresses, Safes, and chain metadata. |
-
-🧭 **Operator checklist:** after execution, the owner Safe must execute the pending `acceptOwnership` transactions surfaced in the Safe queue for IdentityRegistry and AttestationRegistry.
+Command:
+```bash
+npx truffle migrate --network mainnet --f 1 --to 1 --skip-dry-run
+```
 
 ---
 
 ## Step 2 – `2_register_pause.js`
+- Confirms `SystemPause.owner()` equals the owner Safe.
+- Confirms `SystemPause.activePauser()` equals the guardian Safe (or fallback to owner if omitted).
+- Pulls each module pointer from SystemPause and validates ownership.
+- Emits ownership census to stdout for the evidence archive.
 
-`npx truffle migrate --network <net> --f 2 --to 2 --skip-dry-run`
-
-| Guarantee | Implementation |
-| --- | --- |
-| **Owner alignment** | Confirms `SystemPause.owner()` equals `ownerSafe` and `activePauser()` equals `guardianSafe` (or owner fallback). |
-| **Module census** | Pulls pointers for JobRegistry, StakeManager, ValidationModule, DisputeModule, PlatformRegistry, FeePool, ReputationEngine, ArbitratorCommittee, and TaxPolicy; verifies each contract’s `owner()` reports `SystemPause`. |
-| **Audit telemetry** | Prints an ownership table to stdout for archival evidence. |
-
-If any module isn’t under pause control the script reverts before gas is consumed on subsequent steps.
+Command:
+```bash
+npx truffle migrate --network mainnet --f 2 --to 2 --skip-dry-run
+```
 
 ---
 
 ## Step 3 – `3_mainnet_finalize.js`
+- Verifies `$AGIALPHA` constants against [`Constants.sol`](../contracts/Constants.sol) and the manifest.
+- Asserts treasury, owner Safe, guardian Safe, and module pointers align with the manifest.
+- Halts with descriptive errors if any pointer or invariant drifts.
+- Writes `manifests/addresses.<network>.json`.
 
-`npx truffle migrate --network <net> --f 3 --to 3 --skip-dry-run`
-
-| Guarantee | Implementation |
-| --- | --- |
-| **Chain revalidation** | Skips execution when `web3.eth.getChainId()` differs from `cfg.chainId`, preventing cross-chain mistakes. |
-| **Ownership finality** | Re-checks ownership for all core modules (`SystemPause`, JobRegistry, StakeManager, ValidationModule, DisputeModule, PlatformRegistry, FeePool, ReputationEngine, ArbitratorCommittee, TaxPolicy). |
-| **Guardian authority** | Verifies the live `activePauser()` matches guardian (or owner fallback). |
-| **Pointer integrity** | Asserts `SystemPause` pointers match deployed addresses for validation, staking, dispute, platform, fee pool, reputation, committee. |
-| **Token audit** | Requires `FeePool.token()` to equal configured `$AGIALPHA`, blocking any drift away from `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`. |
-| **Treasury heads-up** | Warns (does not revert) if `StakeManager.treasury()` diverges from config so the owner can reconcile manually. |
-| **Final signal** | Emits a success log confirming the governance lattice is ready for production traffic. |
-
-Once this step passes, CI artefacts plus the manifest give incontrovertible evidence that the deployment matches repository code.
-
----
-
-## Owner Command Authority
-
-`SystemPause` is the command bus—`onlyGovernance` functions execute through the owner Safe (Timelock/Multisig). The table below surfaces the highest-leverage controls for the operator:
-
-| Module | Core Controls (all `onlyGovernance`) | Purpose |
-| --- | --- | --- |
-| `SystemPause` | `setModules`, `setGlobalPauser`, `pauseAll`, `unpauseAll`, `executeGovernanceCall` | Rotate modules, delegate pausing, freeze/unfreeze the entire lattice, and forward arbitrary governed calls. |
-| `StakeManager` | `setFeePool`, `setDisputeModule`, `setValidationModule`, `setJobRegistry`, `setTreasury`, `setTreasuryAllowlist`, `setRoleMinimums`, `applyConfiguration`, `pause`, `unpause` | Adjust staking economics, treasury routing, dispute hooks, and pause staking flows instantly. |
-| `JobRegistry` | `setStakeManager`, `setValidationModule`, `setDisputeModule`, `setCertificate`, `setFeePool`, `setTaxPolicy`, `setPlatformRegistry`, `setPlatformFee`, `pause`, `unpause` | Tune job escrow parameters, routing, taxation, and pause job lifecycle. |
-| `FeePool` | `setStakeManager`, `setTreasury`, `setTreasuryAllowlist`, `setTaxPolicy`, `setRewardRole`, `setBurn`, `pause`, `unpause` | Direct payouts, treasury, burn rate, and halt settlement. |
-| `ValidationModule` | `setJobRegistry`, `setStakeManager`, `setIdentityRegistry`, `setReputationEngine`, `setFailover`, `pause`, `unpause` | Steer validation topology, failover windows, and gating. |
-| `DisputeModule` | `setJobRegistry`, `setStakeManager`, `setCommittee`, `setTaxPolicy`, `setValidationModule`, `setEscrow`, `pause`, `unpause` | Govern dispute resolution flow and supporting modules. |
-| `PlatformRegistry` | `setStakeManager`, `setReputationEngine`, `setTaxPolicy`, `pause`, `unpause` | Control operator onboarding thresholds. |
-| `ReputationEngine` | `setCaller`, `setWeights`, `pause`, `unpause` | Manage who can mutate reputation and weighting algorithms. |
-| `TaxPolicy` | `setPolicy`, `setDescription`, `transferOwnership` | Publish new tax documents and messaging. |
-
-Every setter is routed through governance, guaranteeing that the owner Safe can mutate policy, economics, or pause states on demand without redeploying contracts.
-
----
-
-## Validation Telemetry (Mermaid)
-
-```mermaid
-sequenceDiagram
-    participant Operator
-    participant CLI as Operator Terminal
-    participant Pause as SystemPause
-    participant Safe as Owner Safe
-    participant CI as GitHub Actions
-    participant Ledger as Manifest Vault
-
-    Operator->>CLI: Export secrets + npm ci
-    Operator->>CLI: npm run lint:sol ▸ npm run compile ▸ npm run ci:governance
-    CLI->>CI: Push branch → Sovereign Compile + Branch Gatekeeper badges
-    Operator->>CLI: truffle migrate --network mainnet --f 1 --to 1
-    CLI->>Pause: Deploy lattice, transfer ownership, set guardian
-    Pause->>Safe: Pending acceptOwnership (Identity/Attestation)
-    Safe-->>Pause: Execute queued acceptOwnership transactions
-    Operator->>CLI: truffle migrate --f 2 --to 2
-    CLI->>Pause: Ownership census & guardian verification
-    Operator->>CLI: truffle migrate --f 3 --to 3
-    CLI->>Pause: Pointer & token audit, final ✅
-    CLI->>Ledger: Commit manifests + CI artefacts
-    Ledger->>Operator: Signed evidence packet ready for auditors
+Command:
+```bash
+npx truffle migrate --network mainnet --f 3 --to 3 --skip-dry-run
 ```
 
-The same choreography runs identically on Sepolia dry-runs—swap RPC endpoints and chain IDs in the config manifest.
-
 ---
 
-## Troubleshooting & Recovery Spiral
-
-| Symptom | Detection | Remedy |
+## Autopilot Parity
+| Toolchain | Command | Notes |
 | --- | --- | --- |
-| `Mainnet AGIALPHA must be …` error | `$AGIALPHA` address mismatch or non-18 decimal token. | Update `tokens.agi` to `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`; confirm ERC-20 metadata via `cast call`. |
-| `platformFeeBps` / `burnBpsOfFee` validation failures | Config values not multiples of 100 or >100%. | Adjust basis points to compliant values (e.g. 1000 = 10%). |
-| Guardian mismatch in Step 2/3 | `activePauser()` not set to guardian Safe. | Re-run Step 1 after ensuring `cfg.guardianSafe` is correct, or call `SystemPause.setGlobalPauser` via owner Safe. |
-| Ownership mismatch in Step 3 | Module did not transfer or Safe missed acceptance. | Execute `acceptOwnership` via Safe, then re-run Step 2 and Step 3. |
-| FeePool token drift | Configured token differs from deployed constant. | Abort deployment, correct config, redeploy Step 1. |
-| Treasury warning | StakeManager treasury differs from config (info-level). | Update config for future runs and, if necessary, invoke `StakeManager.setTreasury` via owner Safe. |
-| CI badge red | Workflow failure or branch policy breach. | Inspect run logs under GitHub Actions, fix root cause, rerun before merging. |
+| Truffle | `npm run deploy:truffle:mainnet` | Executes all three migrations sequentially (the scripts described above). |
+| Hardhat | `npm run deploy:hardhat:mainnet` | [`hardhat/scripts/deploy-mainnet.js`](../hardhat/scripts/deploy-mainnet.js) mirrors every migration step with `ethers`. |
+| Foundry | `npm run deploy:foundry:mainnet` | [`foundry/script/DeployMainnet.s.sol`](../foundry/script/DeployMainnet.s.sol) reimplements the sequence in Solidity with `forge script`. |
 
-All scripts are safe to re-run; they halt before state changes when invariants are already satisfied.
+All flows rely on the same manifest loader (`scripts/deploy/load-config.js` or its Solidity equivalent) so the invariants remain synchronized.
 
 ---
 
-## Reference Command Matrix
+## Diagnostics & Recovery
+- **Guardian pause:** Guardian Safe calls `SystemPause.pauseAll()` if any step fails post-launch.
+- **Reconfiguration:** Owner Safe uses `OwnerConfigurator.configure` to update module pointers or parameters, then executes through `SystemPause.executeGovernanceCall`.
+- **Validation:** Re-run `npm run ci:governance` and the test suites locally. Archive the outputs with Safe transaction hashes.
+- **Resume:** Owner Safe calls `SystemPause.unpauseAll()` once diagnostics confirm stability.
 
-| Task | Command |
+---
+
+## Reference Commands
+| Purpose | Command |
 | --- | --- |
-| Install | `npm ci --omit=optional --no-audit --no-fund` |
-| Compile | `npm run compile` |
-| Lint | `npm run lint:sol` |
-| Governance audit | `npm run ci:governance` |
-| Mainnet deploy step 1 | `npx truffle migrate --network mainnet --f 1 --to 1 --skip-dry-run` |
-| Mainnet deploy step 2 | `npx truffle migrate --network mainnet --f 2 --to 2 --skip-dry-run` |
-| Mainnet deploy step 3 | `npx truffle migrate --network mainnet --f 3 --to 3 --skip-dry-run` |
-| Verify on Etherscan | `npm run verify:mainnet` |
-| Regenerate manifest | `node truffle/util/writeManifest.js` (usually invoked by migrations) |
-| Update branch protection | `gh api repos/MontrealAI/agijobs-sovereign-labor-v0p1/branches/main/protection --method PUT ...` |
+| Preflight check | `npm run lint:sol && npm run compile && node scripts/verify-artifacts.js && npm run ci:governance` |
+| Dry-run on Sepolia | `TRUFFLE_CONFIG=deploy/config.sepolia.json npx truffle migrate --network sepolia --reset` |
+| Mainnet full deployment | `npm run deploy:truffle:mainnet` |
+| Governance audit | `npm run ci:governance -- --format table` |
+| Ownership census | `npx truffle migrate --network mainnet --f 2 --to 2 --skip-dry-run` |
+| Manifest verification | `node scripts/verify-artifacts.js` |
+| Safe-ready treasury rotation | `NEW_TREASURY=0x... npx truffle exec scripts/owner-set-treasury.js --network mainnet` |
 
-Lock this codex to every release tag so auditors, operators, and Safe signers always have a single source of truth for orchestrating the Sovereign Labor machine.
+Keep these scripts on standby; they are the same levers CI enforces and the owner Safe controls in production.
