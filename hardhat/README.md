@@ -276,7 +276,7 @@ For the post-deployment audit sweep, consult [`migrations/3_mainnet_finalize.js`
 | Function | Purpose | Location |
 | --- | --- | --- |
 | `setModules(...)` | Rewire any core module (JobRegistry, StakeManager, ValidationModule, DisputeModule, PlatformRegistry, FeePool, ReputationEngine, ArbitratorCommittee, TaxPolicy) after verifying ownership. | [`contracts/SystemPause.sol`](../contracts/SystemPause.sol) |
-| `setPauser(address)` / `delegatePauser(address)` | Assign or update the live pauser for rapid response. | [`contracts/SystemPause.sol`](../contracts/SystemPause.sol) |
+| `setGlobalPauser(address)` / `refreshPausers()` | Assign a new guardian Safe or reassert SystemPause as the active pauser across every module. | [`contracts/SystemPause.sol`](../contracts/SystemPause.sol) |
 | `pauseAll()` / `unpauseAll()` | Freeze or resume every module in a single transaction. | [`contracts/SystemPause.sol`](../contracts/SystemPause.sol) |
 | `governanceCall(address target, bytes data)` | Execute arbitrary governance-approved calls to upgrade parameters across the lattice. | [`contracts/SystemPause.sol`](../contracts/SystemPause.sol) |
 | `StakeManager.updateParameters(...)` | Tune staking thresholds, slashing rates, treasuries. | [`contracts/StakeManager.sol`](../contracts/StakeManager.sol) |
