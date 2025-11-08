@@ -1,33 +1,32 @@
 # Sovereign Operations Atlas
 
 [![Sovereign Compile](https://img.shields.io/github/actions/workflow/status/agijobs/agijobs-sovereign-labor-v0p1/ci.yml?branch=main&label=Sovereign%20Compile&logo=github&style=for-the-badge)](https://github.com/agijobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
-[![Branch Gatekeeper](https://img.shields.io/github/actions/workflow/status/agijobs/agijobs-sovereign-labor-v0p1/branch-checks.yml?branch=main&label=Branch%20Gatekeeper&logo=github&style=for-the-badge)](https://github.com/agijobs/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml)
 [![Security Scans](https://img.shields.io/github/actions/workflow/status/agijobs/agijobs-sovereign-labor-v0p1/security.yml?branch=main&label=Security%20Scans&logo=dependabot&style=for-the-badge)](https://github.com/agijobs/agijobs-sovereign-labor-v0p1/actions/workflows/security.yml)
-[![AGIALPHA Spine](https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-5522aa?style=for-the-badge)](https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa)
+[![Branch Gatekeeper](https://img.shields.io/github/actions/workflow/status/agijobs/agijobs-sovereign-labor-v0p1/branch-checks.yml?branch=main&label=Branch%20Gatekeeper&logo=github&style=for-the-badge)](https://github.com/agijobs/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml)
+![\$AGIALPHA](https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-5522aa?style=for-the-badge)
 
-> The operations atlas is the friendly pilot manual for the unstoppable labor engine. Every operator action—from pausing the mesh to rotating treasuries—routes through the owner Safe with deterministic, observable outcomes.
-
----
-
-## Table of contents
-
-1. [Operator command map](#operator-command-map)
-2. [Non-technical control loops](#non-technical-control-loops)
-3. [Owner playbooks](#owner-playbooks)
-4. [Telemetry capture](#telemetry-capture)
-5. [Evidence archive schema](#evidence-archive-schema)
+> This atlas is the operator's cockpit. Every control loop, autopilot path, and telemetry feed is mapped so non-technical guardians can command the machine with confidence.
 
 ---
 
-## Operator command map
+## Table of Contents
+1. [Operator Command Map](#operator-command-map)
+2. [Non-Technical Control Loops](#non-technical-control-loops)
+3. [Autopilot Reference](#autopilot-reference)
+4. [Owner Playbooks](#owner-playbooks)
+5. [Telemetry Capture](#telemetry-capture)
+6. [Evidence Archive Schema](#evidence-archive-schema)
 
+---
+
+## Operator Command Map
 ```mermaid
 flowchart LR
-    subgraph Safe[Owner Safe]
+    subgraph Safe[Owner & Guardian Safes]
         queue[Queue transaction]
         confirm[Confirm & execute]
     end
-    subgraph SystemPause
+    subgraph Router[SystemPause]
         pauseAll[PauseAll]
         resume[UnpauseAll]
         batch[ExecuteGovernanceCall]
@@ -44,83 +43,74 @@ flowchart LR
         committee[ArbitratorCommittee]
         tax[TaxPolicy]
     end
-    queue -->|OwnerConfigurator manifests| batch
+
+    queue --> batch
     confirm --> pauseAll
     confirm --> resume
-    batch --> stake
-    batch --> fee
-    batch --> job
-    batch --> identity
-    batch --> attest
-    batch --> dispute
-    batch --> platform
-    batch --> rep
-    batch --> committee
-    batch --> tax
-    pauseAll -->|Events + Step summaries| log[Evidence Vault]
-    resume --> log
-    stake --> log
-    fee --> log
-    job --> log
-    identity --> log
-    attest --> log
-    dispute --> log
-    platform --> log
-    rep --> log
-    committee --> log
-    tax --> log
+    batch --> stake & fee & job & identity & attest & dispute & platform & rep & committee & tax
+
     classDef safe fill:#14213d,stroke:#fca311,color:#f1faee;
-    classDef system fill:#0b132b,stroke:#1c2541,color:#ffffff;
+    classDef router fill:#0b132b,stroke:#1c2541,color:#fff;
     classDef modules fill:#1b4332,stroke:#2d6a4f,color:#f1faee;
-    class queue,confirm safe;
-    class pauseAll,resume,batch system;
-    class stake,fee,job,identity,attest,dispute,platform,rep,committee,tax modules;
 ```
 
----
-
-## Non-technical control loops
-
-The [`docs/operations/owner-control.md`](owner-control.md) playbook provides narrated, copy-paste ready sequences for guardians and owners:
-
-- **Emergency pause / resume.** One-click OwnerConfigurator bundles that pause or resume the entire lattice.
-- **Treasury rotation.** Update staking treasuries, burn splits, and reward allowlists without touching raw calldata.
-- **Parameter tuning.** Adjust validator quorum, slash basis points, dispute windows, and identity roots using pre-built JSON manifests.
-- **Identity onboarding.** Publish new ENS nodes and Merkle roots with transparent event logs.
-
-Hardhat proof-of-control: running `npm run test:hardhat` executes the SystemPause governance lattice spec so operators confirm treasuries, TaxPolicy text, and guardian pausers remain under Safe control before executing production flows.
-
-Every sequence mirrors CI governance checks and reuses the same `$AGIALPHA` manifest validation.
+Every privileged function flows through SystemPause. All owner updates emit events plus Markdown summaries generated by the scripts to keep guardians and auditors synchronized.
 
 ---
 
-## Owner playbooks
+## Non-Technical Control Loops
+- **Emergency pause / resume.** Guardian Safe runs `pauseAll()`; owner Safe runs `unpauseAll()` after diagnostics.
+- **Treasury rotation.** Use [`scripts/owner-set-treasury.js`](../../scripts/owner-set-treasury.js). The script prints the Safe calldata and Markdown summary; SystemPause executes it via `executeGovernanceCall`.
+- **Validator or policy refresh.** Follow the `owner-set-treasury.js` pattern with OwnerConfigurator manifests to encode `IdentityRegistry` or `TaxPolicy` setters, then forward through the Safe for execution.
+- **Identity onboarding.** Hardhat tests (`npm run test:hardhat`) and Foundry invariants confirm identity/attestation flows before production operations.
 
+All loops mirror CI jobs so every change is pre-validated.
+
+---
+
+## Autopilot Reference
+```mermaid
+flowchart TD
+    start[Start deployment] --> choose{Select toolchain}
+    choose --> truffle[Truffle `npm run deploy:truffle:mainnet`]
+    choose --> hardhat[Hardhat `npm run deploy:hardhat:mainnet`]
+    choose --> foundry[Foundry `npm run deploy:foundry:mainnet`]
+    truffle --> manifest[Manifests + Safe tasks]
+    hardhat --> manifest
+    foundry --> manifest
+    manifest --> accept[Owner Safe accept ownerships]
+    accept --> verify[Run `npm run ci:governance` + tests]
+```
+
+Each autopilot uses the same manifest loader. After execution, accept pending Safe tasks for identity modules, rerun governance audits, and archive manifests.
+
+---
+
+## Owner Playbooks
 | Scenario | Artifact | Summary |
 | --- | --- | --- |
-| Pause / resume mesh | [`owner-control.md`](owner-control.md#global-pause-and-resume) | Guardian and owner Safe instructions with safety checks and telemetry expectations. |
-| Rotate treasuries | [`owner-control.md`](owner-control.md#treasury-rotation) | Update StakeManager and FeePool treasuries while preserving burn splits. |
-| Update validator policy | [`owner-control.md`](owner-control.md#validator-policy-tuning) | Increase quorum, adjust job stakes, and refresh validator allowlists with step-by-step validation. |
-| Refresh identity | [`owner-control.md`](owner-control.md#identity-refresh) | Publish new ENS hashes and Merkle roots with Safe transaction templates. |
+| Global pause / resume | [`owner-control.md`](owner-control.md#global-pause-and-resume) | Guardian triggers pause; owner resumes after diagnostics. |
+| Treasury rotation | [`owner-control.md`](owner-control.md#treasury-rotation) | OwnerConfigurator bundle rotates StakeManager and FeePool treasuries with telemetry. |
+| Validator policy tuning | [`owner-control.md`](owner-control.md#validator-policy-tuning) | Adjust quorum, stake minimums, and Merkle roots with scripted calldata. |
+| Identity refresh | [`owner-control.md`](owner-control.md#identity-refresh) | Publish new ENS nodes and Merkle roots with event expectations. |
 
 ---
 
-## Telemetry capture
-
-1. **Manifest logs.** Every OwnerConfigurator run produces a Markdown summary; commit those under `manifests/governance/` or attach to the Safe transaction comments.
-2. **Event trail.** Subscribe to `ModulesUpdated`, `PausersUpdated`, `GovernanceCallExecuted`, and module-specific events; the playbook lists expected emissions for each flow.
-3. **CI mirror.** After executing a control action, rerun `npm run ci:governance` and `npm run test:truffle:ci` to prove the governance matrix and invariants remain intact.
-4. **Evidence vault.** Store Safe transaction hashes, CLI logs, and GitHub Action URLs in your evidence vault for auditors.
+## Telemetry Capture
+1. **CI Mirror.** Save links to `Sovereign Compile`, `Security Scans`, and `Branch Gatekeeper` runs for every production change.
+2. **Script summaries.** Each governance script appends Markdown to `$GITHUB_STEP_SUMMARY`; copy these into your evidence vault.
+3. **Event trail.** Monitor `ModulesUpdated`, `PausersUpdated`, `GovernanceCallExecuted`, and module-specific events. Verify they match Safe transactions.
+4. **Safe metadata.** Record Safe transaction hashes, signers, and notes for all configuration changes.
+5. **Post-change audit.** Rerun `npm run ci:governance` and the multi-runtime test suite locally after each change; archive the outputs.
 
 ---
 
-## Evidence archive schema
-
+## Evidence Archive Schema
 ```json
 {
-  "timestamp": "2024-05-01T12:34:56Z",
+  "timestamp": "2024-06-01T12:34:56Z",
   "operator": "owner-safe",
-  "action": "stakeManager.setTreasury",
+  "action": "StakeManager.setTreasury",
   "transactionHash": "0x...",
   "safeUrl": "https://app.safe.global/transactions/...",
   "commands": [
@@ -131,10 +121,10 @@ Every sequence mirrors CI governance checks and reuses the same `$AGIALPHA` mani
   ],
   "manifests": [
     "manifests/addresses.mainnet.json",
-    "manifests/governance/2024-05-01-treasury-rotation.md"
+    "manifests/governance/2024-06-01-treasury-rotation.md"
   ],
   "notes": "Treasury rotated to 0x1234… after council approval."
 }
 ```
 
-Keep this schema under version control or your preferred compliance vault so every configuration change is auditable and reproducible.
+Keep this schema versioned; it becomes the living history that proves the operator maintained control over the machine at every step.

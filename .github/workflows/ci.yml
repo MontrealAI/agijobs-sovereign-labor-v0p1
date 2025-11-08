@@ -117,9 +117,11 @@ jobs:
           npx truffle version
 
       - name: Compile contracts
+        id: compile-contracts
         run: npm run compile
 
       - name: Verify compiled artifacts
+        id: verify-artifacts
         run: node scripts/verify-artifacts.js
 
       - name: Upload build artifacts
@@ -131,6 +133,32 @@ jobs:
       - name: Generate compile metadata summary
         if: always()
         run: node scripts/write-compile-summary.js
+
+      - name: Publish compile status
+        if: always()
+        run: |
+          status_icon() {
+            case "$1" in
+              success) echo "✅" ;;
+              skipped) echo "⏭️" ;;
+              *) echo "❌" ;;
+            esac
+          }
+
+          cat <<EOF >> "$GITHUB_STEP_SUMMARY"
+          ### $(status_icon "${{ steps.compile-contracts.outcome }}") Compile contracts
+
+          - `npm run compile`
+            - Outcome: `${{ steps.compile-contracts.outcome }}`
+          - `node scripts/verify-artifacts.js`
+            - Outcome: `${{ steps.verify-artifacts.outcome }}`
+          EOF
+
+      - name: Enforce compile success
+        if: ${{ always() && (steps.compile-contracts.outcome != 'success' || steps.verify-artifacts.outcome != 'success') }}
+        run: |
+          echo "Compilation or artifact verification failed."
+          exit 1
 
   governance-audit:
     name: Governance surface audit
@@ -159,7 +187,31 @@ jobs:
           path: build/contracts
 
       - name: Validate governance matrix
+        id: governance-matrix
         run: npm run ci:governance
+
+      - name: Publish governance summary
+        if: always()
+        run: |
+          icon="❌"
+          if [ "${{ steps.governance-matrix.outcome }}" = "success" ]; then
+            icon="✅"
+          elif [ "${{ steps.governance-matrix.outcome }}" = "skipped" ]; then
+            icon="⏭️"
+          fi
+
+          cat <<EOF >> "$GITHUB_STEP_SUMMARY"
+          ### $icon Governance surface audit
+
+          Command: \`npm run ci:governance\`
+          Outcome: `${{ steps.governance-matrix.outcome }}`
+          EOF
+
+      - name: Enforce governance audit success
+        if: ${{ always() && steps.governance-matrix.outcome != 'success' }}
+        run: |
+          echo "Governance matrix validation failed."
+          exit 1
 
   tests:
     name: Test suites
@@ -194,9 +246,11 @@ jobs:
           path: build/contracts
 
       - name: Run Truffle unit tests (artifact reuse)
+        id: truffle-tests
         run: npm run test:truffle:ci
 
       - name: Run Hardhat tests
+        id: hardhat-tests
         run: npm run test:hardhat
 
       - name: Install Foundry toolchain
@@ -205,18 +259,35 @@ jobs:
           version: stable
 
       - name: Run Foundry invariants
+        id: foundry-tests
         run: npm run test:foundry
 
       - name: Publish test summary
         if: always()
         run: |
-          cat <<'EOF' >> "$GITHUB_STEP_SUMMARY"
-          ### ✅ Multi-runtime test suites
+          status_icon() {
+            case "$1" in
+              success) echo "✅" ;;
+              skipped) echo "⏭️" ;;
+              *) echo "❌" ;;
+            esac
+          }
 
-          - Truffle: `npm run test:truffle:ci`
-          - Hardhat: `npm run test:hardhat`
-          - Foundry: `npm run test:foundry`
+          cat <<EOF >> "$GITHUB_STEP_SUMMARY"
+          ### Multi-runtime test suites
+
+          | Suite | Command | Outcome |
+          | --- | --- | --- |
+          | Truffle | `npm run test:truffle:ci` | $(status_icon "${{ steps.truffle-tests.outcome }}") `${{ steps.truffle-tests.outcome }}` |
+          | Hardhat | `npm run test:hardhat` | $(status_icon "${{ steps.hardhat-tests.outcome }}") `${{ steps.hardhat-tests.outcome }}` |
+          | Foundry | `npm run test:foundry` | $(status_icon "${{ steps.foundry-tests.outcome }}") `${{ steps.foundry-tests.outcome }}` |
           EOF
+
+      - name: Enforce test success
+        if: ${{ always() && (steps.truffle-tests.outcome != 'success' || steps.hardhat-tests.outcome != 'success' || steps.foundry-tests.outcome != 'success') }}
+        run: |
+          echo "One or more runtime test suites failed."
+          exit 1
 
   workflow-hygiene:
     name: Workflow hygiene
@@ -229,6 +300,30 @@ jobs:
           persist-credentials: false
 
       - name: Run actionlint
+        id: actionlint
         uses: rhysd/actionlint@v1.7.1
         with:
           args: -color
+
+      - name: Publish workflow hygiene summary
+        if: always()
+        run: |
+          icon="❌"
+          if [ "${{ steps.actionlint.outcome }}" = "success" ]; then
+            icon="✅"
+          elif [ "${{ steps.actionlint.outcome }}" = "skipped" ]; then
+            icon="⏭️"
+          fi
+
+          cat <<EOF >> "$GITHUB_STEP_SUMMARY"
+          ### $icon Workflow hygiene
+
+          Command: \`actionlint -color\`
+          Outcome: `${{ steps.actionlint.outcome }}`
+          EOF
+
+      - name: Enforce workflow hygiene success
+        if: ${{ always() && steps.actionlint.outcome != 'success' }}
+        run: |
+          echo "Workflow hygiene check failed."
+          exit 1
