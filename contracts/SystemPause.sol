@@ -406,42 +406,27 @@ contract SystemPause is Governable, ReentrancyGuard {
         ArbitratorCommittee _arbitratorCommittee,
         TaxPolicy _taxPolicy
     ) internal view {
-        if (_jobRegistry.owner() != address(this)) {
-            revert ModuleNotOwned(address(_jobRegistry), _jobRegistry.owner());
-        }
-        if (_stakeManager.owner() != address(this)) {
-            revert ModuleNotOwned(address(_stakeManager), _stakeManager.owner());
-        }
-        if (_validationModule.owner() != address(this)) {
-            revert ModuleNotOwned(address(_validationModule), _validationModule.owner());
-        }
-        if (_disputeModule.owner() != address(this)) {
-            revert ModuleNotOwned(address(_disputeModule), _disputeModule.owner());
-        }
-        if (_platformRegistry.owner() != address(this)) {
-            revert ModuleNotOwned(
-                address(_platformRegistry),
-                _platformRegistry.owner()
-            );
-        }
-        if (_feePool.owner() != address(this)) {
-            revert ModuleNotOwned(address(_feePool), _feePool.owner());
-        }
-        if (_reputationEngine.owner() != address(this)) {
-            revert ModuleNotOwned(
-                address(_reputationEngine),
-                _reputationEngine.owner()
-            );
-        }
-        if (_arbitratorCommittee.owner() != address(this)) {
-            revert ModuleNotOwned(
-                address(_arbitratorCommittee),
-                _arbitratorCommittee.owner()
-            );
-        }
-        if (_taxPolicy.owner() != address(this)) {
-            revert ModuleNotOwned(address(_taxPolicy), _taxPolicy.owner());
-        }
+        _requireModuleOwnership(address(_jobRegistry), _jobRegistry.owner());
+        _requireModuleOwnership(address(_stakeManager), _stakeManager.owner());
+        _requireModuleOwnership(
+            address(_validationModule),
+            _validationModule.owner()
+        );
+        _requireModuleOwnership(address(_disputeModule), _disputeModule.owner());
+        _requireModuleOwnership(
+            address(_platformRegistry),
+            _platformRegistry.owner()
+        );
+        _requireModuleOwnership(address(_feePool), _feePool.owner());
+        _requireModuleOwnership(
+            address(_reputationEngine),
+            _reputationEngine.owner()
+        );
+        _requireModuleOwnership(
+            address(_arbitratorCommittee),
+            _arbitratorCommittee.owner()
+        );
+        _requireModuleOwnership(address(_taxPolicy), _taxPolicy.owner());
     }
 
     function _isKnownModule(address target) internal view returns (bool) {
@@ -455,6 +440,34 @@ contract SystemPause is Governable, ReentrancyGuard {
             target == address(reputationEngine) ||
             target == address(arbitratorCommittee) ||
             target == address(taxPolicy);
+    }
+
+    function _requireModuleOwnership(address module, address moduleOwner)
+        private
+        view
+    {
+        if (moduleOwner == address(this)) {
+            return;
+        }
+
+        if (_hasPendingOwnership(module)) {
+            return;
+        }
+
+        revert ModuleNotOwned(module, moduleOwner);
+    }
+
+    function _hasPendingOwnership(address module) private view returns (bool) {
+        (bool success, bytes memory data) = module.staticcall(
+            abi.encodeWithSignature("pendingOwner()")
+        );
+
+        if (!success || data.length < 32) {
+            return false;
+        }
+
+        address pendingOwner = abi.decode(data, (address));
+        return pendingOwner == address(this);
     }
 }
 
