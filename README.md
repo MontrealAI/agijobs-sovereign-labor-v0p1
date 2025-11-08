@@ -31,11 +31,14 @@
 - [Decision Ledger](#decision-ledger)
 - [AGIALPHA Economic Spine](#agialpha-economic-spine)
 - [Continuous Integration Spine](#continuous-integration-spine)
+- [Quality Assurance Arsenal](#quality-assurance-arsenal)
+- [Mainnet Operator Autopilot](#mainnet-operator-autopilot)
 - [Testing Flight Systems](#testing-flight-systems)
 - [Branch Protection Flightplan](#branch-protection-flightplan)
-- [Mainnet Operator Autopilot](#mainnet-operator-autopilot)
 - [Mainnet Launch Procedure](#mainnet-launch-procedure)
 - [Operations Telemetry](#operations-telemetry)
+- [Operational Intelligence Vault](#operational-intelligence-vault)
+- [Quickstart Commands](#quickstart-commands)
 
 ---
 
@@ -43,6 +46,7 @@
 - **Owner-first governance.** [`SystemPause`](contracts/SystemPause.sol) is the command router; every privileged setter, pauser, batch executor, and upgrade hook terminates there. Governance is a Safe-controlled [`TimelockController`](contracts/Governable.sol), so the owner signs, the mesh obeys.
 - **Deterministic compile surface.** `$AGIALPHA` (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) is hard-coded through [`Constants.sol`](contracts/Constants.sol), migrations, staking, rewards, and tax policy. Runtime guards revert if a mismatched token sneaks in.
 - **Runtime plasticity.** `OwnerConfigurator` and `SystemPause.executeGovernanceCall` forward Safe transactions atomically. Emitters broadcast every configuration delta, so downstream telemetry never guesses who changed what.
+- **Thermal incentive tuning.** [`Thermostat`](contracts/Thermostat.sol) lets governance adjust PID gains, role-specific overrides, and KPI weights in-flight, rebalancing emission pressure, backlog heat, and SLA cadence without redeploying.
 - **Auditable automation.** The CI constellation lint → compile → artifact-verify → governance-audit → workflow-hygiene → multi-runtime tests → static + symbolic security sweeps. No PR merges without full green.
 - **Manifested deployments.** Truffle migrations wire the mesh, transfer ownership to the Safe, and emit manifest JSON under `manifests/`. Operators archive manifests together with CI run URLs for forensic replay.
 
@@ -55,6 +59,7 @@ flowchart TB
         guardian[Guardian Safe]
         configurator[OwnerConfigurator]
         pause[SystemPause]
+        thermo[Thermostat]
     end
     subgraph Labor Mesh
         job[JobRegistry]
@@ -79,6 +84,8 @@ flowchart TB
     owner --> configurator
     configurator -->|configureBatch| laborMesh[[Module Surfaces]]
     pause --> job & stake & validate & dispute & platform & fee & rep & arb
+    thermo --> stake
+    thermo --> fee
     job --> stake
     job --> validate
     job --> dispute
@@ -93,12 +100,12 @@ flowchart TB
     classDef deck fill:#0d1b2a,stroke:#3a506b,color:#fff;
     classDef mesh fill:#1b263b,stroke:#5bc0be,color:#fff;
     classDef orbit fill:#3a0ca3,stroke:#4cc9f0,color:#fff;
-    class owner,guardian,configurator,pause deck;
+    class owner,guardian,configurator,pause,thermo deck;
     class job,stake,validate,dispute,platform,fee,rep,arb,tax mesh;
     class id,att,cert,ens orbit;
 ```
 
-Everything funnels through `SystemPause`, so the owner can pause, rewire, or upgrade modules atomically. Identity-facing contracts accept ownership via Safe-controlled flows for direct confirmation.
+Everything funnels through `SystemPause`, so the owner can pause, rewire, or upgrade modules atomically while `Thermostat` keeps incentives responsive to governance signals. Identity-facing contracts accept ownership via Safe-controlled flows for direct confirmation.
 
 ## Design Intelligence Atlas
 
@@ -182,6 +189,7 @@ flowchart LR
 | `IdentityRegistry` | `setAttestationRegistry`, `setAgentMerkleRoot`, `setValidatorMerkleRoot`, `setClubMerkleRoot` | `pause`, `unpause` | Ownership accepted by the Safe; identity updates require owner confirmation. |
 | `AttestationRegistry` | `setENSRegistry`, `setNameWrapper`, `setController` | `pause`, `unpause` | Safe-controlled ENS attestations. |
 | `CertificateNFT` | `setJobRegistry`, `setBaseURI` | `pause`, `unpause` | Credential NFTs minted on job completion. |
+| `Thermostat` | `setPID`, `setKPIWeights`, `setTemperatureBounds`, `setIntegralBounds`, `setRoleTemperature`, `tick` | — | Owner-tuned incentive controller balancing emission heat, backlog, and SLA cadence. |
 
 [`scripts/check-governance-matrix.mjs`](scripts/check-governance-matrix.mjs) validates this matrix at CI time; any missing setter or pauser renders the pipeline red.
 
@@ -227,6 +235,20 @@ flowchart LR
 | Mythril symbolic execution | `Security Scans` | Mythril sweeps privileged contracts with depth/time guards. | `Security Scans / Mythril symbolic execution` |
 
 Every job writes to the GitHub Step Summary so auditors read lint, compile, governance, security, and test telemetry directly from the PR UI.
+
+## Quality Assurance Arsenal
+
+| Surface | Command | What it verifies |
+| --- | --- | --- |
+| Solidity lint | `npm run lint:sol` | Zero-warning Solhint coverage across `contracts/**`. |
+| Compile + artifact parity | `npm run compile` → `node scripts/verify-artifacts.js` | ABI/bytecode parity, checksum drift detection, manifest-ready build outputs. |
+| Governance matrix | `npm run ci:governance` | Ensures owner + guardian setters remain reachable, `$AGIALPHA` constants match manifests, and pause surfaces stay wired. |
+| Branch hygiene | `npm run lint:branch <branch>` | Enforces semantic branch naming for automation clarity. |
+| Truffle regression | `npm run test:truffle:ci` | Executes multi-module flows using shared artifacts. |
+| Hardhat scenarios | `npm run test:hardhat` | Simulates Safe governance, pause lattice control, and treasury reconfiguration. |
+| Foundry invariants | `npm run test:foundry` | Fuzz + invariant suites anchored to canonical `$AGIALPHA` bindings. |
+
+> _Field tip:_ Install Foundry (`curl -L https://foundry.paradigm.xyz | bash && foundryup`) before running the Forge suite to mirror CI parity.
 
 ## Mainnet Operator Autopilot
 
@@ -322,3 +344,50 @@ sequenceDiagram
 - `foundry/`, `hardhat/`, `truffle/`: Tool-specific harnesses, tests, and mainnet deployment autopilots (Forge script, Hardhat ethers script, Truffle migrations).
 
 Operators steer this repository as they would a precision instrument: the governance owner controls every parameter, the CI wall stays green, and the labor intelligence engine reacts instantly to signed instructions.
+
+## Operational Intelligence Vault
+
+```mermaid
+mindmap
+  root((Evidence Vault))
+    Design Intelligence
+      Core Contracts (docs/design/core-contracts.md)
+      ADR Ledger (docs/adr/)
+    Operations Atlas
+      Owner Control Playbook (docs/operations/owner-control.md)
+      Pause & Resume Drills
+      Treasury Rotation Scripts
+    Deployment Stack
+      Truffle Autopilot
+      Hardhat Autopilot
+      Foundry Autopilot
+    Security Mesh
+      Governance Matrix Reports
+      Slither & Mythril Artifacts
+      Workflow Hygiene Summaries
+```
+
+| Need | Start here |
+| --- | --- |
+| Contract wiring & invariants | [docs/design/core-contracts.md](docs/design/core-contracts.md) |
+| Architectural decisions | [docs/adr/](docs/adr/) |
+| Owner & guardian procedures | [docs/operations/README.md](docs/operations/README.md) |
+| Safe-ready parameter manifests | [docs/operations/owner-control.md](docs/operations/owner-control.md) |
+
+Archive GitHub Action URLs, manifest outputs, Safe transaction hashes, and governance audit logs together—this evidence vault is how the owner proves continuous command over the machine.
+
+## Quickstart Commands
+
+```bash
+npm ci --omit=optional --no-audit --no-fund
+npm run lint:sol
+npm run compile && node scripts/verify-artifacts.js
+npm run ci:governance
+npm run test:truffle:ci
+npm run test:hardhat
+# Install Foundry locally before executing the next command:
+npm run test:foundry
+```
+
+- **Environment.** Node.js 20.x, npm 10.x+, solc 0.8.30, Foundry stable (`forge`, `cast`).
+- **Artifacts.** Truffle outputs land in `build/contracts`; Forge outputs in `foundry/out`; Mythril and Slither artifacts upload via GitHub Actions for external review.
