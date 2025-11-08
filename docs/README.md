@@ -11,34 +11,36 @@
 ![Foundry](https://img.shields.io/badge/Foundry-stable-111111?logo=foundry&style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
 
-> This codex describes the living labor engine that concentrates intelligence, capital, and identity into a single owner-steered machine. Every surface is observable, owner-controlled, unstoppable, and production-hardened.
+> This codex captures the sovereign labor engine that concentrates intelligence, capital, and identity into one unstoppable owner-steered machine. Every subsystem is observable, fully configurable by its owner, and production-hardened for non-technical pilots.
 
 ---
 
 ## Table of contents
 
-1. [Orientation](#orientation)
+1. [Mission orientation](#mission-orientation)
 2. [Architecture constellation](#architecture-constellation)
-3. [Owner mastery protocol](#owner-mastery-protocol)
-4. [$AGIALPHA discipline](#agialpha-discipline)
-5. [Directory atlas](#directory-atlas)
-6. [Owner command surface](#owner-command-surface)
-7. [Continuous verification mesh](#continuous-verification-mesh)
-8. [Quality assurance arsenal](#quality-assurance-arsenal)
-9. [Deployment autopilots](#deployment-autopilots)
-10. [Operational intelligence vault](#operational-intelligence-vault)
-11. [Branch protection enforcement](#branch-protection-enforcement)
-12. [Quickstart commands](#quickstart-commands)
-13. [Execution timeline](#execution-timeline)
+3. [Command lattice](#command-lattice)
+4. [Parameter control surfaces](#parameter-control-surfaces)
+5. [$AGIALPHA discipline](#agialpha-discipline)
+6. [Directory atlas](#directory-atlas)
+7. [Operator flight deck](#operator-flight-deck)
+8. [Pause state choreography](#pause-state-choreography)
+9. [Continuous verification mesh](#continuous-verification-mesh)
+10. [Quality assurance arsenal](#quality-assurance-arsenal)
+11. [Deployment autopilots](#deployment-autopilots)
+12. [Operational intelligence vault](#operational-intelligence-vault)
+13. [Branch protection enforcement](#branch-protection-enforcement)
+14. [Quickstart commands](#quickstart-commands)
+15. [Execution timeline](#execution-timeline)
 
 ---
 
-## Orientation
+## Mission orientation
 
-- **Repository scope.** Mirrors production layout: [`contracts/`](../contracts), [`contracts/admin/`](../contracts/admin), [`contracts/utils/`](../contracts/utils), [`contracts/interfaces/`](../contracts/interfaces), [`contracts/libraries/`](../contracts/libraries), [`contracts/modules/`](../contracts/modules), [`deploy/`](../deploy), [`foundry/`](../foundry), [`hardhat/`](../hardhat), [`migrations/`](../migrations), [`scripts/`](../scripts), [`truffle/`](../truffle), [`docs/`](./), and [`.github/workflows/`](../.github/workflows).
-- **Owner-first intelligence.** The machine orients around Safe-governed authority: every core module inherits [`Governable`](../contracts/Governable.sol) or `Ownable` scaffolding wired to the owner’s Safe.
-- **Emergency readiness.** [`SystemPause`](../contracts/SystemPause.sol) aggregates pausers, privileged setters, and governance calls so the owner can halt, redirect, or relink every module in one motion.
-- **Operator UX.** Non-technical pilots follow narrated manifests in [`docs/operations/`](operations/) and [`docs/operations/owner-control.md`](operations/owner-control.md) to pause, resume, rotate treasuries, and publish manifests without handcrafting calldata.
+- **Repository scope.** Mirrors production layout: [`contracts/`](../contracts), [`contracts/admin/`](../contracts/admin), [`contracts/utils/`](../contracts/utils), [`contracts/interfaces/`](../contracts/interfaces), [`contracts/libraries/`](../contracts/libraries), [`contracts/modules/`](../contracts/modules), [`contracts/test/`](../contracts/test), [`deploy/`](../deploy), [`foundry/`](../foundry), [`hardhat/`](../hardhat), [`migrations/`](../migrations), [`scripts/`](../scripts), [`truffle/`](../truffle), [`docs/`](./), and [`.github/workflows/`](../.github/workflows).
+- **Owner-first architecture.** Every production contract inherits [`Governable`](../contracts/Governable.sol) or two-step ownership so the owner’s Safe controls configuration, pausing, treasury routing, and emergency measures end-to-end.
+- **Emergency readiness.** [`SystemPause`](../contracts/SystemPause.sol) aggregates pauser delegation, privileged setters, and governance call forwarding so the owner halts or rewires every module in one motion.
+- **Operator UX.** Non-technical pilots use narrated manifests in [`docs/operations/`](operations/) and [`docs/operations/owner-control.md`](operations/owner-control.md) to execute Safe transactions without handcrafting calldata.
 
 ---
 
@@ -46,12 +48,13 @@
 
 ```mermaid
 graph TD
-    subgraph GovernanceDeck[Governance Deck]
+    subgraph CommandDeck[Command Deck]
         owner[Owner Safe]
         guardian[Guardian Safe]
         configurator[OwnerConfigurator]
         pause[SystemPause]
         thermo[Thermostat]
+        hamiltonian[Hamiltonian Feed]
     end
     subgraph LaborMesh[Labor Mesh]
         job[JobRegistry]
@@ -74,8 +77,9 @@ graph TD
     guardian -->|emergency| pause
     configurator -->|batch config| pause
     pause --> job & stake & platform & validate & dispute & fee & rep & arb & tax
-    thermo --> fee
     thermo --> stake
+    thermo --> fee
+    hamiltonian --> stake
     validate --> rep
     job --> stake
     stake --> fee
@@ -84,21 +88,21 @@ graph TD
     attest --> identity
     ens --> attest
     cert --> job
-    classDef GovernanceDeck fill:#021226,stroke:#00b4d8,color:#caf0f8;
+    classDef CommandDeck fill:#021226,stroke:#00b4d8,color:#caf0f8;
     classDef LaborMesh fill:#0b132b,stroke:#4361ee,color:#f1faee;
     classDef IdentityOrbit fill:#3a0ca3,stroke:#4cc9f0,color:#ffffff;
-    class owner,guardian,configurator,pause,thermo GovernanceDeck;
+    class owner,guardian,configurator,pause,thermo,hamiltonian CommandDeck;
     class job,stake,platform,validate,dispute,fee,rep,arb,tax LaborMesh;
     class identity,attest,cert,ens IdentityOrbit;
 ```
 
-- **Unified pause lattice.** Any module in the mesh responds to `pauseAll`, `unpauseAll`, and targeted pauser delegation orchestrated by [`SystemPause`](../contracts/SystemPause.sol).
-- **Thermal incentive tuning.** [`Thermostat`](../contracts/Thermostat.sol) runs PID-style control to maintain issuance pressure, backlog debt, and SLA compliance with owner-defined gains.
-- **Identity-linked validation.** [`IdentityRegistry`](../contracts/IdentityRegistry.sol) and [`AttestationRegistry`](../contracts/AttestationRegistry.sol) feed [`ValidationModule`](../contracts/ValidationModule.sol), ensuring proofs-of-work stay tied to curated identity roots.
+- **Unified pause lattice.** All core modules obey the pause lattice orchestrated by [`SystemPause`](../contracts/SystemPause.sol#L134-L334), enabling deterministic halts and resumptions.
+- **Thermal incentive tuning.** [`Thermostat`](../contracts/Thermostat.sol#L55-L112) and [`IHamiltonian`](../contracts/interfaces/IHamiltonian.sol#L4-L5) inputs regulate issuance pressure, backlog health, and stake expansion.
+- **Identity-linked validation.** [`IdentityRegistry`](../contracts/IdentityRegistry.sol#L222-L352) and [`AttestationRegistry`](../contracts/AttestationRegistry.sol#L45-L72) continually refresh roots and ENS bindings feeding the [`ValidationModule`](../contracts/ValidationModule.sol#L258-L520).
 
 ---
 
-## Owner mastery protocol
+## Command lattice
 
 ```mermaid
 sequenceDiagram
@@ -112,27 +116,47 @@ sequenceDiagram
     OwnerSafe->>OwnerConfigurator: configureBatch(calls)
     OwnerConfigurator->>SystemPause: executeGovernanceCall(target, data)
     SystemPause->>Module: privileged setter / pauser / relink
-    Module-->>SystemPause: emit event + enforce invariants
+    Module-->>SystemPause: emit telemetry + enforce invariants
     GuardianSafe->>SystemPause: pauseAll() / unpauseAll()
     OwnerSafe->>Thermostat: setPID / setRoleTemperature / tick
     Thermostat-->>EvidenceVault: TemperatureUpdated
     SystemPause-->>EvidenceVault: ModulesUpdated & GovernanceCallExecuted
 ```
 
-- **Absolute parameter control.** [`SystemPause.setModules`](../contracts/SystemPause.sol#L134-L205) confirms Safe ownership before rewiring dependencies; [`SystemPause.executeGovernanceCall`](../contracts/SystemPause.sol#L253-L290) relays arbitrary owner-approved calls with revert-on-failure guarantees.
-- **Total pause authority.** Owner and guardian Safes operate `pauseAll`, `unpauseAll`, and per-module pauser handoffs to maintain deterministic fail-safes.
-- **Configurable treasuries.** [`StakeManager.setTreasury`](../contracts/StakeManager.sol#L1251-L1253) and [`FeePool.setTreasury`](../contracts/FeePool.sol#L442-L447) give the owner full routing control over value streams.
-- **Thermal incentives.** [`Thermostat.setPID`](../contracts/Thermostat.sol#L55-L89) and role-specific setters expose real-time issuance tuning without redeployment.
-- **Auditable trail.** `ParameterUpdated`, `ModulesUpdated`, `PausersUpdated`, and `TemperatureUpdated` events supply the Evidence Vault captured in operations playbooks.
+- **Absolute parameter control.** [`SystemPause.setModules`](../contracts/SystemPause.sol#L134-L213) verifies ownership before rewiring dependencies, while [`SystemPause.executeGovernanceCall`](../contracts/SystemPause.sol#L253-L290) relays arbitrary owner-approved calls with revert-on-failure guarantees.
+- **Total pause authority.** Owner and guardian Safes operate [`pauseAll`](../contracts/SystemPause.sol#L292-L304), [`unpauseAll`](../contracts/SystemPause.sol#L304-L314), [`refreshPausers`](../contracts/SystemPause.sol#L216-L232), and [`setGlobalPauser`](../contracts/SystemPause.sol#L234-L251) to maintain deterministic fail-safes.
+- **Batch configuration.** [`OwnerConfigurator.configureBatch`](../contracts/admin/OwnerConfigurator.sol#L101-L112) emits structured telemetry for every parameter mutation.
+- **Thermal incentives.** [`Thermostat.setPID`](../contracts/Thermostat.sol#L55-L64), [`setKPIWeights`](../contracts/Thermostat.sol#L66-L76), and [`setRoleTemperature`](../contracts/Thermostat.sol#L112-L121) expose real-time issuance tuning without redeployment.
+
+---
+
+## Parameter control surfaces
+
+| Module | Owner leverage | Reference |
+| --- | --- | --- |
+| SystemPause | Rewire modules, refresh pausers, delegate pause authority, forward arbitrary governance calls. | [`SystemPause.sol`](../contracts/SystemPause.sol#L134-L314) |
+| StakeManager | Set thermostats, Hamiltonian feeds, role minimums, staking minima, treasury routes, and slashing splits. | [`StakeManager.sol`](../contracts/StakeManager.sol#L529-L1270) |
+| JobRegistry | Swap validation, dispute, audit, fee, certificate, identity, and stake integrations in one call. | [`JobRegistry.sol`](../contracts/JobRegistry.sol#L1110-L1188) |
+| ValidationModule | Govern reveal quorums, penalties, validator pool, and cross-module pointers. | [`ValidationModule.sol`](../contracts/ValidationModule.sol#L258-L520) |
+| FeePool | Assign pausers, rewarders, stake manager, burn percentages, treasuries, and tax policies. | [`FeePool.sol`](../contracts/FeePool.sol#L160-L455) |
+| ReputationEngine | Curate callers, scoring weights, thresholds, blacklist, and stake manager linkage. | [`ReputationEngine.sol`](../contracts/ReputationEngine.sol#L86-L185) |
+| PlatformRegistry | Gate platform onboarding via stake requirements, blacklist, and registrar allowlists. | [`PlatformRegistry.sol`](../contracts/PlatformRegistry.sol#L91-L392) |
+| DisputeModule | Switch job registry, stake manager, committee, tax policy, dispute fees, windows, and moderators. | [`DisputeModule.sol`](../contracts/modules/DisputeModule.sol#L171-L288) |
+| ArbitratorCommittee | Tune dispute windows, slash parameters, and pauser delegation. | [`ArbitratorCommittee.sol`](../contracts/ArbitratorCommittee.sol#L71-L135) |
+| TaxPolicy | Publish canonical policy URIs, acknowledgements, and authorized acknowledgers. | [`TaxPolicy.sol`](../contracts/TaxPolicy.sol#L86-L170) |
+| IdentityRegistry | Update ENS/name wrapper hooks, Merkle roots, reputation engine, and attestation registry. | [`IdentityRegistry.sol`](../contracts/IdentityRegistry.sol#L222-L352) |
+| AttestationRegistry | Maintain ENS + name wrapper anchors backing attestations. | [`AttestationRegistry.sol`](../contracts/AttestationRegistry.sol#L45-L72) |
+
+Every setter is wired through `onlyGovernance` or Safe-owned `onlyOwner` modifiers, keeping the owner in supreme command while making emergency course corrections instantaneous.
 
 ---
 
 ## $AGIALPHA discipline
 
 - **Canonical binding.** [`Constants.sol`](../contracts/Constants.sol#L5-L27) pins `$AGIALPHA` to `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` with `18` decimals and exposes scaling helpers for every consumer contract.
-- **Runtime enforcement.** Stake, fee, dispute, and registry modules import `Constants` to reject any mismatched token address or decimal drift.
-- **Governance audit parity.** `npm run ci:governance` asserts that the canonical address threads every module and that owner/guardian setters remain reachable.
-- **Deployment manifests.** [`scripts/deploy/load-config.js`](../scripts/deploy/load-config.js) refuses alternate token addresses, ensuring Truffle, Hardhat, and Foundry autopilots stay synchronized.
+- **Runtime enforcement.** Stake, fee, dispute, and registry modules import `Constants` to reject mismatched token addresses or decimal drift.
+- **Governance audit parity.** `npm run ci:governance` validates token constants, owner/guardian reachability, and pause lattice wiring.
+- **Deployment manifests.** [`scripts/deploy/load-config.js`](../scripts/deploy/load-config.js) refuses alternate token addresses, keeping Truffle, Hardhat, and Foundry autopilots synchronized.
 
 ---
 
@@ -141,32 +165,48 @@ sequenceDiagram
 | Path | Contents | Highlights |
 | --- | --- | --- |
 | [`contracts/`](../contracts) | Solidity source for the labor machine. | Core modules (`JobRegistry`, `StakeManager`, `ValidationModule`, `FeePool`, etc.) inherit Safe-governed access control. |
-| [`contracts/admin/`](../contracts/admin) | Governance helper contracts. | [`OwnerConfigurator`](../contracts/admin/OwnerConfigurator.sol) batches parameter updates with event-rich telemetry. |
-| [`contracts/utils/`](../contracts/utils) | Utility mixins and ownership scaffolding. | [`CoreOwnable2Step`](../contracts/utils/CoreOwnable2Step.sol) for Safe migrations, math helpers, pausability mixins. |
-| [`contracts/interfaces/`](../contracts/interfaces) | Canonical ABI surfaces. | Interface definitions for cross-module calls and off-chain automation. |
-| [`contracts/libraries/`](../contracts/libraries) | Pure math and struct helpers. | Deterministic scaling, epoch math, and reward distribution helpers. |
-| [`contracts/modules/`](../contracts/modules) | Secondary modules. | [`DisputeModule`](../contracts/modules/DisputeModule.sol) for challenge arbitration. |
-| [`contracts/test/`](../contracts/test) | Mocks and harnesses. | Deterministic fixtures for invariants and scenario tests. |
-| [`deploy/`](../deploy) | Mainnet configuration + operator manual. | `config.mainnet.json` templates and deployment evidence guides. |
-| [`foundry/`](../foundry) | Forge config, scripts, and tests. | Invariant suites and `DeployMainnet.s.sol` autopilot writing manifests. |
+| [`contracts/admin/`](../contracts/admin) | Governance helpers. | [`OwnerConfigurator`](../contracts/admin/OwnerConfigurator.sol) batches parameter updates with telemetry. |
+| [`contracts/utils/`](../contracts/utils) | Utility mixins & scaffolding. | [`CoreOwnable2Step`](../contracts/utils/CoreOwnable2Step.sol) for Safe migrations, math helpers, pausability mixins. |
+| [`contracts/interfaces/`](../contracts/interfaces) | Canonical ABI surfaces. | Interface definitions for cross-module calls and automation. |
+| [`contracts/libraries/`](../contracts/libraries) | Math & struct helpers. | Deterministic scaling, epoch math, reward distribution helpers. |
+| [`contracts/modules/`](../contracts/modules) | Secondary modules. | [`DisputeModule`](../contracts/modules/DisputeModule.sol) orchestrates arbitration and escalation. |
+| [`deploy/`](../deploy) | Mainnet configuration & operator manual. | `config.mainnet.json` templates and deployment evidence guides. |
+| [`foundry/`](../foundry) | Forge config, scripts, and tests. | Invariant suites and `DeployMainnet.s.sol` autopilot. |
 | [`hardhat/`](../hardhat) | Hardhat tests + scripts. | Safe governance simulations verifying pause + treasury surfaces. |
-| [`migrations/`](../migrations) | Truffle migration scripts + documentation. | Idempotent broadcasts that emit manifests for the Evidence Vault. |
-| [`scripts/`](../scripts) | Node.js automation. | Branch linting, governance matrix auditing, artifact verification, owner treasury helper. |
-| [`truffle/`](../truffle) | Truffle configuration + utilities. | Manifest writers, deterministic compile settings, deployment codex. |
+| [`migrations/`](../migrations) | Truffle migration scripts. | Idempotent broadcasts that emit manifests for the Evidence Vault. |
+| [`scripts/`](../scripts) | Node.js automation. | Branch linting, governance matrix auditing, artifact verification, owner treasury helpers. |
+| [`truffle/`](../truffle) | Truffle configuration & utilities. | Manifest writers, deterministic compile settings, deployment codex. |
 | [`docs/`](./) | Knowledge base. | Design dossiers, ADR ledger, operations atlas. |
-| [`.github/workflows/`](../.github/workflows) | GitHub Actions pipelines. | Branch gatekeeper, Sovereign Compile, and security scans enforced on protected branches. |
+| [`.github/workflows/`](../.github/workflows) | GitHub Actions pipelines. | Branch Gatekeeper, Sovereign Compile, and Security Scans enforced on protected branches. |
 
 ---
 
-## Owner command surface
+## Operator flight deck
 
-- **Pause lattice.** [`SystemPause.pauseAll`](../contracts/SystemPause.sol#L292-L304), `unpauseAll`, and pauser delegation functions allow instant halt/resume cycles across all core modules.
-- **Module rewiring.** [`SystemPause.setModules`](../contracts/SystemPause.sol#L134-L205) verifies ownership before relinking registries, fee pools, dispute engines, or tax policies.
-- **Batch configuration.** [`OwnerConfigurator.configureBatch`](../contracts/admin/OwnerConfigurator.sol#L101-L112) emits structured `ParameterUpdated` events for every owner-driven change.
-- **Treasury orchestration.** [`StakeManager`](../contracts/StakeManager.sol#L1251-L1264) and [`FeePool`](../contracts/FeePool.sol#L442-L451) expose `setTreasury` and allowlist setters so the owner controls reward/burn routing.
-- **Validator discipline.** [`ValidationModule`](../contracts/ValidationModule.sol#L300-L363) surfaces quorum, window, and failover setters restricted to governance.
-- **Incentive thermostat.** [`Thermostat`](../contracts/Thermostat.sol#L55-L155) offers PID gains, role overrides, and tick operations gated behind governance, enabling live economic tuning.
-- **Identity cadence.** [`IdentityRegistry`](../contracts/IdentityRegistry.sol#L317-L392) and [`AttestationRegistry`](../contracts/AttestationRegistry.sol#L77-L110) let the owner refresh Merkle roots, ENS nodes, and certificate issuers.
+- **Pause lattice.** [`SystemPause.pauseAll`](../contracts/SystemPause.sol#L292-L304) and [`unpauseAll`](../contracts/SystemPause.sol#L304-L314) extend across every core module.
+- **Module rewiring.** [`SystemPause.setModules`](../contracts/SystemPause.sol#L134-L213) and [`refreshPausers`](../contracts/SystemPause.sol#L216-L232) verify ownership before relinking registries, fee pools, dispute engines, or tax policies.
+- **Treasury orchestration.** [`StakeManager.setTreasury`](../contracts/StakeManager.sol#L1251-L1253) and [`FeePool.setTreasury`](../contracts/FeePool.sol#L442-L447) deliver deterministic reward routing with allowlisted safety.
+- **Validator discipline.** [`ValidationModule.setRevealQuorum`](../contracts/ValidationModule.sol#L287-L299) and [`setValidatorPool`](../contracts/ValidationModule.sol#L444-L458) keep quorum dynamics owner-driven.
+- **Incentive thermostat.** [`StakeManager.setThermostat`](../contracts/StakeManager.sol#L529-L536) and [`StakeManager.setHamiltonianFeed`](../contracts/StakeManager.sol#L533-L539) wire thermal and Hamiltonian feedback loops back to the owner’s console.
+- **Identity cadence.** [`IdentityRegistry.setAgentMerkleRoot`](../contracts/IdentityRegistry.sol#L317-L335) and [`AttestationRegistry.setENS`](../contracts/AttestationRegistry.sol#L45-L50) provide fresh identity anchors.
+
+---
+
+## Pause state choreography
+
+```mermaid
+stateDiagram-v2
+    [*] --> Active
+    Active --> SoftPause: pauseAll()
+    SoftPause --> Active: unpauseAll()
+    SoftPause --> CustomPauser: setGlobalPauser(pauser)
+    CustomPauser --> Active: new pauser resumes modules
+    SoftPause --> EmergencyRetreat: guardian Safe pauseAll()
+    EmergencyRetreat --> Active: owner Safe unpauseAll()
+```
+
+- **Global choreography.** Pauser delegation flows from [`setGlobalPauser`](../contracts/SystemPause.sol#L234-L251) with audit trails in `PausersUpdated` events.
+- **Guardian override.** Guardian Safe holds emergency-only access, ensuring graceful degradation without compromising owner primacy.
 
 ---
 
@@ -188,10 +228,10 @@ flowchart LR
     E --> F[Protected branches\nmain & develop]
 ```
 
-- **Fully green CI.** Every workflow runs on push and pull requests; required status checks mirror the badges above so reviewers see live health immediately.
-- **Concurrency hygiene.** Pipelines scope concurrency groups (`sovereign-${{ github.workflow }}`, `security-${{ github.workflow }}`) to avoid stale artifacts while retaining cache reuse.
-- **Principle of least privilege.** All workflows execute with read-only repository permissions and ephemeral toolchains.
-- **Evidence artifacts.** Slither SARIF, Mythril traces, compile summaries, and governance audits upload as artifacts for archival in the Evidence Vault.
+- **Fully green CI.** All workflows run on push and pull requests; required status checks mirror the badges above so reviewers see live health immediately.
+- **Concurrency hygiene.** Pipelines scope concurrency groups (`sovereign-${{ github.workflow }}`, `security-${{ github.workflow }}`) to avoid stale artifacts while reusing caches.
+- **Principle of least privilege.** Every job executes with read-only repository permissions and ephemeral toolchains.
+- **Evidence artifacts.** Slither SARIF, Mythril traces, compile summaries, and governance audits upload for archival in the Evidence Vault.
 
 ---
 
@@ -201,7 +241,7 @@ flowchart LR
 | --- | --- | --- |
 | Solidity lint | `npm run lint:sol` | Zero-warning Solhint coverage across `contracts/**`. |
 | Compile + artifact parity | `npm run compile` → `node scripts/verify-artifacts.js` | ABI/bytecode parity, checksum drift detection, manifest-ready build outputs. |
-| Governance matrix | `npm run ci:governance` | Ensures owner + guardian setters remain reachable, `$AGIALPHA` constants match manifests, and pause surfaces stay wired. |
+| Governance matrix | `npm run ci:governance` | Confirms owner + guardian setters remain reachable, `$AGIALPHA` constants stay canonical, pause lattice stays wired. |
 | Branch hygiene | `npm run lint:branch <branch>` | Enforces semantic branch naming for automation clarity. |
 | Truffle regression | `npm run test:truffle:ci` | Executes multi-module flows using shared artifacts. |
 | Hardhat scenarios | `npm run test:hardhat` | Simulates Safe governance, pause lattice control, and treasury reconfiguration. |
@@ -214,10 +254,10 @@ flowchart LR
 ## Deployment autopilots
 
 - **Truffle migrations.** [`migrations/`](../migrations) with [`truffle-config.js`](../truffle-config.js) execute deterministic broadcasts, transfer ownership to the Safe, and emit manifests under `manifests/` (created during the run) for archival.
-- **Hardhat scripts.** [`hardhat/scripts/deploy-mainnet.js`](../hardhat/scripts/deploy-mainnet.js) mirrors production Safe governance while reusing Truffle artifacts for deterministic addresses.
+- **Hardhat scripts.** [`hardhat/scripts/deploy-mainnet.js`](../hardhat/scripts/deploy-mainnet.js) mirrors production governance while reusing Truffle artifacts for deterministic addresses.
 - **Foundry scripts.** [`foundry/script/DeployMainnet.s.sol`](../foundry/script/DeployMainnet.s.sol) supports `forge script ... --broadcast` flows that emit the same manifest schema as the JavaScript pipelines.
-- **Deterministic constants.** [`contracts/Constants.sol`](../contracts/Constants.sol#L1-L20) is auto-generated by the release toolchain; [`deploy/config.mainnet.json`](../deploy/config.mainnet.json) and [`scripts/deploy/load-config.js`](../scripts/deploy/load-config.js) keep runtime inputs aligned with the canonical token metadata.
-- **Operator manifests.** [`deploy/README.md`](../deploy/README.md) explains how to capture GitHub run URLs, manifest checksums, and Safe transaction hashes so non-technical operators can deploy safely.
+- **Deterministic constants.** [`contracts/Constants.sol`](../contracts/Constants.sol#L5-L27) is auto-generated by the release toolchain; [`deploy/config.mainnet.json`](../deploy/config.mainnet.json) and [`scripts/deploy/load-config.js`](../scripts/deploy/load-config.js) keep runtime inputs aligned with the canonical token metadata.
+- **Operator manifests.** [`deploy/README.md`](../deploy/README.md) describes how to capture GitHub run URLs, manifest checksums, and Safe transaction hashes so non-technical operators can deploy safely.
 
 ---
 
@@ -250,7 +290,7 @@ mindmap
 | Owner + guardian playbooks | [`docs/operations/README.md`](operations/README.md) |
 | Safe-ready parameter manifests | [`docs/operations/owner-control.md`](operations/owner-control.md) |
 
-Archive GitHub Action URLs, manifest outputs, Safe transaction hashes, and governance audit logs together—this evidence vault is how the owner proves continuous control.
+Archive GitHub Action URLs, manifest outputs, Safe transaction hashes, and governance audit logs together—this evidence vault is how the owner proves continuous control over the machine.
 
 ---
 
@@ -294,7 +334,7 @@ npm run test:foundry
 ```
 
 - **Environment.** Node.js 20.x, npm 10.x+, solc 0.8.30, Foundry stable (`forge`, `cast`).
-- **Artifacts.** Truffle outputs land in `build/contracts`; Forge outputs in `foundry/out`; Mythril and Slither artefacts upload via GitHub Actions for external review.
+- **Artifacts.** Truffle outputs land in `build/contracts`; Forge outputs in `foundry/out`; Mythril and Slither artifacts upload via GitHub Actions for external review.
 
 ---
 
@@ -314,5 +354,5 @@ timeline
 ```
 
 - **Telemetry-first.** Every job appends summaries to the GitHub run log for rapid operator review.
-- **Artifact retention.** Security artefacts persist for 14 days, enabling auditors to replay analyses.
-- **Scalable cadence.** `security.yml` runs on every push, pull request, and weekly cron (`17 3 * * 1`) so the machine is continuously verified.
+- **Artifact retention.** Security artifacts persist for 14 days, enabling auditors to replay analyses.
+- **Scalable cadence.** `security.yml` runs on every push, pull request, and weekly cron (`17 3 * * 1`) so the machine remains continuously verified.
