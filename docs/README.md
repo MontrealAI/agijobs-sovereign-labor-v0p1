@@ -11,7 +11,7 @@
 ![Foundry](https://img.shields.io/badge/Foundry-stable-111111?logo=foundry&style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
 
-> This repository is the orchestrated labor engine that concentrates intelligence, capital, and identity into one owner-commanded powerhouse. Every subsystem is observable, configurable, and immediately deployable for non-technical pilots operating in production-critical environments.
+> This codex is the owner-operated intelligence engine capable of bending labor markets, capital, and compliance into a single command surface. Every subsystem remains observable, rewritable, and immediately deployable for non-technical pilots stewarding production-critical environments.
 
 ---
 
@@ -35,8 +35,8 @@
 
 ## Strategic briefing
 
-- **Production mirror.** The repository structure mirrors mainnet layout with audited contracts under [`contracts/`](../contracts), deployment manifests in [`deploy/`](../deploy), and multi-tool runners in [`scripts/`](../scripts), [`hardhat/`](../hardhat), [`foundry/`](../foundry), and [`truffle/`](../truffle).
-- **Owner-dominant governance.** Every critical contract inherits [`Governable`](../contracts/Governable.sol) or implements Safe-owned guards so the owner can rewire, pause, or retune parameters without redeployment, as detailed in the design dossier [`docs/design/core-contracts.md`](design/core-contracts.md).
+- **Production mirror.** The repository structure mirrors mainnet layout with audited contracts under [`contracts/`](../contracts), deployment manifests in [`deploy/`](../deploy), multi-runtime harnesses in [`scripts/`](../scripts), [`hardhat/`](../hardhat), [`foundry/`](../foundry), and [`truffle/`](../truffle).
+- **Owner-dominant governance.** Every critical contract inherits [`Governable`](../contracts/Governable.sol) or Safe-owned guards so the owner can rewire, pause, or retune parameters without redeployment (see [`docs/design/core-contracts.md`](design/core-contracts.md)).
 - **Non-technical operability.** Narrated playbooks in [`docs/operations/`](operations/) translate Safe transactions into copy/paste manifests, guaranteeing deterministic execution for guardians and treasury operators.
 - **Immutable alignment.** Constants such as the `$AGIALPHA` binding and burn routes are pinned in [`contracts/Constants.sol`](../contracts/Constants.sol), ensuring every runtime entrypoint resolves to the canonical token and scaling factors.
 
@@ -174,21 +174,29 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-    Lint[Solidity Lint]\n`npm run lint:sol`
-    Compile[Truffle Compile]\n`npm run compile`
-    GovAudit[Governance Matrix]\n`npm run ci:governance`
-    TruffleTest[Truffle Spec]\n`npm test`
-    HardhatTest[Hardhat Spec]\n`npm run test:hardhat`
-    FoundryTest[Foundry Spec]\n`npm run test:foundry`
-    Slither[Slither Static]\n`slither .`
-    Mythril[Mythril Symbolic]
+    subgraph StaticGuards[Static Assurance]
+        Lint[Solidity Lint]\n`npm run lint:sol`
+        Compile[Truffle Compile]\n`npm run compile`
+        GovAudit[Governance Matrix]\n`npm run ci:governance`
+    end
+    subgraph DynamicTrials[Dynamic Trials]
+        TruffleTest[Truffle Spec]\n`npm run test:truffle:ci`
+        HardhatTest[Hardhat Spec]\n`npm run test:hardhat`
+        FoundryTest[Foundry Spec]\n`npm run test:foundry`
+    end
+    subgraph SecurityWave[Security Wave]
+        Slither[Slither Static]\n`slither .`
+        Mythril[Mythril Symbolic]
+    end
     Lint --> Compile --> GovAudit
     GovAudit --> TruffleTest --> HardhatTest --> FoundryTest
     Compile --> Slither --> Mythril
-    classDef primary fill:#14213d,stroke:#fca311,color:#f1faee;
-    classDef security fill:#1b4332,stroke:#2d6a4f,color:#f1faee;
-    class Lint,Compile,GovAudit,TruffleTest,HardhatTest,FoundryTest primary;
-    class Slither,Mythril security;
+    classDef StaticGuards fill:#14213d,stroke:#fca311,color:#f1faee;
+    classDef DynamicTrials fill:#1b4332,stroke:#2d6a4f,color:#f1faee;
+    classDef SecurityWave fill:#3a0ca3,stroke:#4cc9f0,color:#ffffff;
+    class Lint,Compile,GovAudit StaticGuards;
+    class TruffleTest,HardhatTest,FoundryTest DynamicTrials;
+    class Slither,Mythril SecurityWave;
 ```
 
 - **`Sovereign Compile`.** [.github/workflows/ci.yml](../.github/workflows/ci.yml) enforces linting, compilation, and governance audits on every push and pull request against `main`, `develop`, and release branches.
@@ -272,9 +280,17 @@ All deployment flows expect environment variables (RPC URLs, mnemonics) to be su
 
 ## Governance timeline
 
-- **Genesis deployment.** Use Truffle migrations with canonical manifests to seed the job mesh, treasury routes, and `$AGIALPHA` bindings.
-- **Continuous calibration.** Run OwnerConfigurator manifests (see [`docs/operations/owner-control.md`](operations/owner-control.md)) whenever validator policy, treasury destinations, or dispute windows need tuning.
-- **Emergency posture.** Keep guardian Safe keys ready to trigger `pauseAll`/`unpauseAll`; regularly exercise the flow in staging networks using the provided manifests.
-- **Audit cadence.** Schedule periodic security runs via the `Security Scans` workflow and archive SARIF findings even when empty to demonstrate continuous monitoring.
+```mermaid
+timeline
+    title Owner-dominant lifecycle
+    section Genesis
+        Mainnet seeding : Truffle migrations bootstrap `$AGIALPHA` bindings and treasury routes
+    section Calibration
+        Ongoing tuning : OwnerConfigurator batches adjust validators, treasuries, and dispute policy
+    section Resilience
+        Emergency posture : Guardian Safe rehearses `pauseAll`/`unpauseAll` with manifest playbooks
+    section Oversight
+        Continuous audit : Security Scans SARIF + governance manifests archived for compliance
+```
 
 This codex is intentionally composed so the owner remains in complete control—able to pause, reconfigure, and redeploy incentives in moments—while every guardian and operator can follow deterministic, tested procedures backed by the continuous verification mesh.
