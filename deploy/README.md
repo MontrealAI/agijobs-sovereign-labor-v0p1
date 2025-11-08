@@ -223,11 +223,13 @@ stateDiagram-v2
 ### Step 1 — Export secrets securely
 ```bash
 export MAINNET_RPC="https://mainnet.infura.io/v3/<project>"
-export DEPLOYER_PK="<hex-private-key-without-0x>"
+export DEPLOYER_PK="0x<private-key>"             # Foundry & Hardhat read this
+# Optional Foundry alias:
+export PRIVATE_KEY="$DEPLOYER_PK"                # Only if you prefer PRIVATE_KEY
 export ETHERSCAN_API_KEY="<etherscan-api-token>"
 export DEPLOY_CONFIG="$(pwd)/deploy/config.mainnet.json"
 ```
-> Clear these environment variables after deployment. Never save them to disk.
+> Clear these environment variables after deployment. Never save them to disk or to shell history.
 
 ### Step 2 — Mirror CI locally
 ```bash
@@ -236,26 +238,46 @@ npm run lint:sol
 npm run compile
 node scripts/verify-artifacts.js
 npm run ci:governance
+npm run test:truffle:ci
+npm run test:hardhat
+npm run test:foundry
 ```
 > Local verification must mirror GitHub Actions output. Capture terminal logs for the Evidence Archive.
 
 ### Step 3 — Broadcast to Ethereum mainnet
+
+Every deployment autopilot consumes the exact same manifest, validates `$AGIALPHA = 0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals), and refuses to proceed if ownership or identity wiring diverges. Choose the tooling that best matches the operator’s comfort level—each option streams human-readable logs and writes manifests under `manifests/` for the Evidence Archive.
+
+#### Option A — Truffle reference flight plan
 ```bash
 DEPLOY_CONFIG=$(pwd)/deploy/config.mainnet.json \
   npx truffle migrate --network mainnet --compile-all --f 1 --to 3 --skip-dry-run
 ```
-The migration aborts automatically if:
-- `chainId` mismatches the configuration.
-- `$AGIALPHA` is not `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`.
-- Token decimals differ from `18`.
-- ENS roots or treasury wiring fail validation.
+- Aborts automatically on chain ID mismatch, token metadata drift, invalid ENS roots, or treasury misconfiguration.
+- Produces `manifests/addresses.mainnet.json` and queues Safe ownership acceptances for identity modules.
+
+#### Option B — Hardhat (ethers.js) autopilot
+```bash
+npm run deploy:hardhat:mainnet
+```
+- Streams labelled transactions (`▶️ SetTreasury`, etc.) so non-technical operators can follow along in real time.
+- Reuses `scripts/deploy/load-config.js` to enforce the same invariants as the Truffle flow.
+- Writes a manifest identical to the Truffle migration and summarizes hashes for the Evidence Archive.
+
+#### Option C — Foundry script autopilot
+```bash
+npm run deploy:foundry:mainnet
+```
+- Executes [`foundry/script/DeployMainnet.s.sol`](../foundry/script/DeployMainnet.s.sol), which reads `DEPLOYER_PK` / `PRIVATE_KEY`, broadcasts via `forge script`, and emits colorized telemetry to the console.
+- Performs runtime checks (token decimals, ENS hashes, governance wiring) before signing a single transaction.
+- Persists `manifests/addresses.<chain>.json` on success so the archival workflow matches the other runtimes.
 
 ### Step 4 — Verify sources and regenerate governance proofs
 ```bash
-npm run verify:mainnet
-npm run ci:governance
+npm run verify:mainnet          # Works regardless of the deployer runtime
+npm run ci:governance           # Regenerates the privileged-surface ledger
 ```
-Collect verification URLs, governance audit outputs, and store them alongside deployment manifests.
+Collect verification URLs, governance audit outputs, and store them alongside deployment manifests. If you also want Hardhat’s native verification receipts, run `npx hardhat verify --network mainnet <contract> ...` using the manifest addresses after the Truffle verify step succeeds.
 
 ### Step 5 — Publish the evidence pack
 1. Upload `manifests/addresses.mainnet.json`, Safe transaction exports, and GitHub Action URLs to your evidence vault.
@@ -831,6 +853,16 @@ module.exports = async function (_deployer, network) {
 
 These scripts guarantee the owner retains unilateral ability to update or pause every subsystem through governed setters while keeping `$AGIALPHA` fixed on mainnet.
 
+### `hardhat/scripts/deploy-mainnet.js`
+- Uses Hardhat’s ethers v6 factories to deploy the entire lattice while reusing [`scripts/deploy/load-config.js`](../scripts/deploy/load-config.js) for deterministic validation.
+- Emits labelled console output (`▶️ ValidationModule.setStakeManager`, `🎛️ Transferring ownership`) so reviewers can follow each governance hop in real time.
+- Automatically writes the manifest via [`truffle/util/writeManifest`](../truffle/util/writeManifest.js), ensuring downstream evidence consumers receive an identical JSON payload regardless of deployment runtime.
+
+### `foundry/script/DeployMainnet.s.sol`
+- Forge-native script that mirrors the Truffle wiring in Solidity, including runtime checks against ENS namehashes, treasury routing, and `$AGIALPHA` metadata before broadcasting.
+- Supports both `DEPLOYER_PK` and `PRIVATE_KEY` environment variables, making it effortless for non-technical operators to reuse stored credentials from the other toolchains.
+- Serialises a manifest to `manifests/addresses.<chain>.json` on success, matching the structure produced by the JavaScript pipelines so audits and branch protections remain invariant.
+
 ---
 
 ## Owner Command Authority
@@ -936,7 +968,7 @@ Run it with your signer that mirrors the Safe decision (or inside a Safe simulat
 ```bash
 MAINNET_RPC=https://mainnet.infura.io/v3/<project> \
 NEW_TREASURY=0xNewTreasurySafeAddressHere \
-DEPLOYER_PK=<owner-representative-private-key> \
+DEPLOYER_PK=0x<owner-representative-private-key> \
   npx truffle exec scripts/owner-set-treasury.js --network mainnet
 ```
 

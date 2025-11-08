@@ -150,6 +150,9 @@ The durations are indicative—gas costs are minimised by batching safe confirma
    npm run compile
    node scripts/verify-artifacts.js
    npm run ci:governance
+   npm run test:truffle:ci
+   npm run test:hardhat
+   npm run test:foundry
    ```
 3. **Sanity-check config:**
    ```bash

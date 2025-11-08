@@ -10,9 +10,13 @@
     "lint:sol": "solhint --max-warnings=0 'contracts/**/*.sol'",
     "ci:governance": "node scripts/check-governance-matrix.mjs",
     "test": "truffle test --migrate-none",
+    "test:truffle:ci": "truffle test --migrate-none --compile-none",
     "test:hardhat": "hardhat test",
     "test:foundry": "forge test",
-    "test:ci": "npm test && npm run test:hardhat && npm run test:foundry"
+    "test:ci": "npm test && npm run test:hardhat && npm run test:foundry",
+    "deploy:truffle:mainnet": "truffle migrate --network mainnet --compile-all",
+    "deploy:hardhat:mainnet": "hardhat run hardhat/scripts/deploy-mainnet.js --network mainnet",
+    "deploy:foundry:mainnet": "forge script foundry/script/DeployMainnet.s.sol:DeployMainnet --rpc-url $MAINNET_RPC --broadcast --slow"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.8",

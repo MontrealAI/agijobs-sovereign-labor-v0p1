@@ -187,8 +187,14 @@ jobs:
       - name: Install JavaScript dependencies
         run: npm ci --omit=optional --no-audit --no-fund
 
-      - name: Run Truffle unit tests
-        run: npm test
+      - name: Download compiled artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: truffle-build
+          path: build/contracts
+
+      - name: Run Truffle unit tests (artifact reuse)
+        run: npm run test:truffle:ci
 
       - name: Run Hardhat tests
         run: npm run test:hardhat
@@ -207,7 +213,7 @@ jobs:
           cat <<'EOF' >> "$GITHUB_STEP_SUMMARY"
           ### ✅ Multi-runtime test suites
 
-          - Truffle: `npm test`
+          - Truffle: `npm run test:truffle:ci`
           - Hardhat: `npm run test:hardhat`
           - Foundry: `npm run test:foundry`
           EOF
