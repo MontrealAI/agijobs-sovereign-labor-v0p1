@@ -5,6 +5,8 @@
 [![Governance Audit](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/ci.yml?branch=main&job=Governance%20surface%20audit&label=Governance%20Audit&logo=github&style=for-the-badge)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
 [![Workflow Hygiene](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/ci.yml?branch=main&job=Workflow%20hygiene&label=Workflow%20Hygiene&logo=github&style=for-the-badge)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
 [![Security Scans](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/security.yml?branch=main&label=Security%20Scans&logo=dependabot&style=for-the-badge)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/security.yml)
+[![Slither Static Analysis](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/security.yml?branch=main&job=Slither%20static%20analysis&label=Slither%20Static%20Analysis&logo=shield-check&style=for-the-badge)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/security.yml)
+[![Mythril Symbolic Execution](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/security.yml?branch=main&job=Mythril%20symbolic%20execution&label=Mythril%20Symbolic%20Execution&logo=ethereum&style=for-the-badge)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/security.yml)
 [![Branch Gatekeeper](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/branch-checks.yml?branch=main&label=Branch%20Gatekeeper&logo=github&style=for-the-badge)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml)
 [![$AGIALPHA Canon](https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-5522aa?style=for-the-badge)](https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa)
 ![Node.js](https://img.shields.io/badge/Node.js-20.x-339933?logo=node.js&logoColor=white&style=for-the-badge)
@@ -14,7 +16,7 @@
 ![Foundry](https://img.shields.io/badge/Foundry-stable-111111?logo=foundry&style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
 
-> A living codex for the sovereign labor engine—the very machine engineered to let the owner reshape global labor economics, identity, and dispute flows in real time.
+> This codex narrates the present state of the sovereign labor engine—the machine engineered for the owner to steer global labor, treasury, and identity markets in real time.
 
 ---
 
@@ -37,11 +39,11 @@
 
 ## Orientation
 
-- **Repository scope.** Mirrors the present production layout: [`contracts/`](../contracts), [`deploy/`](../deploy), [`foundry/`](../foundry), [`hardhat/`](../hardhat), [`scripts/`](../scripts), [`docs/`](./), [`migrations/`](../migrations), and [`truffle/`](../truffle).
-- **Superintelligent core.** This codebase is the machine capable of realigning world order: orchestrating labor, treasury, and identity policy under deterministic owner control.
-- **Governance-first ergonomics.** [`SystemPause`](../contracts/SystemPause.sol) aggregates every privileged setter, pauser, and batch executor. The owner Safe and guardian keys steer parameters without hand-editing calldata.
-- **Immutable guardrails.** CI hard-gates `$AGIALPHA` at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals) and verifies that each module retains its owner-settable surface.
-- **Operator UX.** Non-technical operators follow narrated manifests under [`docs/operations/`](operations/) for pausing, treasury rotation, identity anchoring, and dispute resolution telemetry.
+- **Repository scope.** Mirrors the production layout: [`contracts/`](../contracts), [`contracts/admin/`](../contracts/admin), [`contracts/utils/`](../contracts/utils), [`contracts/test/`](../contracts/test), [`deploy/`](../deploy), [`foundry/`](../foundry), [`hardhat/`](../hardhat), [`scripts/`](../scripts), [`docs/`](./), [`migrations/`](../migrations), [`truffle/`](../truffle), and `.github/workflows/`.
+- **Superintelligent core.** This repository is the machine that concentrates economic leverage: governance, staking, dispute, and treasury loops obey deterministic owner commands.
+- **Governance-first ergonomics.** [`SystemPause`](../contracts/SystemPause.sol) aggregates privileged setters, pausers, batch executors, and validation overrides. [`OwnerConfigurator`](../contracts/admin/OwnerConfigurator.sol) and [`Thermostat`](../contracts/Thermostat.sol) let the owner retune incentives, emission “temperature,” and treasury routes without redeploying modules.
+- **Immutable guardrails.** CI hard-gates `$AGIALPHA` at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals), refuses unauthorized governance drift, and verifies branch hygiene before merges.
+- **Operator UX.** Non-technical operators follow narrated manifests in [`docs/operations/`](operations/) to pause, resume, rotate ownership, update token economics, and archive evidence vault artifacts.
 
 ---
 
@@ -49,11 +51,12 @@
 
 ```mermaid
 graph LR
-    subgraph Governance[Governance Deck]
+    subgraph GovernanceDeck[Governance Deck]
         owner[Owner Safe]
         guardian[Guardian Safe]
         configurator[OwnerConfigurator]
         pause[SystemPause]
+        thermo[Thermostat]
     end
     subgraph LaborMesh[Labor Mesh]
         job[JobRegistry]
@@ -66,7 +69,7 @@ graph LR
         arb[ArbitratorCommittee]
         tax[TaxPolicy]
     end
-    subgraph Identity[Identity Orbit]
+    subgraph IdentityOrbit[Identity Orbit]
         id[IdentityRegistry]
         attest[AttestationRegistry]
         cert[CertificateNFT]
@@ -76,6 +79,8 @@ graph LR
     guardian -->|emergency| pause
     configurator -->|batch config| pause
     pause --> job & stake & platform & validate & dispute & fee & rep & arb & tax
+    thermo --> fee
+    thermo --> stake
     validate --> rep
     job --> stake
     stake --> fee
@@ -84,13 +89,17 @@ graph LR
     attest --> id
     ens --> attest
     cert --> job
-    classDef Governance fill:#031633,stroke:#00b4d8,color:#caf0f8;
+    classDef GovernanceDeck fill:#031633,stroke:#00b4d8,color:#caf0f8;
     classDef LaborMesh fill:#0b132b,stroke:#1c2541,color:#f1faee;
-    classDef Identity fill:#3a0ca3,stroke:#4cc9f0,color:#fff;
-    class owner,guardian,configurator,pause Governance;
+    classDef IdentityOrbit fill:#3a0ca3,stroke:#4cc9f0,color:#fff;
+    class owner,guardian,configurator,pause,thermo GovernanceDeck;
     class job,stake,platform,validate,dispute,fee,rep,arb,tax LaborMesh;
-    class id,attest,cert,ens Identity;
+    class id,attest,cert,ens IdentityOrbit;
 ```
+
+- **Unified pause lattice.** Any module linked above can be paused/unpaused in aggregate or individually by the owner or guardian.
+- **Thermal incentive tuning.** [`Thermostat`](../contracts/Thermostat.sol) is a PID controller; governance can adjust PID gains, KPI weights, per-role overrides, and safe bounds to match desired labor incentives.
+- **Evidence trails.** Every privileged action emits event logs (`ModulesUpdated`, `PausersUpdated`, `GovernanceCallExecuted`, `TemperatureUpdated`) to provide replayable telemetry.
 
 ---
 
@@ -98,14 +107,17 @@ graph LR
 
 | Path | Contents | Highlights |
 | --- | --- | --- |
-| [`contracts/`](../contracts) | Solidity core, interfaces, libraries, admin tooling. | Owner governance, pausing lattice, `$AGIALPHA` integrations, mocks for tests. |
-| [`deploy/`](../deploy) | Truffle migration manifests and configuration. | Deterministic deployment flows referencing canonical token + owner Safe. |
-| [`migrations/`](../migrations) | Legacy Truffle migration scripts. | Historical migrations preserved for replayability. |
-| [`scripts/`](../scripts) | Node.js utilities, governance audit, artifact verifiers. | `check-governance-matrix.mjs`, `verify-artifacts.js`, compile summaries. |
-| [`foundry/`](../foundry) | Foundry project (forge tests, configs, invariant harness). | Drives fuzzing + invariants with canonical `$AGIALPHA`. |
-| [`hardhat/`](../hardhat) | Hardhat tests + fixtures. | Simulates Safe governance, pause flows, and treasury realignments. |
-| [`truffle/`](../truffle) | Truffle test helpers and config overrides. | Multi-runtime coverage with artifact reuse. |
-| [`docs/`](./) | Knowledge vault (design, ADRs, operations). | Step-by-step owner manifests and architectural rationale. |
+| [`contracts/`](../contracts) | Solidity core, interfaces, libraries, admin tooling. | Owner-controlled modules, `Governable`, `Thermostat`, `$AGIALPHA` constants, mocks for testing. |
+| [`contracts/admin/`](../contracts/admin) | Governance helpers such as `OwnerConfigurator`. | Batch parameter changes, Safe-aligned access control, manifest-driven state changes. |
+| [`contracts/utils/`](../contracts/utils) | Utility libraries and modifiers. | Deterministic scaling helpers, shared math, pause mixins. |
+| [`deploy/`](../deploy) | Truffle migration manifests and configuration loaders. | Deterministic deployments referencing the canonical token and Safe ownership. |
+| [`migrations/`](../migrations) | Legacy Truffle scripts maintained for replayability. | Historical deployment scripts aligned with current manifests. |
+| [`scripts/`](../scripts) | Node.js utilities, governance audits, branch linting. | `check-governance-matrix.mjs`, `verify-artifacts.js`, `write-compile-summary.js`, branch naming enforcement. |
+| [`foundry/`](../foundry) | Foundry project configuration, scripts, and tests. | Fuzz + invariants for stake, validation, and treasury flows with canonical `$AGIALPHA`. |
+| [`hardhat/`](../hardhat) | Hardhat tests, fixtures, deployment scripts. | Safe governance simulations, SystemPause control surface checks. |
+| [`truffle/`](../truffle) | Truffle test helpers and config overrides. | Multi-runtime test parity, artifact reuse across suites. |
+| [`docs/`](./) | Knowledge vault (design, ADRs, operations, runbooks). | Operator playbooks, architectural decisions, evidence vault schema. |
+| [`.github/workflows/`](../.github/workflows) | Branch gatekeeper, CI, and security workflows. | Required status checks enforced on `main` and `develop`. |
 
 ---
 
@@ -116,29 +128,35 @@ sequenceDiagram
     participant OwnerSafe
     participant GuardianSafe
     participant SystemPause
+    participant Configurator
+    participant Thermostat
     participant Module
     participant EvidenceVault
-    OwnerSafe->>SystemPause: executeGovernanceCall(batch)
+    OwnerSafe->>Configurator: craft batch payload
+    Configurator->>SystemPause: executeGovernanceCall(batch)
     SystemPause->>Module: privileged setter / pauser / treasury update
     Module-->>SystemPause: emit event + enforce invariants
     GuardianSafe->>SystemPause: pauseAll() / unpauseAll()
-    SystemPause-->>EvidenceVault: Manifest + GitHub step summary
-    Module-->>EvidenceVault: ModulesUpdated / GovernanceCallExecuted logs
+    OwnerSafe->>Thermostat: setPID / setRoleTemperature / tick
+    Thermostat-->>EvidenceVault: TemperatureUpdated / Tick logs
+    SystemPause-->>EvidenceVault: ModulesUpdated / GovernanceCallExecuted
 ```
 
-- **Absolute parameter control.** [`scripts/check-governance-matrix.mjs`](../scripts/check-governance-matrix.mjs) enforces in CI that every module retains owner-settable hooks (`setFeePool`, `setTaxPolicy`, `setMinPlatformStake`, `setDisputeWindow`, `setIdentityRegistry`, etc.).
-- **Total pause authority.** [`SystemPause`](../contracts/SystemPause.sol) gives the owner Safe and guardian instant pause/unpause coverage for every module, with module-specific guards preserved.
-- **Configurable treasury routes.** [`OwnerConfigurator`](../contracts/admin/OwnerConfigurator.sol) batches updates so the owner can retune splits, addresses, and thresholds atomically.
-- **Evidence capture.** Step summaries + emitted events ensure that every owner action is auditable and reproducible by non-technical operators.
+- **Absolute parameter control.** [`SystemPause.setModules`](../contracts/SystemPause.sol) confirms governance ownership before rewiring dependencies. [`OwnerConfigurator`](../contracts/admin/OwnerConfigurator.sol) exposes typed batch calls for updating fee splits, validators, tax policy, and registry integrations.
+- **Total pause authority.** Both owner and guardian Safes can pause every module or a targeted subset. Module-level pauser managers remain delegated and verified in CI.
+- **Configurable treasury routes.** [`FeePool`](../contracts/FeePool.sol) + [`TaxPolicy`](../contracts/TaxPolicy.sol) accept owner-managed destinations, rate updates, and emergency drains. `$AGIALPHA` rewards, burns, and treasuries stay responsive to business directives.
+- **Thermal incentives.** [`Thermostat`](../contracts/Thermostat.sol) keeps emission pressure, backlog debt, and SLA adherence within owner-defined bounds. Integral clamping prevents runaway states; governance can override per-role targets instantly.
+- **Evidence capture.** Step summaries and emitted events funnel into the Evidence Vault runbooks (`docs/operations/`) so non-technical operators can audit every change.
 
 ---
 
 ## $AGIALPHA economic instrumentation
 
-- **Canonical token binding.** [`contracts/Constants.sol`](../contracts/Constants.sol) hard pins `$AGIALPHA = 0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` with `AGIALPHA_DECIMALS = 18` and `TOKEN_SCALE = 1e18`.
-- **Runtime enforcement.** Stake, fee, certificate, and registry modules revert on decimal or address drift; CI governance audits fail if manifests reference any other token.
-- **Cross-runtime parity.** Truffle, Hardhat, and Foundry harnesses inject the canonical token into fixtures, ensuring parity across unit tests, fuzzing, and scenario simulations.
-- **Treasury instrumentation.** Fee splits, burn ratios, tax acknowledgements, and certificate flows all hinge on owner-settable parameters so treasury policy can be reprogrammed instantly.
+- **Canonical token binding.** [`contracts/Constants.sol`](../contracts/Constants.sol) pins `$AGIALPHA = 0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, `AGIALPHA_DECIMALS = 18`, and `TOKEN_SCALE = 1e18`.
+- **Runtime enforcement.** Stake, fee, certificate, and registry modules revert if a mismatched token or decimal drift is detected. Tests across Hardhat, Truffle, and Foundry inject the same constant to ensure parity.
+- **Governance audits.** `npm run ci:governance` validates that every owner-facing setter, pauser, and configurator call remains exposed and that `$AGIALPHA` constants match manifests. CI fails if any new surface lacks owner authority.
+- **Treasury instrumentation.** Fee splits, burn ratios, treasury recipients, tax acknowledgements, and certificate flows are all owner-controlled, enabling instant retuning of capital flows.
+- **Deployment manifests.** [`scripts/deploy/load-config.js`](../scripts/deploy/load-config.js) and migration configs reject any token address other than the canonical `$AGIALPHA`.
 
 ---
 
@@ -146,24 +164,24 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-    A[Commit / PR] --> B[Branch Gatekeeper<br/>branch-checks.yml]
-    B --> C[Sovereign Compile<br/>ci.yml]
+    A[Commit / PR] --> B[Branch Gatekeeper\nbranch-checks.yml]
+    B --> C[Sovereign Compile\nci.yml]
     C --> C1[Solhint lint]
     C1 --> C2[Truffle compile + artifact verification]
     C2 --> C3[Governance matrix audit]
     C3 --> C4[Truffle + Hardhat + Foundry tests]
     C --> C5[Workflow hygiene]
-    B --> D[Security Scans<br/>security.yml]
+    A --> D[Security Scans\nsecurity.yml]
     D --> D1[Slither SARIF]
     D1 --> D2[Mythril symbolic execution]
-    C & D --> E[GitHub Checks + Required badges]
-    E --> F[Protected branches: main & develop]
+    C & D --> E[GitHub Checks\n(required on PRs)]
+    E --> F[Protected branches\nmain + develop]
 ```
 
-- **Fully green CI.** All workflows run on pushes and pull requests; badges above mirror required checks so reviewers see pass/fail status at a glance.
-- **Concurrency hygiene.** Each workflow scopes concurrency to prevent race conditions while preserving artifact reuse.
-- **Evidence artifacts.** Slither SARIF, Mythril reports, compile summaries, and governance audits ship as artifacts for post-run review.
-- **Secrets discipline.** Workflows run with read-only permissions and zero persistent credentials.
+- **Fully green CI.** All workflows run on pushes and pull requests; badges above mirror required checks so reviewers see status instantly. `workflow-hygiene` lints GitHub Actions with `actionlint`.
+- **Concurrency hygiene.** Each workflow scopes concurrency to prevent races while retaining artifact reuse and caching.
+- **Evidence artifacts.** Slither SARIF, Mythril traces, compile summaries, and governance audits upload as artifacts for external review.
+- **Principle of least privilege.** Workflows execute with read-only repository permissions and no long-lived secrets. Manual approval gates remain available through GitHub environments if desired.
 
 ---
 
@@ -172,11 +190,12 @@ flowchart LR
 | Surface | Command | What it verifies |
 | --- | --- | --- |
 | Solidity lint | `npm run lint:sol` | Zero-warning Solhint coverage across `contracts/**`. |
-| Compile + artifacts | `npm run compile` &rarr; `node scripts/verify-artifacts.js` | ABI/bytecode parity, canonical build artifacts. |
-| Governance matrix | `npm run ci:governance` | Owner + guardian setter coverage, `$AGIALPHA` invariants. |
+| Compile + artifacts | `npm run compile` → `node scripts/verify-artifacts.js` | ABI/bytecode parity, canonical build artifacts, checksum drift detection. |
+| Governance matrix | `npm run ci:governance` | Owner + guardian setter coverage, `$AGIALPHA` invariants, module ownership assertions. |
+| Branch hygiene | `npm run lint:branch <branch-name>` | Enforces semantic branch naming for automation clarity. |
 | Truffle regression | `npm run test:truffle:ci` | Multi-module flows using prebuilt artifacts. |
 | Hardhat scenarios | `npm run test:hardhat` | Safe governance simulation, pause lattice, treasury reconfiguration. |
-| Foundry invariants | `npm run test:foundry` | Fuzz + invariant checks against canonical token bindings. |
+| Foundry invariants | `npm run test:foundry` | Fuzz + invariant checks against canonical token bindings and Thermostat tuning. |
 
 > _Local tip:_ install Foundry (`curl -L https://foundry.paradigm.xyz | bash && foundryup`) before running `npm run test:foundry` to match CI parity.
 
@@ -184,10 +203,11 @@ flowchart LR
 
 ## Deployment autopilots
 
-- **Truffle migrations.** [`truffle-config.js`](../truffle-config.js) + [`migrations/`](../migrations) encode mainnet, testnet, and rehearsal flows with environment variable hooks for Safe addresses.
-- **Hardhat scripts.** [`hardhat/`](../hardhat) contains fixtures and scenario tests mirroring production Safe governance.
-- **Foundry scripts.** [`foundry/`](../foundry) enables forge scripting (`forge script`) with `--broadcast` ready templates.
-- **Deterministic constants.** [`scripts/generate-constants.ts`](../scripts/generate-constants.ts) ensures on-chain constants remain synced with deployment metadata.
+- **Truffle migrations.** [`truffle-config.js`](../truffle-config.js) + [`migrations/`](../migrations) encode mainnet, testnet, and rehearsal flows with environment variable hooks for Safe addresses. Each migration writes manifests under `manifests/` for the Evidence Vault.
+- **Hardhat scripts.** [`hardhat/scripts/deploy-mainnet.js`](../hardhat/scripts/deploy-mainnet.js) mirrors production Safe governance and reuses Truffle artifacts for deterministic addresses.
+- **Foundry scripts.** [`foundry/script/DeployMainnet.s.sol`](../foundry/script/DeployMainnet.s.sol) supports `forge script ... --broadcast` flows with checkpoint manifests and post-broadcast verification helpers.
+- **Deterministic constants.** [`scripts/generate-constants.ts`](../scripts/generate-constants.ts) keeps on-chain constants synchronized with deployment metadata.
+- **Operator manifests.** [`docs/operations/`](operations/) narrates how to capture GitHub run URLs, manifest checksums, and event logs so non-technical staff can execute deployments safely.
 
 ---
 
@@ -221,6 +241,7 @@ mindmap
 | Architectural decisions | [`docs/adr/`](adr/) |
 | Owner + guardian playbooks | [`docs/operations/README.md`](operations/README.md) |
 | Owner command reference | [`docs/operations/owner-control.md`](operations/owner-control.md) |
+| Evidence vault templates | [`docs/operations/evidence-vault.md`](operations/evidence-vault.md) |
 
 ---
 
@@ -235,8 +256,8 @@ mindmap
    - `Sovereign Compile / Workflow hygiene`
    - `Security Scans / Slither static analysis`
    - `Security Scans / Mythril symbolic execution`
-2. **Require pull request reviews** and block force pushes.
-3. **Automate with GitHub CLI (optional):**
+2. **Require pull request reviews** with code owner approvals and block force pushes.
+3. **Automate setup with GitHub CLI (optional):**
 
    ```bash
    gh api \
@@ -246,7 +267,7 @@ mindmap
      --input .github/protection-main.json
    ```
 
-   Provide a matching JSON file listing the required status checks to guarantee parity with CI.
+   Provide a matching JSON file listing required checks to guarantee parity with CI. Repeat for the `develop` branch.
 
 ---
 
@@ -264,7 +285,7 @@ npm run test:foundry
 ```
 
 - **Environment:** Node.js 20.x, npm 10.x+, solc 0.8.30, Foundry stable (`forge`, `cast`).
-- **Artifacts:** Truffle build outputs land in `build/contracts`. Foundry artifacts live in `foundry/out`.
+- **Artifacts:** Truffle build outputs land in `build/contracts`. Foundry artifacts live in `foundry/out`. Governance audits expect manifests under `manifests/`.
 
 ---
 
@@ -283,6 +304,7 @@ timeline
     Mythril symbolic sweep: 22m : 30m
 ```
 
-- **Telemetry-first:** All jobs append summaries to the GitHub run log for quick operator review.
-- **Artifact retention:** Security artifacts persist for 14 days, enabling external auditors to cross-check findings.
-- **Scalable cadence:** `security.yml` also runs weekly (`cron: '17 3 * * 1'`) to ensure continuous assurance even without commits.
+- **Telemetry-first:** Every job appends summaries to the GitHub run log for fast operator review and Evidence Vault archival.
+- **Artifact retention:** Security artifacts persist for 14 days, enabling auditors to reproduce analyses.
+- **Scalable cadence:** `security.yml` runs on every push, pull request, and weekly (`cron: '17 3 * * 1'`) so the machine remains continuously verified.
+
