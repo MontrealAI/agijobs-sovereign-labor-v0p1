@@ -94,6 +94,24 @@ module.exports = async function (deployer, network, accounts) {
   const guardianSafe = cfg.guardianSafe || ownerSafe;
   const treasury = cfg.treasury || ZERO_ADDRESS;
 
+  if (!ownerSafe || ownerSafe === ZERO_ADDRESS) {
+    throw new Error('deploy config must include a non-zero ownerSafe');
+  }
+
+  if (!web3.utils.isAddress(ownerSafe)) {
+    throw new Error(`ownerSafe must be a valid address, received ${ownerSafe}`);
+  }
+
+  if (guardianSafe && guardianSafe !== ownerSafe) {
+    if (!web3.utils.isAddress(guardianSafe) || guardianSafe === ZERO_ADDRESS) {
+      throw new Error(`guardianSafe must be a valid, non-zero address when specified (received ${guardianSafe})`);
+    }
+  }
+
+  if (treasury !== ZERO_ADDRESS && !web3.utils.isAddress(treasury)) {
+    throw new Error(`treasury must be zero or a valid address, received ${treasury}`);
+  }
+
   const params = cfg.params || {};
   const platformFeeBps = Number(params.platformFeeBps ?? 1000);
   if (platformFeeBps % 100 !== 0) {
