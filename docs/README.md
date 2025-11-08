@@ -1,8 +1,13 @@
 # Sovereign Labor Control Codex
 
 [![Sovereign Compile](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/ci.yml?branch=main&label=Sovereign%20Compile&logo=github&style=for-the-badge)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
+[![Governance Audit](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/ci.yml?branch=main&label=Governance%20Audit&logo=github&style=for-the-badge&job=Governance%20surface%20audit)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
+[![Multi-runtime Tests](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/ci.yml?branch=main&label=Multi-runtime%20Tests&logo=github&style=for-the-badge&job=Test%20suites)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
+[![Workflow Hygiene](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/ci.yml?branch=main&label=Workflow%20Hygiene&logo=github&style=for-the-badge&job=Workflow%20hygiene)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
 [![Branch Gatekeeper](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/branch-checks.yml?branch=main&label=Branch%20Gatekeeper&logo=github&style=for-the-badge)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml)
 [![Security Scans](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/security.yml?branch=main&label=Security%20Scans&logo=dependabot&style=for-the-badge)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/security.yml)
+[![Slither](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/security.yml?branch=main&label=Slither&logo=shield-check&style=for-the-badge&job=Slither%20static%20analysis)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/security.yml)
+[![Mythril](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/security.yml?branch=main&label=Mythril&logo=ethereum&style=for-the-badge&job=Mythril%20symbolic%20execution)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/security.yml)
 [![$AGIALPHA Canon](https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-5522aa?style=for-the-badge)](https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa)
 ![Node.js](https://img.shields.io/badge/Node.js-20.x-339933?logo=node.js&logoColor=white&style=for-the-badge)
 ![solc](https://img.shields.io/badge/solc-0.8.30-363636?logo=ethereum&style=for-the-badge)
@@ -11,7 +16,7 @@
 ![Foundry](https://img.shields.io/badge/Foundry-stable-111111?logo=foundry&style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
 
-> This codex captures the sovereign labor engine that concentrates intelligence, capital, and identity into one unstoppable owner-steered machine. Every subsystem is observable, fully configurable by its owner, and production-hardened for non-technical pilots.
+> This codex documents the sovereign labor engine that compresses intelligence, liquidity, and identity into a single owner-steered force multiplier. Every surface is observable, pausable, and rewritable by the owner without compromising production serenity for non-technical pilots.
 
 ---
 
@@ -20,27 +25,29 @@
 1. [Mission orientation](#mission-orientation)
 2. [Architecture constellation](#architecture-constellation)
 3. [Command lattice](#command-lattice)
-4. [Parameter control surfaces](#parameter-control-surfaces)
-5. [$AGIALPHA discipline](#agialpha-discipline)
-6. [Directory atlas](#directory-atlas)
-7. [Operator flight deck](#operator-flight-deck)
-8. [Pause state choreography](#pause-state-choreography)
-9. [Continuous verification mesh](#continuous-verification-mesh)
-10. [Quality assurance arsenal](#quality-assurance-arsenal)
-11. [Deployment autopilots](#deployment-autopilots)
-12. [Operational intelligence vault](#operational-intelligence-vault)
-13. [Branch protection enforcement](#branch-protection-enforcement)
-14. [Quickstart commands](#quickstart-commands)
-15. [Execution timeline](#execution-timeline)
+4. [Owner override catalogue](#owner-override-catalogue)
+5. [Parameter control surfaces](#parameter-control-surfaces)
+6. [$AGIALPHA discipline](#agialpha-discipline)
+7. [Directory atlas](#directory-atlas)
+8. [Operator flight deck](#operator-flight-deck)
+9. [Pause state choreography](#pause-state-choreography)
+10. [Continuous verification mesh](#continuous-verification-mesh)
+11. [Quality assurance arsenal](#quality-assurance-arsenal)
+12. [Deployment autopilots](#deployment-autopilots)
+13. [Operational intelligence vault](#operational-intelligence-vault)
+14. [Branch protection enforcement](#branch-protection-enforcement)
+15. [Quickstart commands](#quickstart-commands)
+16. [Execution timeline](#execution-timeline)
 
 ---
 
 ## Mission orientation
 
 - **Repository scope.** Mirrors production layout: [`contracts/`](../contracts), [`contracts/admin/`](../contracts/admin), [`contracts/utils/`](../contracts/utils), [`contracts/interfaces/`](../contracts/interfaces), [`contracts/libraries/`](../contracts/libraries), [`contracts/modules/`](../contracts/modules), [`contracts/test/`](../contracts/test), [`deploy/`](../deploy), [`foundry/`](../foundry), [`hardhat/`](../hardhat), [`migrations/`](../migrations), [`scripts/`](../scripts), [`truffle/`](../truffle), [`docs/`](./), and [`.github/workflows/`](../.github/workflows).
-- **Owner-first architecture.** Every production contract inherits [`Governable`](../contracts/Governable.sol) or two-step ownership so the owner’s Safe controls configuration, pausing, treasury routing, and emergency measures end-to-end.
-- **Emergency readiness.** [`SystemPause`](../contracts/SystemPause.sol) aggregates pauser delegation, privileged setters, and governance call forwarding so the owner halts or rewires every module in one motion.
-- **Operator UX.** Non-technical pilots use narrated manifests in [`docs/operations/`](operations/) and [`docs/operations/owner-control.md`](operations/owner-control.md) to execute Safe transactions without handcrafting calldata.
+- **Owner-first architecture.** Production contracts inherit [`Governable`](../contracts/Governable.sol) or the Safe-ready [`CoreOwnable2Step`](../contracts/utils/CoreOwnable2Step.sol) so the owner Safe approves every setter, pauser, and treasury update.
+- **Emergency readiness.** [`SystemPause`](../contracts/SystemPause.sol) concentrates pauser delegation, module rewiring, and arbitrary governance calls so the owner halts or retunes the entire machine in a single transaction.
+- **Operator UX.** Narrated manifests in [`docs/operations/`](operations/) and [`docs/operations/owner-control.md`](operations/owner-control.md) let non-technical pilots copy/paste Safe transactions while CI and manifests confirm every state transition.
+- **Evidence discipline.** [`scripts/write-compile-summary.js`](../scripts/write-compile-summary.js) and governance audit logs append structured runbooks to each CI summary, feeding the Evidence Vault described below.
 
 ---
 
@@ -130,6 +137,32 @@ sequenceDiagram
 
 ---
 
+## Owner override catalogue
+
+```mermaid
+flowchart LR
+    owner((Owner Safe)) -->|configureBatch| configurator[OwnerConfigurator]
+    owner -->|governance calls| pauseRouter[SystemPause]
+    owner -->|thermals| thermostat[Thermostat]
+    owner -->|treasury| stakeManager[StakeManager]
+    owner -->|policy| taxPolicy[TaxPolicy]
+    owner -->|identity cadence| identity[IdentityRegistry]
+    guardian((Guardian Safe)) -->|emergency pause| pauseRouter
+    configurator -->|ModulesUpdated| evidenceVault[[Evidence Vault]]
+    pauseRouter -->|GovernanceCallExecuted| evidenceVault
+    thermostat -->|TemperatureUpdated| evidenceVault
+    classDef actor fill:#03045e,stroke:#90e0ef,color:#caf0f8;
+    classDef module fill:#2a6f97,stroke:#48cae4,color:#f1faee;
+    class owner,guardian actor;
+    class configurator,pauseRouter,thermostat,stakeManager,taxPolicy,identity module;
+```
+
+- **Absolute parameter sovereignty.** [`SystemPause.executeGovernanceCall`](../contracts/SystemPause.sol#L253-L314) relays any Safe-approved call, reverting on failure and emitting audit trails.
+- **Guardian containment.** The guardian Safe can only trigger [`pauseAll`](../contracts/SystemPause.sol#L292-L304); it cannot reconfigure parameters, preserving the owner's economic command while still guaranteeing emergency brakes.
+- **Telemetry-first governance.** Every configuration pathway emits structured events (`ModulesUpdated`, `GovernanceCallExecuted`, `TemperatureUpdated`) that CI aggregates into run summaries, providing triple-source verification: on-chain logs, manifests, and GitHub evidence.
+
+---
+
 ## Parameter control surfaces
 
 | Module | Owner leverage | Reference |
@@ -154,7 +187,7 @@ Every setter is wired through `onlyGovernance` or Safe-owned `onlyOwner` modifie
 ## $AGIALPHA discipline
 
 - **Canonical binding.** [`Constants.sol`](../contracts/Constants.sol#L5-L27) pins `$AGIALPHA` to `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` with `18` decimals and exposes scaling helpers for every consumer contract.
-- **Runtime enforcement.** Stake, fee, dispute, and registry modules import `Constants` to reject mismatched token addresses or decimal drift.
+- **Runtime enforcement.** Stake, fee, dispute, identity, and registry modules import `Constants` to reject mismatched token addresses or decimal drift before any state mutation executes.
 - **Governance audit parity.** `npm run ci:governance` validates token constants, owner/guardian reachability, and pause lattice wiring.
 - **Deployment manifests.** [`scripts/deploy/load-config.js`](../scripts/deploy/load-config.js) refuses alternate token addresses, keeping Truffle, Hardhat, and Foundry autopilots synchronized.
 
@@ -174,7 +207,7 @@ Every setter is wired through `onlyGovernance` or Safe-owned `onlyOwner` modifie
 | [`foundry/`](../foundry) | Forge config, scripts, and tests. | Invariant suites and `DeployMainnet.s.sol` autopilot. |
 | [`hardhat/`](../hardhat) | Hardhat tests + scripts. | Safe governance simulations verifying pause + treasury surfaces. |
 | [`migrations/`](../migrations) | Truffle migration scripts. | Idempotent broadcasts that emit manifests for the Evidence Vault. |
-| [`scripts/`](../scripts) | Node.js automation. | Branch linting, governance matrix auditing, artifact verification, owner treasury helpers. |
+| [`scripts/`](../scripts) | Node.js automation. | Branch linting, governance matrix auditing, artifact verification (`verify-artifacts`, `write-compile-summary`), owner treasury helpers. |
 | [`truffle/`](../truffle) | Truffle configuration & utilities. | Manifest writers, deterministic compile settings, deployment codex. |
 | [`docs/`](./) | Knowledge base. | Design dossiers, ADR ledger, operations atlas. |
 | [`.github/workflows/`](../.github/workflows) | GitHub Actions pipelines. | Branch Gatekeeper, Sovereign Compile, and Security Scans enforced on protected branches. |
