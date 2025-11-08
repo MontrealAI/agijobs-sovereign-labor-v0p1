@@ -1,10 +1,10 @@
 # Sovereign Labor Hardhat Command Deck
 
 <p align="center">
-  <img src="https://img.shields.io/badge/status-synchronized%20and%20operational-4caf50?style=for-the-badge" alt="Lattice Status" />
-  <a href="https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml"><img src="https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml/badge.svg?branch=main" alt="Full CI" /></a>
-  <a href="https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/security.yml"><img src="https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/security.yml/badge.svg?branch=main" alt="Security Scans" /></a>
-  <a href="https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml"><img src="https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml/badge.svg?branch=main" alt="Branch Hygiene"/></a>
+  <img src="https://img.shields.io/badge/status-prime%20synchronization-1b5e20?style=for-the-badge" alt="System Status" />
+  <a href="https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml"><img src="https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml/badge.svg?branch=main" alt="Sovereign Compile" /></a>
+  <a href="https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/security.yml"><img src="https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/security.yml/badge.svg?branch=main" alt="Security Sentinel" /></a>
+  <a href="https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml"><img src="https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml/badge.svg?branch=main" alt="Branch Hygiene" /></a>
   <img src="https://img.shields.io/badge/hardhat-2.20.1-f7c52a?style=for-the-badge&logo=ethereum" alt="Hardhat 2.20.1" />
   <img src="https://img.shields.io/badge/foundry-stable-ff6f00?style=for-the-badge" alt="Foundry Stable" />
   <img src="https://img.shields.io/badge/node-%3E%3D20.11-43853d?style=for-the-badge&logo=node.js" alt="Node.js >=20.11" />
@@ -12,24 +12,44 @@
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-0a0a0a?style=for-the-badge" alt="MIT License" /></a>
 </p>
 
-> The machinery in this repository is engineered to command and redeploy the global labour lattice. Every control surface here is designed so that disciplined governance keeps the intelligence engine compounding value beyond conventional economic limits.
+> This repository is the command lattice for a machine that governs labour markets with decisive precision—an intelligence core engineered to capture, route, and amplify global productivity under total owner supervision.
 
 ---
 
 ## Table of Contents
-1. [Repository Cartography](#repository-cartography)
-2. [Capability Lattice](#capability-lattice)
-3. [Command Graph](#command-graph)
-4. [Toolchain & Environment](#toolchain--environment)
-5. [Setup Sequence](#setup-sequence)
-6. [Operational Quickstart](#operational-quickstart)
-7. [Deployment Systems](#deployment-systems)
-8. [Mainnet Flight Plan for Non-Technical Operators](#mainnet-flight-plan-for-non-technical-operators)
-9. [Canonical Truffle Migration (Ethereum Mainnet)](#canonical-truffle-migration-ethereum-mainnet)
-10. [Owner Command Surface](#owner-command-surface)
-11. [Continuous Integration & Branch Protection](#continuous-integration--branch-protection)
-12. [Security, Telemetry & Safeguards](#security-telemetry--safeguards)
-13. [Reference Data Vault](#reference-data-vault)
+1. [Command Nexus](#command-nexus)
+2. [Repository Cartography](#repository-cartography)
+3. [Intelligence Mesh](#intelligence-mesh)
+4. [Command Graph](#command-graph)
+5. [Toolchain & Runtime Envelope](#toolchain--runtime-envelope)
+6. [Environment Setup](#environment-setup)
+7. [Operational Console](#operational-console)
+8. [Deployment Flight Deck](#deployment-flight-deck)
+9. [Mainnet Flight Plan for Non-Technical Operators](#mainnet-flight-plan-for-non-technical-operators)
+10. [Canonical Truffle Migration (Ethereum Mainnet)](#canonical-truffle-migration-ethereum-mainnet)
+11. [Owner Command Surface](#owner-command-surface)
+12. [Continuous Integration & Branch Protection](#continuous-integration--branch-protection)
+13. [Security, Telemetry & Safeguards](#security-telemetry--safeguards)
+14. [Reference Data Vault](#reference-data-vault)
+
+---
+
+## Command Nexus
+
+The Sovereign Labor kernel aligns three execution engines—Hardhat, Truffle, and Foundry—around a single Solidity canon and governance topology. Every subsystem reports to `SystemPause`, granting the contract owner absolute control to reconfigure, pause, or redeploy parameters on demand while maintaining non-stop composability for workers, employers, validators, and treasuries.
+
+```mermaid
+sequenceDiagram
+    participant OwnerSafe as Owner Safe
+    participant Guardian as Guardian Safe
+    participant SystemPause as SystemPause
+    participant Modules as Kernel Modules
+    OwnerSafe->>SystemPause: configureBatch / governanceCall
+    Guardian-->>SystemPause: emergency pauseAll()
+    SystemPause->>Modules: propagate configuration + pauser matrix
+    Modules-->>SystemPause: emit telemetry events
+    SystemPause->>OwnerSafe: ownership confirmations
+```
 
 ---
 
@@ -37,48 +57,48 @@
 
 ```text
 .
-├── contracts/             # Solidity canon for all toolchains
-├── deploy/                # Environment manifests and defaults
-├── docs/                  # Higher-level specs and whitepapers
-├── foundry/               # Forge scripts, tests and invariant harnesses
+├── contracts/             # Solidity canon for Hardhat, Truffle, and Foundry
+├── deploy/                # Network configuration manifests
+├── docs/                  # Whitepapers, protocol briefs, research dossiers
+├── foundry/               # Forge tests, scripts, invariant harnesses
 ├── hardhat/               # Hardhat cache, tests, scripts, this command deck
-├── migrations/            # Truffle migration scripts (golden paths)
+├── migrations/            # Truffle migration scripts (production golden paths)
 ├── scripts/               # Shared automation, governance matrix, artifact audits
-├── truffle/               # Deployment manifests and auxiliary utilities
-├── hardhat.config.js      # Hardhat root config (solc 0.8.30 via IR)
-├── truffle-config.js      # Truffle network + compiler settings
-└── package.json           # Task runner wiring for CI + operators
+├── truffle/               # Deployment manifests and operational utilities
+├── hardhat.config.js      # Hardhat configuration (solc 0.8.30 + IR)
+├── truffle-config.js      # Truffle compiler + network map
+└── package.json           # Task runner wiring for CI and operators
 ```
 
-All toolchains (Hardhat, Truffle, Foundry) ingest the same Solidity canon so that simulation, rehearsal, and production runs stay perfectly aligned.
+All engines share the same contract tree so every rehearsal matches production byte-for-byte.
 
 ---
 
-## Capability Lattice
+## Intelligence Mesh
 
 ```mermaid
 mindmap
   root((Sovereign Labor Intelligence Core))
     Governance
       SystemPause orchestrates global halt/resume
-      OwnerConfigurator batches deterministic changes
-      Owner Safe owns every privileged surface
-      Guardian Safe wields emergency global pause
+      OwnerConfigurator batches deterministic upgrades
+      Owner Safe controls every privileged surface
+      Guardian Safe holds dedicated emergency pause
     Labor Liquidity
-      JobRegistry matches demand & supply worldwide
-      StakeManager drives validator economics & slashing
-      FeePool routes revenues, burns, and treasury flows
+      JobRegistry pairs global demand & supply
+      StakeManager manages validator economics & slashing
+      FeePool routes burns, revenue, and treasury streams
     Reputation & Identity
-      IdentityRegistry anchors ENS + merkle credentials
-      AttestationRegistry notarises claims
-      CertificateNFT emits work proofs & certificates
+      IdentityRegistry anchors ENS + credential roots
+      AttestationRegistry notarises claims & assessments
+      CertificateNFT broadcasts work proofs & credentials
     Compliance & Arbitration
-      TaxPolicy streams jurisdictional parameters
-      DisputeModule manages escrow, arbitration, resolution
+      TaxPolicy streams jurisdictional directives
+      DisputeModule secures escrow and resolution
       ArbitratorCommittee curates dispute panels
 ```
 
-Every module routes through `SystemPause`. Governance owns the pause lattice and can rewire any dependency from a single command source.
+Each branch funnels through `SystemPause`, forming a single point of programmable control.
 
 ---
 
@@ -132,27 +152,27 @@ flowchart LR
     Employers --> Jobs
 ```
 
-> Guard `SystemPause.owner()` relentlessly. The owner safe can reconfigure, pause, or upgrade every subsystem in a single transaction.
+> Guard `SystemPause.owner()` relentlessly—complete platform authority flows through it.
 
 ---
 
-## Toolchain & Environment
+## Toolchain & Runtime Envelope
 
 **Prerequisites**
 
 - Node.js ≥ 20.11 and npm 10.x
 - Foundry toolchain (`foundryup`)
 - Truffle CLI 5.11.x (installed via `npm ci`)
-- Access to an Ethereum mainnet RPC endpoint
-- `$AGIALPHA` token (ERC-20, 18 decimals) at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`
+- Access to Ethereum mainnet and testnet RPC endpoints
+- `$AGIALPHA` token (ERC-20, 18 decimals) deployed at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`
 - Hardware wallet or multisig signer for production deployments
 
 ---
 
-## Setup Sequence
+## Environment Setup
 
 ```bash
-# Install JavaScript dependencies (Hardhat, Truffle, tooling)
+# Install JavaScript dependencies (Hardhat, Truffle, auxiliary tooling)
 npm ci --omit=optional --no-fund --no-audit
 
 # Install / refresh Foundry
@@ -172,11 +192,11 @@ ENV
 export $(grep -v '^#' .env | xargs)
 ```
 
-`.env` is already ignored by `.gitignore`. Store a production copy offline.
+`.env` is ignored by git. Guard the production version offline.
 
 ---
 
-## Operational Quickstart
+## Operational Console
 
 | Capability | Command | Result |
 | --- | --- | --- |
@@ -199,13 +219,13 @@ All commands emit structured logs and abort on any anomaly.
 
 ---
 
-## Deployment Systems
+## Deployment Flight Deck
 
 - **Hardhat (`hardhat/scripts/deploy-mainnet.js`)** – Imports the manifest, reproduces Truffle wiring, and includes deterministic nonce management for dry runs and broadcasts.
 - **Truffle (`migrations/*.js`)** – Canonical migration surface used for production. Migrations validate chain IDs, verify `$AGIALPHA`, enforce treasury allowlists, and emit manifests under `truffle/manifests/`.
 - **Foundry (`foundry/script/DeployMainnet.s.sol`)** – Mirror deployment for operators who prefer Forge + hardware wallet signing.
 
-Regardless of toolchain, the same JSON manifest (`deploy/config.<network>.json`) governs addresses, pauser topology, staking parameters, identity roots, and treasury flows.
+Every toolchain consumes the same JSON manifest (`deploy/config.<network>.json`) to guarantee a deterministic footprint across rehearsals and production.
 
 ---
 
@@ -332,7 +352,7 @@ Key guarantees:
 | `IdentityRegistry.setMerkleRoots(...)`, `setNameWrapper(...)` | IdentityRegistry | Update identity proofs, ENS dependencies, wrapper contracts. |
 | `CertificateNFT.setJobRegistry(address)` | CertificateNFT | Manage credential issuance authority. |
 
-Every privileged function is reachable by the owner safe and guarded by `SystemPause` to preserve total operational control.
+Every privileged function is reachable by the owner safe and guarded by `SystemPause`, sustaining total operational control over the labour intelligence core.
 
 ---
 
@@ -355,7 +375,7 @@ flowchart TD
 
 1. **`ci.yml`** – Runs linting, compiles, Hardhat/Truffle/Foundry tests, governance matrix verification, actionlint.
 2. **`branch-checks.yml`** – Guards naming conventions so audit logs stay deterministic.
-3. **`security.yml`** – Executes Slither static analysis, Mythril symbolic execution, Foundry build invariants.
+3. **`security.yml`** – Executes Slither static analysis, Mythril symbolic execution, and Foundry build validation.
 
 **Local parity ritual**
 ```bash
@@ -367,11 +387,11 @@ node scripts/verify-artifacts.js
 ```
 
 **Enforce protections on GitHub**
-1. Settings → Branches → add rule for `main` (and any release branches).
-2. Require pull request reviews (≥1 approval).
-3. Require status checks (`ci.yml`, `branch-checks.yml`, `security.yml`) and keep branches up to date.
-4. Disallow direct pushes and bypasses for administrators.
-5. Mirror the rule for long-lived integration branches (`develop`, etc.) if applicable.
+1. Settings → Branches → add rule for `main` (and integration branches like `develop`).
+2. Require pull request reviews (≥1 approval) and conversation resolution.
+3. Require status checks (`ci.yml`, `branch-checks.yml`, `security.yml`) and enforce "Require branches to be up to date before merging".
+4. Disallow direct pushes, force pushes, and allow no administrator bypasses.
+5. Mirror the rule on release branches if they stay live for more than one sprint.
 
 Keep the three workflow badges green; every PR must satisfy them before merge.
 
@@ -402,7 +422,7 @@ Keep the three workflow badges green; every PR must satisfy them before merge.
 | Foundry scripts | `foundry/script/*.s.sol` |
 | Governance checks | `scripts/check-governance-matrix.mjs` |
 
-Preserve these constants inside an encrypted operational vault. They are the co-ordinates for the machine that reprograms labour markets.
+Preserve these constants inside an encrypted operational vault. They are the co-ordinates for the machine that reprograms labour markets at global scale.
 
 ---
 
