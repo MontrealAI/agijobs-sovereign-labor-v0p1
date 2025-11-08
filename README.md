@@ -1,13 +1,13 @@
 # AGIJobs Sovereign Labor v0.1
 
-[![Sovereign Compile](https://img.shields.io/github/actions/workflow/status/agijobs/agijobs-sovereign-labor-v0p1/ci.yml?branch=main&label=Sovereign%20Compile&logo=github)](https://github.com/agijobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
-[![Multi-runtime Tests](https://img.shields.io/github/actions/workflow/status/agijobs/agijobs-sovereign-labor-v0p1/ci.yml?branch=main&label=Multi-runtime%20Tests&logo=github&job=Test%20suites)](https://github.com/agijobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
-[![Governance Audit](https://img.shields.io/github/actions/workflow/status/agijobs/agijobs-sovereign-labor-v0p1/ci.yml?branch=main&label=Governance%20Audit&logo=github&job=Governance%20surface%20audit)](https://github.com/agijobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
-[![Workflow Hygiene](https://img.shields.io/github/actions/workflow/status/agijobs/agijobs-sovereign-labor-v0p1/ci.yml?branch=main&label=Workflow%20Hygiene&logo=github&job=Workflow%20hygiene)](https://github.com/agijobs/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
-[![Branch Gatekeeper](https://img.shields.io/github/actions/workflow/status/agijobs/agijobs-sovereign-labor-v0p1/branch-checks.yml?branch=main&label=Branch%20Gatekeeper&logo=github)](https://github.com/agijobs/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml)
-[![Security Scans](https://img.shields.io/github/actions/workflow/status/agijobs/agijobs-sovereign-labor-v0p1/security.yml?branch=main&label=Security%20Scans&logo=dependabot)](https://github.com/agijobs/agijobs-sovereign-labor-v0p1/actions/workflows/security.yml)
-[![Slither](https://img.shields.io/github/actions/workflow/status/agijobs/agijobs-sovereign-labor-v0p1/security.yml?branch=main&label=Slither&logo=shield-check&job=Slither%20static%20analysis)](https://github.com/agijobs/agijobs-sovereign-labor-v0p1/actions/workflows/security.yml)
-[![Mythril](https://img.shields.io/github/actions/workflow/status/agijobs/agijobs-sovereign-labor-v0p1/security.yml?branch=main&label=Mythril&logo=ethereum&job=Mythril%20symbolic%20execution)](https://github.com/agijobs/agijobs-sovereign-labor-v0p1/actions/workflows/security.yml)
+[![Sovereign Compile](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/ci.yml?branch=main&label=Sovereign%20Compile&logo=github)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
+[![Multi-runtime Tests](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/ci.yml?branch=main&label=Multi-runtime%20Tests&logo=github&job=Test%20suites)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
+[![Governance Audit](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/ci.yml?branch=main&label=Governance%20Audit&logo=github&job=Governance%20surface%20audit)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
+[![Workflow Hygiene](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/ci.yml?branch=main&label=Workflow%20Hygiene&logo=github&job=Workflow%20hygiene)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
+[![Branch Gatekeeper](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/branch-checks.yml?branch=main&label=Branch%20Gatekeeper&logo=github)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml)
+[![Security Scans](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/security.yml?branch=main&label=Security%20Scans&logo=dependabot)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/security.yml)
+[![Slither](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/security.yml?branch=main&label=Slither&logo=shield-check&job=Slither%20static%20analysis)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/security.yml)
+[![Mythril](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/security.yml?branch=main&label=Mythril&logo=ethereum&job=Mythril%20symbolic%20execution)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/security.yml)
 [![Coverage Lockstep](https://img.shields.io/badge/CI-enforced%20on%20PRs-0a9396?logo=githubactions)](./.github/workflows)
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)
@@ -33,6 +33,7 @@
 - [Continuous Integration Spine](#continuous-integration-spine)
 - [Testing Flight Systems](#testing-flight-systems)
 - [Branch Protection Flightplan](#branch-protection-flightplan)
+- [Mainnet Operator Autopilot](#mainnet-operator-autopilot)
 - [Mainnet Launch Procedure](#mainnet-launch-procedure)
 - [Operations Telemetry](#operations-telemetry)
 
@@ -226,6 +227,18 @@ flowchart LR
 | Mythril symbolic execution | `Security Scans` | Mythril sweeps privileged contracts with depth/time guards. | `Security Scans / Mythril symbolic execution` |
 
 Every job writes to the GitHub Step Summary so auditors read lint, compile, governance, security, and test telemetry directly from the PR UI.
+
+## Mainnet Operator Autopilot
+
+Non-technical operators deploy the machine with manifest-backed safeguards across every runtime. Each autopilot stream ingests `deploy/config.mainnet.json`, verifies `$AGIALPHA = 0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals), asserts the connected chain ID, and writes manifests under `manifests/` for evidence vaulting.
+
+| Runtime | Command | Highlights |
+| --- | --- | --- |
+| **Truffle** | `DEPLOY_CONFIG=$(pwd)/deploy/config.mainnet.json`<br/>`npx truffle migrate --network mainnet --compile-all --f 1 --to 3 --skip-dry-run` | Canonical migrations, Safe ownership acceptance prompts, and manifest/governance wiring parity with CI rehearsals. |
+| **Hardhat** | `npm run deploy:hardhat:mainnet` | Human-labelled transaction timeline (`▶️ StakeManager.setTreasury`, etc.), shared config loader invariants, manifest writer identical to Truffle flow. |
+| **Foundry** | `npm run deploy:foundry:mainnet` | [`foundry/script/DeployMainnet.s.sol`](foundry/script/DeployMainnet.s.sol) enforces token decimals, ENS namehashes, and governance ownership before `forge script --broadcast`. |
+
+Before launch, mirror CI locally: `npm run lint:sol`, `npm run compile`, `node scripts/verify-artifacts.js`, `npm run ci:governance`, `npm run test:truffle:ci`, `npm run test:hardhat`, `npm run test:foundry`. After broadcast, run `npm run verify:mainnet` and archive manifests plus Safe transaction hashes. The full cockpit manual is in [`deploy/README.md`](deploy/README.md).
 
 ## Testing Flight Systems
 
