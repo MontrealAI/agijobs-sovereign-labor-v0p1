@@ -123,7 +123,7 @@ Networks are resolved from [`truffle-config.js`](../truffle-config.js) and mirro
 | Verify artifacts | `node scripts/verify-artifacts.js` | Fails if ABI or bytecode missing for any core module.
 | Governance audit | `npm run ci:governance` | Validates ownership/pauser surfaces; required before merges.
 | Branch hygiene check | `npm run lint:branch` | Local mirror of `Branch Gatekeeper` workflow.
-| Migration | `npx truffle migrate --network <mainnet|sepolia> --f 1 --to 3 --compile-all` | Replays production sequence exactly.
+| Migration | `npm run deploy:truffle:mainnet` (or `npx truffle migrate --network <net> --f 1 --to 3 --compile-all`) | Replays production sequence exactly.
 | Execute script | `npx truffle exec scripts/<name>.js --network <profile>` | Automates post-deploy operations.
 | Truffle console | `npx truffle console --network <profile>` | Hot-wires contract instances for manual inspection.
 
@@ -211,7 +211,7 @@ sequenceDiagram
     Operator->>CLI: `node scripts/verify-artifacts.js`
     Operator->>CLI: `npm run ci:governance`
     Operator->>Safe: Review CI artefacts & manifests
-    Operator->>CLI: `DEPLOY_CONFIG=deploy/config.mainnet.json npx truffle migrate --network mainnet --f 1 --to 3 --compile-all --skip-dry-run`
+    Operator->>CLI: `npm run deploy:truffle:mainnet`
     CLI->>Ethereum: Broadcast migrations
     Operator->>CLI: `npm run verify:mainnet`
     CLI->>Ethereum: Submit source verification
@@ -233,7 +233,7 @@ sequenceDiagram
    - Inspect `build/contracts` and manifests for consistency.
 4. **Mainnet deployment**
    - Ensure the deployer wallet holds enough ETH.
-   - Run `DEPLOY_CONFIG=deploy/config.mainnet.json npx truffle migrate --network mainnet --f 1 --to 3 --compile-all --skip-dry-run`.
+   - Run `npm run deploy:truffle:mainnet` (exports `DEPLOY_CONFIG` automatically if set in the environment).
    - Save the console output (contract addresses, gas usage) to the evidence archive.
 5. **Post-launch tasks**
    - Execute `npm run verify:mainnet` to publish source to Etherscan.

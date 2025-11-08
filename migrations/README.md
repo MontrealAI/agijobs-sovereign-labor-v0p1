@@ -170,7 +170,7 @@ If any command diverges from CI output, stop and reconcile before touching mainn
 
 ## Step 1 – `1_deploy_kernel.js`
 
-`npx truffle migrate --network <net> --f 1 --to 1 --skip-dry-run`
+`npx truffle migrate --network <net> --f 1 --to 1 --skip-dry-run` (or run the aggregated `npm run deploy:truffle:mainnet` to execute steps 1–3 in sequence).
 
 | Guarantee | Implementation |
 | --- | --- |
