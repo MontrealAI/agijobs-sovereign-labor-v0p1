@@ -301,14 +301,17 @@ jobs:
 
       - name: Install actionlint 1.7.1
         run: |
-          mkdir -p "$HOME/.local/bin"
+          set -euo pipefail
+          install_dir="$HOME/.local/bin"
+          mkdir -p "$install_dir"
           curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash \
-            | bash -s 1.7.1 "$HOME/.local/bin"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+            | bash -s 1.7.1 "$install_dir"
+          echo "$install_dir" >> "$GITHUB_PATH"
+          "$install_dir/actionlint" --version
 
       - name: Run actionlint
         id: actionlint
-        run: actionlint -color
+        run: $HOME/.local/bin/actionlint -color
 
       - name: Publish workflow hygiene summary
         if: always()
