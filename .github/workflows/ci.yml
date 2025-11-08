@@ -299,11 +299,16 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Install actionlint 1.7.1
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash \
+            | bash -s 1.7.1 "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
       - name: Run actionlint
         id: actionlint
-        uses: rhysd/actionlint@v1.7.1
-        with:
-          args: -color
+        run: actionlint -color
 
       - name: Publish workflow hygiene summary
         if: always()
