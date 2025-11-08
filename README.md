@@ -184,6 +184,8 @@ flowchart LR
 
 [`scripts/check-governance-matrix.mjs`](scripts/check-governance-matrix.mjs) validates this matrix at CI time; any missing setter or pauser renders the pipeline red.
 
+For narrated, copy-paste owner sequences (pause, treasury rotation, identity refresh), use the [Owner Control Playbook](docs/operations/owner-control.md).
+
 ## Decision Ledger
 
 - [ADR 0001 – Safe-Routed System Pause Authority](docs/adr/0001-safe-pause-routing.md): SystemPause centralises pauser delegation through the owner Safe and the guardian emergency key.
@@ -229,7 +231,7 @@ Every job writes to the GitHub Step Summary so auditors read lint, compile, gove
 
 ```mermaid
 graph TD
-    A[Truffle npm test] -->|happy-path smoke| B(StakeManagerHarness fixtures)
+    A[Truffle deterministic suite] -->|happy-path smoke| B(StakeManagerHarness fixtures)
     A --> C(ConstantsHarness)
     D[Hardhat test] -->|guardian routing| B
     D --> E(MaliciousJobRegistry)
@@ -238,7 +240,7 @@ graph TD
     G --> H[Accounting conservation]
 ```
 
-- **Truffle (`npm test`).** Smoke-level Mocha specs boot `ConstantsHarness` and `StakeManagerHarness` so operators can validate deployments with the familiar `truffle test` shell.
+- **Truffle (`npm test` locally · `npm run test:truffle:ci` in CI).** Smoke-level Mocha specs boot `ConstantsHarness` and `StakeManagerHarness` so operators can validate deployments with the familiar `truffle test` shell while CI reuses compile artifacts for a deterministic pass.
 - **Hardhat (`npm run test:hardhat`).** Uses `hardhat_setCode` to emulate `$AGIALPHA`, impersonates the timelock Safe, and proves privileged setters, pause semantics, and `MaliciousJobRegistry` reentrancy probes all behave as intended.
 - **Foundry (`npm run test:foundry`).** High-entropy invariant suite fuzzes stake magnitudes, toggles pausers, and checks slashing fixed-point math without tolerating drift.
 
@@ -275,7 +277,13 @@ sequenceDiagram
     Operator->>Terminal: `npm run compile`
     Terminal-->>Operator: `scripts/verify-artifacts.js`
     Operator->>Terminal: `npm run ci:governance`
-    Operator->>Terminal: `DEPLOY_CONFIG=... npx truffle migrate --network mainnet --f 1 --to 3 --compile-all --skip-dry-run`
+    alt Truffle autopilot
+        Operator->>Terminal: `DEPLOY_CONFIG=... npx truffle migrate --network mainnet --f 1 --to 3 --compile-all --skip-dry-run`
+    else Hardhat autopilot
+        Operator->>Terminal: `npm run deploy:hardhat:mainnet`
+    else Foundry autopilot
+        Operator->>Terminal: `npm run deploy:foundry:mainnet`
+    end
     Terminal-->>Operator: Manifest + queued Safe transactions
     Operator->>Safe: Execute `acceptOwnership` calls
     Operator->>Terminal: `npm run verify:mainnet`
@@ -287,7 +295,7 @@ sequenceDiagram
 1. **Prepare the workstation.** Install Node.js 20 LTS, clone this repository, and run `npm ci --omit=optional --no-audit --no-fund`.
 2. **Configure secrets.** Populate `.env` with RPC endpoints, mnemonic, and Etherscan API key. Verify `$AGIALPHA` entries across config files.
 3. **Dry-run governance.** Run `npm run ci:governance` and inspect the generated summaries before scheduling timelock transactions.
-4. **Migrate.** Execute Truffle migrations with the Safe as governance, capture manifests, and double-check `owner()` for each module equals the Safe.
+4. **Migrate.** Execute the deployment autopilot of choice—Truffle (`npx truffle migrate ...`), Hardhat (`npm run deploy:hardhat:mainnet`), or Foundry (`npm run deploy:foundry:mainnet`). Each writes manifests and performs the same `$AGIALPHA`, ENS, and governance validations before signing transactions. Double-check `owner()` for every module equals the Safe.
 5. **Post-launch.** Run the full CI suite locally (`npm run test:ci`) and archive the passing summaries alongside Safe transaction hashes.
 
 ## Operations Telemetry
@@ -298,6 +306,6 @@ sequenceDiagram
   - `deploy/`: Network-specific configuration JSON.
   - `migrations/`: Truffle scripts orchestrating deployments and ownership transfers.
   - `scripts/`: CI helpers, governance matrix validation, artifact verification.
-  - `foundry/`, `hardhat/`, `truffle/`: Tool-specific harnesses and configs for the multi-runtime test suite.
+- `foundry/`, `hardhat/`, `truffle/`: Tool-specific harnesses, tests, and mainnet deployment autopilots (Forge script, Hardhat ethers script, Truffle migrations).
 
 Operators steer this repository as they would a precision instrument: the governance owner controls every parameter, the CI wall stays green, and the labor intelligence engine reacts instantly to signed instructions.

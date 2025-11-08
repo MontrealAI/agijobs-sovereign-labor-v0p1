@@ -75,6 +75,9 @@ npm run lint:sol
 npm run compile
 node scripts/verify-artifacts.js
 node scripts/check-governance-matrix.mjs
+npm run test:truffle:ci
+npm run test:hardhat
+npm run test:foundry
 ```
 
 > **Recommendation:** Execute the full checklist locally before opening a PR. Console tables emitted by the scripts mirror the CI job summaries, so any discrepancy is obvious.
@@ -89,6 +92,7 @@ node scripts/check-governance-matrix.mjs
 | [`verify-artifacts.js`](verify-artifacts.js) | Compile surface | Confirms Truffle artifacts exist for production contracts, contain non-empty bytecode, were compiled with `solc 0.8.30`, and are fresher than their Solidity sources. Emits a Markdown size table for gas analysts. | `node scripts/verify-artifacts.js` |
 | [`write-compile-summary.js`](write-compile-summary.js) | Toolchain telemetry | Captures Node.js, npm, Truffle, and Solidity versions plus the evaluated branch and runner OS. Appends the information to the job summary for audit trails. | `node scripts/write-compile-summary.js` *(executed automatically in CI)* |
 | [`check-governance-matrix.mjs`](check-governance-matrix.mjs) | Governance lattice | Parses `build/contracts` ABIs to ensure every owner + pauser function remains available on `SystemPause`, `StakeManager`, `JobRegistry`, `ValidationModule`, `DisputeModule`, `PlatformRegistry`, `FeePool`, `ReputationEngine`, and `ArbitratorCommittee`. Verifies `$AGIALPHA` constants and decimals (`18`) match [`contracts/Constants.sol`](../contracts/Constants.sol) and [`deploy/config.mainnet.json`](../deploy/config.mainnet.json). | `node scripts/check-governance-matrix.mjs` *(after `npm run compile`)* |
+| [`deploy/load-config.js`](deploy/load-config.js) | Deployment invariants | Shared loader used by Hardhat and Foundry autopilots. Validates chain ID, `$AGIALPHA` metadata, basis-point math, ENS hashes, and identity/treasury wiring before any transactions broadcast. | Reused automatically by `npm run deploy:hardhat:mainnet` |
 | [`owner-set-treasury.js`](owner-set-treasury.js) | Treasury rotation | Allows the owner Safe (via `OwnerConfigurator`) to rotate the `StakeManager` treasury through `SystemPause.executeGovernanceCall`. Emits transaction hash plus `ParameterUpdated` events so the change is fully auditable. | `NEW_TREASURY=0xYourSafe node scripts/owner-set-treasury.js` |
 
 ---

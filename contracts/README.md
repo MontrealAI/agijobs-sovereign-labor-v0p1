@@ -48,6 +48,7 @@ graph LR
 | Solidity lint | [`Sovereign Compile`](../.github/workflows/ci.yml) → `lint` job | PRs & pushes | `solhint` zero-warning policy. | `npm run lint:sol` |
 | Deterministic build | `compile` job | PRs & pushes | `truffle compile` + artifact checksum guard. | `npm run compile` + `node scripts/verify-artifacts.js` |
 | Governance matrix | `governance-audit` job | After compile | Validates every owner/pauser setter against [`scripts/check-governance-matrix.mjs`](../scripts/check-governance-matrix.mjs). | `npm run ci:governance` |
+| Multi-runtime tests | `tests` job | After compile | Truffle, Hardhat, and Foundry suites execute against the compiled artifacts. | `npm run test:truffle:ci` + `npm run test:hardhat` + `npm run test:foundry` |
 | Workflow hygiene | `workflow-hygiene` job | PRs & pushes | `actionlint` blocks drift in CI definitions. | `actionlint -color` |
 
 All workflows must be green before a merge; branch protection on `main` and `develop` requires the checks above plus review approval. This keeps PRs and the default branch perpetually deploy-ready.
