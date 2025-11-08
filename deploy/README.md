@@ -213,7 +213,7 @@ stateDiagram-v2
 
 ### Step 0 — Prepare a clean cockpit
 1. Download the tagged release into a fresh directory (no cached build artefacts) and verify checksums against the release notes.
-2. Populate `deploy/config.mainnet.json`:
+2. Create a private copy of [`deploy/config.mainnet.json`](./config.mainnet.json) (for example `~/agi-deploy/mainnet.json`) and populate it without committing secrets:
    - `ownerSafe`, `guardianSafe`, `treasury` must be EIP-55 checksum addresses.
    - Keep `$AGIALPHA` fixed at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals).
    - Adjust `params` (`platformFeeBps`, `minStakeWei`, `slashBps`, `validatorQuorum`, `burnBpsOfFee`, optional `jobStakeWei`, `disputeFeeWei`, `disputeWindow`) to match governance decisions.
@@ -227,7 +227,7 @@ export DEPLOYER_PK="0x<private-key>"             # Foundry & Hardhat read this
 # Optional Foundry alias:
 export PRIVATE_KEY="$DEPLOYER_PK"                # Only if you prefer PRIVATE_KEY
 export ETHERSCAN_API_KEY="<etherscan-api-token>"
-export DEPLOY_CONFIG="$(pwd)/deploy/config.mainnet.json"
+export DEPLOY_CONFIG="/absolute/path/to/agi-deploy/mainnet.json"  # private copy created in Step 0
 ```
 > Clear these environment variables after deployment. Never save them to disk or to shell history.
 
@@ -250,8 +250,7 @@ Every deployment autopilot consumes the exact same manifest, validates `$AGIALPH
 
 #### Option A — Truffle reference flight plan
 ```bash
-DEPLOY_CONFIG=$(pwd)/deploy/config.mainnet.json \
-  npx truffle migrate --network mainnet --compile-all --f 1 --to 3 --skip-dry-run
+npm run deploy:truffle:mainnet
 ```
 - Aborts automatically on chain ID mismatch, token metadata drift, invalid ENS roots, or treasury misconfiguration.
 - Produces `manifests/addresses.mainnet.json` and queues Safe ownership acceptances for identity modules.

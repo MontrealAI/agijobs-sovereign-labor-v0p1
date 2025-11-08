@@ -137,11 +137,11 @@ flowchart TD
 
 ### Configure the Launch
 
-1. Duplicate [`deploy/config.template.json`](../deploy/config.template.json) to `deploy/config.mainnet.json`.
-2. Set `chainId` to `1` and provide Safe addresses for `ownerSafe`, `guardianSafe`, and `treasury`.
-3. Confirm `$AGIALPHA` address is present under `tokens.agi` (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`).
-4. Tune governance parameters (`platformFeeBps`, `minStakeWei`, `disputeWindow`, etc.) as required by the launch playbook.
-5. Commit the config to a secure vault—never to version control.
+1. Start from [`deploy/config.mainnet.json`](../deploy/config.mainnet.json) and copy it to a private location (for example `~/agi-deploy/config.mainnet.json`).
+2. Update the copy with the production Safe addresses for `ownerSafe`, `guardianSafe`, and `treasury`. Leave placeholders in the repository version untouched.
+3. Confirm `$AGIALPHA` remains `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` with 18 decimals under `tokens.agi`; CI and every migration abort if it diverges.
+4. Tune governance parameters (`platformFeeBps`, `minStakeWei`, `disputeWindow`, etc.) in the private copy to match the launch council decisions.
+5. Export `DEPLOY_CONFIG=/absolute/path/to/your/private/config.json` when deploying so no secrets leak into Git history.
 
 ### Dry-Run on Sepolia
 
@@ -168,12 +168,14 @@ sequenceDiagram
 
 ### Mainnet Launch (Non-Technical Operator Flow)
 
-1. **Set environment variables.** `export DEPLOY_CONFIG=$(pwd)/deploy/config.mainnet.json` (or rely on default path).
-2. **Run the canonical migration:**
-   ```bash
-   npx truffle migrate --network mainnet --f 1 --to 3
-   ```
-   *Step 1 (`1_deploy_kernel.js`) deploys the lattice, wires `$AGIALPHA`, and hands module control to `SystemPause` before transferring it to the Owner Safe.*
+1. **Set environment variables.** Export `DEPLOY_CONFIG=/absolute/path/to/agi-deploy/config.mainnet.json` (or rely on the default path if your private copy sits inside the repository).
+2. **Select an autopilot and run it with your secrets loaded:**
+   - **Truffle:** `npm run deploy:truffle:mainnet`
+   - **Hardhat:** `npm run deploy:hardhat:mainnet`
+   - **Foundry:** `MAINNET_RPC=$MAINNET_RPC DEPLOY_CONFIG=$DEPLOY_CONFIG forge script foundry/script/DeployMainnet.s.sol:DeployMainnet --broadcast --slow`
+
+   Each autopilot executes the same deployment choreography:
+   *Step 1 (`1_deploy_kernel.js`) or equivalent deploys the lattice, wires `$AGIALPHA`, and hands module control to `SystemPause` before transferring it to the Owner Safe.*
    *Step 2 (`2_register_pause.js`) registers pausers and ensures guardianship.*
    *Step 3 (`3_mainnet_finalize.js`) halts execution unless ownership, pauser, and token pointers match the config.*
 3. **No manual calldata crafting required.** Ownership transfers and pauser assignments are handled automatically; the operator only needs to confirm Safe acceptance prompts for identity contracts.

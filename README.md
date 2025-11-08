@@ -271,14 +271,14 @@ sequenceDiagram
     participant Etherscan
 
     Operator->>Terminal: Clone repo & `npm ci`
-    Operator->>Terminal: Populate deploy/config.mainnet.json
+    Operator->>Terminal: Prepare private deploy/config.mainnet.json
     Terminal-->>Operator: Validate AGIALPHA + Safe addresses
     Operator->>Terminal: `npm run lint:sol`
     Operator->>Terminal: `npm run compile`
     Terminal-->>Operator: `scripts/verify-artifacts.js`
     Operator->>Terminal: `npm run ci:governance`
     alt Truffle autopilot
-        Operator->>Terminal: `DEPLOY_CONFIG=... npx truffle migrate --network mainnet --f 1 --to 3 --compile-all --skip-dry-run`
+        Operator->>Terminal: `npm run deploy:truffle:mainnet`
     else Hardhat autopilot
         Operator->>Terminal: `npm run deploy:hardhat:mainnet`
     else Foundry autopilot
@@ -295,7 +295,7 @@ sequenceDiagram
 1. **Prepare the workstation.** Install Node.js 20 LTS, clone this repository, and run `npm ci --omit=optional --no-audit --no-fund`.
 2. **Configure secrets.** Populate `.env` with RPC endpoints, mnemonic, and Etherscan API key. Verify `$AGIALPHA` entries across config files.
 3. **Dry-run governance.** Run `npm run ci:governance` and inspect the generated summaries before scheduling timelock transactions.
-4. **Migrate.** Execute the deployment autopilot of choice—Truffle (`npx truffle migrate ...`), Hardhat (`npm run deploy:hardhat:mainnet`), or Foundry (`npm run deploy:foundry:mainnet`). Each writes manifests and performs the same `$AGIALPHA`, ENS, and governance validations before signing transactions. Double-check `owner()` for every module equals the Safe.
+4. **Migrate.** Execute the deployment autopilot of choice—Truffle (`npm run deploy:truffle:mainnet`), Hardhat (`npm run deploy:hardhat:mainnet`), or Foundry (`npm run deploy:foundry:mainnet`). Each writes manifests and performs the same `$AGIALPHA`, ENS, and governance validations before signing transactions. Double-check `owner()` for every module equals the Safe.
 5. **Post-launch.** Run the full CI suite locally (`npm run test:ci`) and archive the passing summaries alongside Safe transaction hashes.
 
 ## Operations Telemetry

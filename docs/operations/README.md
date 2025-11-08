@@ -90,6 +90,12 @@ The [`docs/operations/owner-control.md`](owner-control.md) playbook provides nar
 
 Every sequence mirrors CI governance checks and reuses the same `$AGIALPHA` manifest validation.
 
+**Deployment autopilot shortcuts:**
+- Truffle: `npm run deploy:truffle:mainnet`
+- Hardhat: `npm run deploy:hardhat:mainnet`
+- Foundry: `npm run deploy:foundry:mainnet` (requires `MAINNET_RPC`, `DEPLOYER_PK`, and `DEPLOY_CONFIG` environment variables).
+
+
 ---
 
 ## Owner playbooks
