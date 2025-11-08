@@ -60,7 +60,7 @@ end
   ```bash
   npm run ci:governance
   npm run test:truffle:ci
-  npm run test:hardhat
+  npm run test:hardhat   # includes the SystemPause governance lattice spec
   npm run test:foundry
   ```
 - Store Safe transaction hash, CLI logs, and Step Summaries in the evidence archive.
@@ -105,6 +105,7 @@ sequenceDiagram
 export NEW_TREASURY=0xYourNewSafe
 node scripts/owner-set-treasury.js > manifests/governance/$(date +%Y%m%d)-treasury-rotation.md
 npm run test:truffle:ci
+npm run test:hardhat   # confirms SystemPause can retune treasuries & TaxPolicy via Safe control
 npm run test:foundry
 npm run ci:governance
 ```

@@ -177,6 +177,28 @@ const surfaces = [
       'owner'
     ],
     events: ['PauserUpdated', 'PauserManagerUpdated', 'TimingUpdated', 'AbsenteeSlashUpdated']
+  },
+  {
+    name: 'TaxPolicy',
+    label: 'Tax Policy',
+    functions: [
+      'setPolicyURI',
+      'setAcknowledgement',
+      'setPolicy',
+      'setAcknowledger',
+      'setAcknowledgers',
+      'revokeAcknowledgement',
+      'transferOwnership',
+      'owner'
+    ],
+    events: [
+      'TaxPolicyURIUpdated',
+      'AcknowledgementUpdated',
+      'PolicyVersionUpdated',
+      'PolicyAcknowledged',
+      'AcknowledgementRevoked',
+      'AcknowledgerUpdated'
+    ]
   }
 ];
 
