@@ -73,16 +73,21 @@ The machine stays trustworthy only when CI remains fully green and enforced on p
 | Branch naming gate | [`branch-checks.yml`](../.github/workflows/branch-checks.yml) | Rejects off-policy branch names before CI starts.
 | Security scans | [`security.yml`](../.github/workflows/security.yml) | Slither + Mythril over compiled artifacts.
 
-**Enforce status checks on `main` and `develop`:** Settings → Branches → protect branch → require PR, require status checks, select `Sovereign Compile`, `Branch Gatekeeper`, and `Security Scans`, disable bypasses, block force pushes/deletions, and demand signed commits if policy allows. Mirror settings via:
+**Enforce status checks on `main` and `develop`:** Settings → Branches → protect branch → require PR, require status checks, select `Sovereign Compile / Solidity lint`, `Sovereign Compile / Compile smart contracts`, `Sovereign Compile / Governance surface audit`, `Sovereign Compile / Test suites`, `Sovereign Compile / Workflow hygiene`, `Security Scans / Slither static analysis`, `Security Scans / Mythril symbolic execution`, and `Branch Gatekeeper / Validate branch naming conventions`. Disable bypasses, block force pushes/deletions, and demand signed commits if policy allows. Mirror settings via:
 
 ```bash
 gh api \
   -X PUT \
   repos/MontrealAI/agijobs-sovereign-labor-v0p1/branches/main/protection \
   -f required_status_checks.strict=true \
-  -f required_status_checks.contexts[]='Sovereign Compile' \
-  -f required_status_checks.contexts[]='Security Scans' \
-  -f required_status_checks.contexts[]='Branch Gatekeeper' \
+  -f required_status_checks.contexts[]='Sovereign Compile / Solidity lint' \
+  -f required_status_checks.contexts[]='Sovereign Compile / Compile smart contracts' \
+  -f required_status_checks.contexts[]='Sovereign Compile / Governance surface audit' \
+  -f required_status_checks.contexts[]='Sovereign Compile / Test suites' \
+  -f required_status_checks.contexts[]='Sovereign Compile / Workflow hygiene' \
+  -f required_status_checks.contexts[]='Security Scans / Slither static analysis' \
+  -f required_status_checks.contexts[]='Security Scans / Mythril symbolic execution' \
+  -f required_status_checks.contexts[]='Branch Gatekeeper / Validate branch naming conventions' \
   -f enforce_admins=true \
   -f required_pull_request_reviews.dismiss_stale_reviews=true \
   -f required_pull_request_reviews.required_approving_review_count=1 \
