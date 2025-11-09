@@ -24,6 +24,7 @@ import {IIdentityRegistry} from "contracts/interfaces/IIdentityRegistry.sol";
 import {IENS} from "contracts/interfaces/IENS.sol";
 import {INameWrapper} from "contracts/interfaces/INameWrapper.sol";
 import {IJobRegistry} from "contracts/interfaces/IJobRegistry.sol";
+import {ICertificateNFT} from "contracts/interfaces/ICertificateNFT.sol";
 
 contract DemoFlowTest is Test {
     address private constant OWNER = address(0xA11CE);
