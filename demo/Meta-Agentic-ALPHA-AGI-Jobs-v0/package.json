@@ -1,0 +1,7 @@
+{
+  "name": "meta-agentic-alpha-agi-jobs-v0",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Demo scaffolding for the Meta-Agentic ALPHA AGI Jobs environment.",
+  "license": "MIT"
+}
