@@ -3,7 +3,7 @@ require("@nomicfoundation/hardhat-chai-matchers");
 require("@nomicfoundation/hardhat-network-helpers");
 require("@nomicfoundation/hardhat-ethers");
 
-const { MAINNET_RPC, DEPLOYER_PK, ETHERSCAN_API_KEY } = process.env;
+const { MAINNET_RPC, DEPLOYER_PK, ETHERSCAN_API_KEY, SEPOLIA_RPC, SEPOLIA_DEPLOYER_PK } = process.env;
 
 module.exports = {
   solidity: {
@@ -26,6 +26,11 @@ module.exports = {
     hardhat: {
       allowUnlimitedContractSize: true,
       blockGasLimit: 30_000_000
+    },
+    sepolia: {
+      url: SEPOLIA_RPC || "",
+      accounts: SEPOLIA_DEPLOYER_PK ? [SEPOLIA_DEPLOYER_PK] : [],
+      chainId: 11155111
     },
     mainnet: {
       url: MAINNET_RPC || "",
