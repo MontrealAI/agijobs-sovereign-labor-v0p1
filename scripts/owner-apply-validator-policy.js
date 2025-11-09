@@ -689,12 +689,13 @@ module.exports = async function (callback) {
 
     console.log('---');
     console.log(markdown);
+    callback();
   } catch (error) {
     console.error('❌ Scenario execution failed:', error.message);
     if (process.env.DEBUG || process.env.VERBOSE) {
       console.error(error);
     }
-  }
 
-  callback();
+    callback(error);
+  }
 };
