@@ -99,16 +99,16 @@ contract DemoFlowTest is Test {
         taxPolicy.setAcknowledger(address(jobRegistry), true);
         taxPolicy.setAcknowledger(address(stakeManager), true);
         jobRegistry.setAcknowledger(address(stakeManager), true);
-        jobRegistry.setIdentityRegistry(address(identityRegistry));
+        jobRegistry.setIdentityRegistry(IIdentityRegistry(address(identityRegistry)));
 
         stakeManager.setJobRegistry(address(jobRegistry));
         stakeManager.setDisputeModule(address(disputeModule));
-        stakeManager.setFeePool(address(feePool));
+        stakeManager.setFeePool(IFeePool(address(feePool)));
         stakeManager.setTreasuryAllowlist(TREASURY, true);
         stakeManager.setTreasury(TREASURY);
 
-        feePool.setStakeManager(address(stakeManager));
-        feePool.setTaxPolicy(address(taxPolicy));
+        feePool.setStakeManager(IStakeManager(address(stakeManager)));
+        feePool.setTaxPolicy(ITaxPolicy(address(taxPolicy)));
         feePool.setTreasuryAllowlist(TREASURY, true);
         feePool.setTreasury(TREASURY);
         feePool.setBurnPct(0);
@@ -178,7 +178,7 @@ contract DemoFlowTest is Test {
         assertEq(uint256(finalizedMeta.status), uint256(IJobRegistry.Status.Finalized));
 
         assertEq(token.balanceOf(AGENT), reward);
-        assertEq(stakeManager.stakeOf(AGENT, IStakeManager.Role.Agent), stakeAmount);
+        assertEq(stakeManager.stakeOf(AGENT, StakeManager.Role.Agent), stakeAmount);
         assertEq(token.balanceOf(address(feePool)), fee);
         assertTrue(taxPolicy.hasAcknowledged(AGENT));
     }
