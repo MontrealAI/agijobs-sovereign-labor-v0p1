@@ -158,6 +158,18 @@ flowchart TD
 2. Owner Safe signers aware of planned change and risk controls.
 3. Hardhat tests green locally.
 
+**Automation**
+
+```bash
+export VALIDATOR_POLICY_MANIFEST=manifests/policies/validator-policy.json
+export GOVERNANCE_SUMMARY_PATH=manifests/governance/$(date +%Y%m%d)-validator-policy.md
+truffle exec scripts/owner-apply-validator-policy.js --network <network>
+# or `npm run owner:validator-policy -- --network <network>` once env vars are set
+```
+
+The script diff-checks the manifest against on-chain state, relays a single `OwnerConfigurator.configureBatch` call through
+`SystemPause`, prints decoded telemetry (`ParameterUpdated`, `GovernanceCallExecuted`, `JobParametersUpdated`, `ValidatorBoundsUpdated`, etc.), and writes a Markdown audit summary to `GOVERNANCE_SUMMARY_PATH` when set.
+
 **CLI validation**
 
 ```bash
@@ -168,14 +180,15 @@ npm run ci:governance
 
 **Safe execution**
 
-1. Use OwnerConfigurator to queue `StakeManager.setRoleMinimums`, `StakeManager.applyConfiguration`, and `ValidationModule.setValidatorQuorum` as needed.
-2. Include `SystemPause.executeGovernanceCall` wrappers if batching cross-module updates.
+The OwnerConfigurator batch routes every setter through `SystemPause.executeGovernanceCall`, so the queued transaction is Safe-ready out of the box. Review the Markdown summary and attach it to the Safe payload for signer context.
 
 **Expected events**
 
-- `RoleMinimumUpdated` on `StakeManager`.
-- `ValidatorQuorumUpdated` on `ValidationModule`.
-- `ConfigurationApplied` logs depending on modules touched.
+- `ParameterUpdated` and `GovernanceCallExecuted` for each module touched.
+- `RoleMinimumUpdated`, `MinStakeUpdated`, and `SlashingPercentagesUpdated` on `StakeManager`.
+- `FeePctUpdated`, `JobParametersUpdated` on `JobRegistry`.
+- `ValidatorBoundsUpdated`, `ValidatorsPerJobUpdated`, `RequiredValidatorApprovalsUpdated` on `ValidationModule`.
+- `BurnPctUpdated` on `FeePool` when burn splits change.
 
 **Post-checks**
 

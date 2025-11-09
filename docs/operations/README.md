@@ -85,7 +85,7 @@ The [`docs/operations/owner-control.md`](owner-control.md) playbook provides nar
 
 - **Emergency pause / resume.** One-click OwnerConfigurator bundles that pause or resume the entire lattice.
 - **Treasury rotation.** Update staking treasuries, burn splits, and reward allowlists without touching raw calldata.
-- **Parameter tuning.** Adjust validator quorum, slash basis points, dispute windows, and identity roots using pre-built JSON manifests.
+- **Parameter tuning.** Adjust validator quorum, slash basis points, dispute windows, and identity roots using pre-built JSON manifests and `scripts/owner-apply-validator-policy.js` to stream telemetry + Markdown evidence automatically.
 - **Identity onboarding.** Publish new ENS nodes and Merkle roots with transparent event logs.
 
 Hardhat proof-of-control: running `npm run test:hardhat` executes the SystemPause governance lattice spec so operators confirm treasuries, TaxPolicy text, and guardian pausers remain under Safe control before executing production flows.

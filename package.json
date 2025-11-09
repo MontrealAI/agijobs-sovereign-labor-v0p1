@@ -19,7 +19,8 @@
     "test:ci": "npm test && npm run test:hardhat && npm run test:foundry",
     "deploy:truffle:mainnet": "truffle migrate --network mainnet --compile-all",
     "deploy:hardhat:mainnet": "hardhat run hardhat/scripts/deploy-mainnet.js --network mainnet",
-    "deploy:foundry:mainnet": "forge script foundry/script/DeployMainnet.s.sol:DeployMainnet --rpc-url $MAINNET_RPC --broadcast --slow"
+    "deploy:foundry:mainnet": "forge script foundry/script/DeployMainnet.s.sol:DeployMainnet --rpc-url $MAINNET_RPC --broadcast --slow",
+    "owner:validator-policy": "truffle exec scripts/owner-apply-validator-policy.js"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.8",
