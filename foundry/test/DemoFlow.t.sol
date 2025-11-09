@@ -62,8 +62,13 @@ contract DemoFlowTest is Test {
             address(0),
             OWNER
         );
-        feePool = new FeePool(address(stakeManager), 0, TREASURY, address(taxPolicy));
-        reputationEngine = new ReputationEngine(address(stakeManager));
+        feePool = new FeePool(
+            IStakeManager(address(stakeManager)),
+            0,
+            TREASURY,
+            ITaxPolicy(address(taxPolicy))
+        );
+        reputationEngine = new ReputationEngine(IStakeManager(address(stakeManager)));
         identityRegistry = new IdentityRegistry(
             IENS(address(0)),
             INameWrapper(address(0)),
@@ -88,7 +93,7 @@ contract DemoFlowTest is Test {
             OWNER
         );
 
-        validationModule.configure(jobRegistry);
+        validationModule.configure(IJobRegistry(address(jobRegistry)));
         validationModule.setDefaultOutcome(true);
 
         taxPolicy.setAcknowledger(address(jobRegistry), true);
@@ -153,22 +158,24 @@ contract DemoFlowTest is Test {
         );
         vm.stopPrank();
 
-        IJobRegistry.Job memory submitted = jobRegistry.jobs(jobId);
-        IJobRegistry.JobMetadata memory submittedMeta = jobRegistry.decodeJobMetadata(
+        IJobRegistry registry = IJobRegistry(address(jobRegistry));
+
+        IJobRegistry.Job memory submitted = registry.jobs(jobId);
+        IJobRegistry.JobMetadata memory submittedMeta = registry.decodeJobMetadata(
             submitted.packedMetadata
         );
-        assertEq(uint256(submittedMeta.state), uint256(IJobRegistry.Status.Submitted));
+        assertEq(uint256(submittedMeta.status), uint256(IJobRegistry.Status.Submitted));
 
         validationModule.complete(jobId);
 
         vm.prank(EMPLOYER);
         jobRegistry.finalize(jobId);
 
-        IJobRegistry.Job memory finalized = jobRegistry.jobs(jobId);
-        IJobRegistry.JobMetadata memory finalizedMeta = jobRegistry.decodeJobMetadata(
+        IJobRegistry.Job memory finalized = registry.jobs(jobId);
+        IJobRegistry.JobMetadata memory finalizedMeta = registry.decodeJobMetadata(
             finalized.packedMetadata
         );
-        assertEq(uint256(finalizedMeta.state), uint256(IJobRegistry.Status.Finalized));
+        assertEq(uint256(finalizedMeta.status), uint256(IJobRegistry.Status.Finalized));
 
         assertEq(token.balanceOf(AGENT), reward);
         assertEq(stakeManager.stakeOf(AGENT, IStakeManager.Role.Agent), stakeAmount);
