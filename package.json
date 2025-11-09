@@ -3,6 +3,9 @@
   "version": "0.1.0-alpha",
   "license": "MIT",
   "private": true,
+  "workspaces": [
+    "demo/*"
+  ],
   "scripts": {
     "compile": "truffle compile",
     "verify:mainnet": "truffle run verify IdentityRegistry JobRegistry PlatformRegistry StakeManager SystemPause ValidationModule --network mainnet --force-license MIT",
