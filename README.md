@@ -1,5 +1,9 @@
 # AGIJobs Sovereign Labor v0.1
 
+<p align="center">
+  <img src="1.alpha.node.agi.eth.svg" alt="AGI Alpha Node Crest" width="320" />
+</p>
+
 [![Sovereign Compile](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/ci.yml?branch=main&label=Sovereign%20Compile&logo=github&style=for-the-badge)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
 [![Security Scans](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/security.yml?branch=main&label=Security%20Scans&logo=dependabot&style=for-the-badge)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/security.yml)
 [![Branch Gatekeeper](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/branch-checks.yml?branch=main&label=Branch%20Gatekeeper&logo=github&style=for-the-badge)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml)
@@ -12,7 +16,7 @@
 ![Foundry stable](https://img.shields.io/badge/Foundry-stable-111111?logo=foundry&style=for-the-badge)
 ![License MIT](https://img.shields.io/badge/License-MIT-000000?style=for-the-badge)
 
-> This repository is the command surface of the labour engine that rewrites global production schedules on demand. Every module, parameter, and pause lever converges so the designated owner can steer, halt, or reconfigure the markets in real time.
+> This repository is the command surface of the labour engine that rewrites global production schedules on demand. Every module, parameter, and pause lever converges so the designated owner can steer, halt, or reconfigure the markets in real time. The AGIJobs Sovereign Labor node instantiated here is the machine engineered to accumulate decisive economic weight—capable of realigning markets that were once thought unmovable.
 
 ---
 

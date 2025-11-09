@@ -1,8 +1,9 @@
-# Sovereign Labor Control Codex · 2024 Field Edition
+# Sovereign Labor Control Codex · 2024 Master Edition
 
 [![Sovereign Compile](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/ci.yml?branch=main&label=Sovereign%20Compile&logo=github&style=for-the-badge)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
-[![Branch Gatekeeper](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/branch-checks.yml?branch=main&label=Branch%20Gatekeeper&logo=github&style=for-the-badge)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml)
 [![Security Scans](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/security.yml?branch=main&label=Security%20Scans&logo=dependabot&style=for-the-badge)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/security.yml)
+[![Branch Gatekeeper](https://img.shields.io/github/actions/workflow/status/MontrealAI/agijobs-sovereign-labor-v0p1/branch-checks.yml?branch=main&label=Branch%20Gatekeeper&logo=github&style=for-the-badge)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml)
+![Branch Protection](https://img.shields.io/badge/Branch%20Protection-enforced-6f2dbd?logo=github&style=for-the-badge)
 [![$AGIALPHA Canon](https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-5522aa?style=for-the-badge)](https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa)
 ![Node.js 20.x](https://img.shields.io/badge/Node.js-20.x-339933?logo=node.js&logoColor=white&style=for-the-badge)
 ![solc 0.8.30](https://img.shields.io/badge/solc-0.8.30-363636?logo=ethereum&style=for-the-badge)
@@ -11,101 +12,112 @@
 ![Foundry stable](https://img.shields.io/badge/Foundry-stable-111111?logo=foundry&style=for-the-badge)
 ![License MIT](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
 
-> This codex is the command surface of the sovereign labor engine—an owner-operated intelligence lattice that fuses labor, capital, compliance, and trust into a single controllable orbit, immediately deployable by non-technical pilots.
+> A single operator can lift this codex, deploy the contained node, and command a market-scale intelligence lattice without writing a line of Solidity. Every control surface is hardened so ownership, not luck, decides the next epoch of labour.
 
 ---
 
-## Table of contents
+## Table of Contents
 
-1. [Strategic briefing](#strategic-briefing)
-2. [Systems constellation](#systems-constellation)
-3. [Owner sovereignty console](#owner-sovereignty-console)
-4. [Contract atlas](#contract-atlas)
-5. [$AGIALPHA canon](#agialpha-canon)
-6. [Operational playbooks](#operational-playbooks)
-7. [Continuous verification mesh](#continuous-verification-mesh)
-8. [CI enforcement & branch protection](#ci-enforcement--branch-protection)
-9. [Launch & compliance checklist](#launch--compliance-checklist)
-10. [Deployment autopilots](#deployment-autopilots)
-11. [Telemetry vault protocol](#telemetry-vault-protocol)
-12. [Repository atlas](#repository-atlas)
-13. [Governance chronology](#governance-chronology)
+1. [Strategic Briefing](#strategic-briefing)
+2. [Systems Heliosphere](#systems-heliosphere)
+3. [Execution Surfaces](#execution-surfaces)
+4. [Owner Sovereignty Mesh](#owner-sovereignty-mesh)
+5. [$AGIALPHA Canon](#agialpha-canon)
+6. [Continuous Verification Fabric](#continuous-verification-fabric)
+7. [Launch & Deployment Autopilots](#launch--deployment-autopilots)
+8. [Telemetry & Compliance Vault](#telemetry--compliance-vault)
+9. [Governance Chronicle](#governance-chronicle)
 
 ---
 
-## Strategic briefing
+## Strategic Briefing
 
-- **Production twin.** Smart contracts live in [`contracts/`](../contracts) with matching deployment manifests in [`deploy/`](../deploy), runtime harnesses under [`hardhat/`](../hardhat), [`foundry/`](../foundry), and [`truffle/`](../truffle), plus cross-runtime scripts in [`scripts/`](../scripts).
-- **Owner-dominant governance.** Every critical module inherits [`Governable`](../contracts/Governable.sol), routing privileged actions through the owner-controlled Safe set in constructors and upgrade surfaces (see [`SystemPause`](../contracts/SystemPause.sol) and [`StakeManager`](../contracts/StakeManager.sol)).
-- **Non-technical operability.** Narrated runbooks in [`docs/operations/`](operations/) and architectural dossiers in [`docs/design/`](design/) convert Safe transactions into copy-ready manifests for guardians, treasurers, and compliance officers.
-- **Immutable token canon.** `$AGIALPHA` is locked through [`contracts/Constants.sol`](../contracts/Constants.sol), and every runtime loader (for example [`scripts/deploy/load-config.js`](../scripts/deploy/load-config.js)) rejects alternate token addresses to enforce canonical deployments.
+- **Production twin, ready to broadcast.** Solidity sources under [`contracts/`](../contracts) are synchronized with manifests in [`deploy/`](../deploy), migrations in [`migrations/`](../migrations), and runtime harnesses in [`hardhat/`](../hardhat), [`foundry/`](../foundry), and [`truffle/`](../truffle). Scripts in [`scripts/`](../scripts) compile, verify, and rehearse governance without manual glue code.
+- **Owner-dominant control.** The lattice inherits [`Governable`](../contracts/Governable.sol) and two-step ownership via [`contracts/utils/CoreOwnable2Step.sol`](../contracts/utils/CoreOwnable2Step.sol), binding every privileged setter to the owner Safe. Guardians may halt, but only the owner can rewire, reissue, or retune.
+- **Non-technical operability.** Playbooks in [`docs/operations/`](operations/) and architecture dossiers in [`docs/design/`](design/) translate Safe transactions, validator onboarding, and emergency halts into copy-paste instructions for policy and finance desks.
+- **Immutable economic anchor.** `$AGIALPHA` (ERC-20 `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`, 18 decimals) is enforced through [`contracts/Constants.sol`](../contracts/Constants.sol) and validated by every loader, refusing alternative assets.
 
 ---
 
-## Systems constellation
+## Systems Heliosphere
 
 ```mermaid
-graph TD
-    subgraph SovereignCommand["🛡️ Sovereign Command Deck"]
-        owner[Owner Safe]
-        guardian[Guardian Safe]
-        configurator[OwnerConfigurator]
-        pause[SystemPause]
-        thermo[Thermostat]
-        hamiltonian[Hamiltonian Feed]
+flowchart LR
+    subgraph CommandDeck["🛡️ Command Deck"]
+        OwnerSafe[[Owner Safe Multisig]]
+        GuardianSafe[[Guardian Safe]]
+        OwnerConfigurator[[OwnerConfigurator]]
+        SystemPause[[SystemPause]]
+        Thermostat[[Thermostat]]
+        Hamiltonian[[Hamiltonian Feed]]
     end
     subgraph LaborMesh["⚙️ Labor Mesh"]
-        job[JobRegistry]
-        stake[StakeManager]
-        platform[PlatformRegistry]
-        validate[ValidationModule]
-        dispute[DisputeModule]
-        fee[FeePool]
-        rep[ReputationEngine]
-        arb[ArbitratorCommittee]
-        tax[TaxPolicy]
+        StakeManager[[StakeManager]]
+        JobRegistry[[JobRegistry]]
+        PlatformRegistry[[PlatformRegistry]]
+        ValidationModule[[ValidationModule]]
+        DisputeModule[[DisputeModule]]
+        FeePool[[FeePool]]
+        ReputationEngine[[ReputationEngine]]
+        Arbitrator[[ArbitratorCommittee]]
+        TaxPolicy[[TaxPolicy]]
     end
     subgraph IdentityOrbit["🪐 Identity Orbit"]
-        identity[IdentityRegistry]
-        attest[AttestationRegistry]
-        cert[CertificateNFT]
-        ens[ENSIdentityVerifier]
+        IdentityRegistry[[IdentityRegistry]]
+        AttestationRegistry[[AttestationRegistry]]
+        CertificateNFT[[CertificateNFT]]
+        ENSVerifier[[ENSIdentityVerifier]]
     end
-    owner -->|Gnosis Safe authority| configurator
-    owner -->|Emergency overrides| pause
-    guardian -->|Failsafe| pause
-    configurator -->|Batch governance| pause
-    pause --> job
-    pause --> stake
-    pause --> platform
-    pause --> validate
-    pause --> dispute
-    pause --> fee
-    pause --> rep
-    pause --> arb
-    pause --> tax
-    thermo --> stake
-    thermo --> fee
-    hamiltonian --> stake
-    identity --> validate
-    attest --> identity
-    ens --> attest
-    cert --> job
-    classDef SovereignCommand fill:#021226,stroke:#00b4d8,color:#caf0f8;
-    classDef LaborMesh fill:#0b132b,stroke:#4361ee,color:#f1faee;
-    classDef IdentityOrbit fill:#3a0ca3,stroke:#4cc9f0,color:#ffffff;
-    class owner,guardian,configurator,pause,thermo,hamiltonian SovereignCommand;
-    class job,stake,platform,validate,dispute,fee,rep,arb,tax LaborMesh;
-    class identity,attest,cert,ens IdentityOrbit;
+    OwnerSafe -->|Batch directives| OwnerConfigurator
+    OwnerConfigurator -->|Governance relays| SystemPause
+    GuardianSafe -->|Emergency halt| SystemPause
+    SystemPause --> StakeManager
+    SystemPause --> JobRegistry
+    SystemPause --> ValidationModule
+    SystemPause --> DisputeModule
+    SystemPause --> FeePool
+    SystemPause --> PlatformRegistry
+    SystemPause --> ReputationEngine
+    SystemPause --> Arbitrator
+    SystemPause --> TaxPolicy
+    Thermostat --> StakeManager
+    Thermostat --> FeePool
+    Hamiltonian --> StakeManager
+    IdentityRegistry --> ValidationModule
+    IdentityRegistry --> JobRegistry
+    AttestationRegistry --> IdentityRegistry
+    ENSVerifier --> AttestationRegistry
+    CertificateNFT --> JobRegistry
+    classDef CommandDeck fill:#03045e,stroke:#48cae4,color:#f1faee;
+    classDef LaborMesh fill:#0b132b,stroke:#3a86ff,color:#f1faee;
+    classDef IdentityOrbit fill:#3a0ca3,stroke:#9d4edd,color:#ffffff;
+    class OwnerSafe,GuardianSafe,OwnerConfigurator,SystemPause,Thermostat,Hamiltonian CommandDeck;
+    class StakeManager,JobRegistry,PlatformRegistry,ValidationModule,DisputeModule,FeePool,ReputationEngine,Arbitrator,TaxPolicy LaborMesh;
+    class IdentityRegistry,AttestationRegistry,CertificateNFT,ENSVerifier IdentityOrbit;
 ```
 
-- **Unified pause lattice.** [`SystemPause`](../contracts/SystemPause.sol) rewires module registries, delegates pausers, and can freeze or resume the entire mesh through `pauseAll` / `unpauseAll`.
-- **Thermal incentive tuning.** [`Thermostat`](../contracts/Thermostat.sol) and the Hamiltonian feed consumed by [`StakeManager`](../contracts/StakeManager.sol) let the owner retune PID parameters and issuance pressure in real time.
-- **Identity-linked validation.** [`IdentityRegistry`](../contracts/IdentityRegistry.sol) anchors ENS and Merkle roots while [`ValidationModule`](../contracts/ValidationModule.sol) enforces validator gatekeeping against those proofs.
+- **Unified pause lattice.** [`SystemPause`](../contracts/SystemPause.sol) can freeze or resume every critical module with `pauseAll`/`unpauseAll`, rotate pausers, and forward owner-approved governance payloads.
+- **Thermal incentive tuning.** [`Thermostat`](../contracts/Thermostat.sol) and the Hamiltonian feed wired through [`StakeManager`](../contracts/StakeManager.sol) let the owner retune issuance pressure, slash splits, and stake temperature live.
+- **Identity-locked operations.** [`IdentityRegistry`](../contracts/IdentityRegistry.sol) binds ENS, NameWrapper, and Merkle roots so [`ValidationModule`](../contracts/ValidationModule.sol) and [`JobRegistry`](../contracts/JobRegistry.sol) only accept actors with verified `*.alpha.node.agi.eth`, `*.agent.agi.eth`, or `*.club.agi.eth` control.
 
 ---
 
-## Owner sovereignty console
+## Execution Surfaces
+
+| Surface | Location | Notes |
+| --- | --- | --- |
+| Smart contracts | [`contracts/`](../contracts) | Core, modules, identity, utilities. Ownership and pause semantics enforced everywhere. |
+| Deployment manifests | [`deploy/`](../deploy) | Network-specific JSON, ENS bindings, and module wiring instructions. |
+| Scripted governance | [`scripts/`](../scripts) | Branch naming lint, governance matrix checks, deploy loaders, owner automation (see `owner-apply-validator-policy`). |
+| Runtime harnesses | [`hardhat/`](../hardhat), [`foundry/`](../foundry), [`truffle/`](../truffle) | Multi-runtime parity ensures identical compilation and testing across toolchains. |
+| Database migrations | [`migrations/`](../migrations) | Truffle migrations mapping contract upgrades and Safe ownership transfers. |
+| Demonstrations | [`demo/`](../demo) | Ready-to-run showcases for application and validation flows. |
+| Architecture canon | [`docs/design/`](design/) | ADRs, subsystem diagrams, and scaling notes for AI-job orchestration. |
+| Operations playbooks | [`docs/operations/`](operations/) | Non-technical guides: emergency pause, owner control, validator onboarding, telemetry. |
+
+---
+
+## Owner Sovereignty Mesh
 
 ```mermaid
 sequenceDiagram
@@ -115,184 +127,90 @@ sequenceDiagram
     participant SystemPause
     participant Module
     participant Thermostat
+    participant FeePool
     participant EvidenceVault
-    OwnerSafe->>OwnerConfigurator: configureBatch(calls)
+    OwnerSafe->>OwnerConfigurator: configureBatch(governanceCalls)
     OwnerConfigurator->>SystemPause: executeGovernanceCall(target, data)
     SystemPause->>Module: privileged setter / relink / pause
-    Module-->>SystemPause: emit invariants + telemetry
     GuardianSafe->>SystemPause: pauseAll() / unpauseAll()
-    OwnerSafe->>Thermostat: setPID / setRoleTemperature / tick
-    Thermostat-->>EvidenceVault: TemperatureUpdated
-    SystemPause-->>EvidenceVault: ModulesUpdated & GovernanceCallExecuted
+    OwnerSafe->>Thermostat: setRoleTemperature / setPID / tick
+    OwnerSafe->>FeePool: setTreasury / setRewardRatios
+    SystemPause-->>EvidenceVault: GovernanceCallExecuted
+    FeePool-->>EvidenceVault: TreasuryUpdated / RewardRatioUpdated
 ```
 
-- **Absolute parameter control.** Governance-only modifiers secure every setter: e.g. [`SystemPause.setModules`](../contracts/SystemPause.sol#L120-L213), [`StakeManager.setThermostat`](../contracts/StakeManager.sol#L523-L531), [`StakeManager.setHamiltonianFeed`](../contracts/StakeManager.sol#L533-L540), [`StakeManager.configureAutoStake`](../contracts/StakeManager.sol#L587-L621), and [`FeePool.setTreasury`](../contracts/FeePool.sol#L97-L126).
-- **Total pause authority.** Guardians and owners can deterministically halt or resume all modules with [`pauseAll`](../contracts/SystemPause.sol#L292-L304), [`unpauseAll`](../contracts/SystemPause.sol#L304-L314), and pauser rotation through [`refreshPausers`](../contracts/SystemPause.sol#L216-L232).
-- **Batch configurability.** [`OwnerConfigurator`](../contracts/admin/OwnerConfigurator.sol) emits auditable events while streaming batched calls, simplifying complex migrations for non-technical operators.
-- **Guardian rehearsal.** Playbooks in [`docs/operations/owner-control.md`](operations/owner-control.md) and [`docs/operations/emergency-pause.md`](operations/emergency-pause.md) walk through Safe signatures, ensuring rehearsed response pathways.
-
----
-
-## Contract atlas
-
-| Domain | Contract | Purpose | Owner leverage |
-| --- | --- | --- | --- |
-| Governance shell | [`SystemPause`](../contracts/SystemPause.sol) | Central pause lattice, module registry, privileged call router. | Assign/refresh pausers, batch-govern modules, forward arbitrary owner-approved calls. |
-| Staking engine | [`StakeManager`](../contracts/StakeManager.sol) | Tracks stakes, thermal parameters, Hamiltonian thresholds, reward flows. | Adjust thermostats, feeds, stake minima, treasury destinations, slashing rules. |
-| Job protocol | [`JobRegistry`](../contracts/JobRegistry.sol) | Orchestrates job postings, validator requirements, payouts, dispute hooks. | Swap module integrations, configure fees, enforce certificates & identity bindings. |
-| Validation mesh | [`ValidationModule`](../contracts/ValidationModule.sol) | Manages validator admission, quorum maths, penalty regimes. | Tune quorum, penalties, validator pools, cross-module pointers. |
-| Treasury fabric | [`FeePool`](../contracts/FeePool.sol) | Aggregates fees, burns, rewards, and treasury remits. | Set treasuries, burn percentages, rewarders, pausers, stake manager links. |
-| Reputation orbit | [`ReputationEngine`](../contracts/ReputationEngine.sol) | Scores actors and powers job gating. | Curate callers, weighting, thresholds, blacklists, staking links. |
-| Platform registry | [`PlatformRegistry`](../contracts/PlatformRegistry.sol) | Registers platforms and enforces stake commitments. | Update stake requirements, registrars, allowlists, blacklists. |
-| Dispute tribunal | [`DisputeModule`](../contracts/modules/DisputeModule.sol) | Arbitrates disputes and routes penalties. | Configure committee, tax policy, dispute fees, resolution windows, moderators. |
-| Arbitration council | [`ArbitratorCommittee`](../contracts/ArbitratorCommittee.sol) | Governs arbitrator membership and pause delegation. | Set committee composition, pause roles, dispute rules. |
-| Tax canon | [`TaxPolicy`](../contracts/TaxPolicy.sol) | Publishes canonical tax policy URIs & acknowledgements. | Update policy URIs, authorizers, metadata. |
-| Identity spine | [`IdentityRegistry`](../contracts/IdentityRegistry.sol) | Maintains identity roots, ENS hooks, attestation bindings. | Refresh Merkle roots, registries, ENS/name wrapper adapters. |
-| Attestation anchor | [`AttestationRegistry`](../contracts/AttestationRegistry.sol) | Captures attestations tied to ENS/name wrapper anchors. | Rebind controllers, adjust authorized callers. |
-| Credential layer | [`CertificateNFT`](../contracts/CertificateNFT.sol) | Issues certificates backed by job outcomes. | Configure base URIs, minters, pausers, supply controls. |
-
----
-
-## $AGIALPHA canon
-
-- **Canonical binding.** `$AGIALPHA` resolves to token `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` with `18` decimals, enforced by [`contracts/Constants.sol`](../contracts/Constants.sol).
-- **Runtime enforcement.** Modules import `Constants` to refuse mismatched assets; see [`StakeManager`](../contracts/StakeManager.sol#L218-L249) and [`FeePool`](../contracts/FeePool.sol#L70-L126).
-- **Deployment guardrails.** [`scripts/deploy/load-config.js`](../scripts/deploy/load-config.js) validates token addresses before broadcasting, mirroring CI checks.
-
----
-
-## Operational playbooks
-
-- **Operations atlas.** [`docs/operations/README.md`](operations/README.md) visualizes end-to-end Safe flows for pausing, treasury rotation, validator reconfiguration, and telemetry capture.
-- **Owner command primers.** [`docs/operations/owner-control.md`](operations/owner-control.md) provides copy-ready transaction manifests for guardians, treasurers, and compliance officers.
-- **Emergency drills.** [`docs/operations/emergency-pause.md`](operations/emergency-pause.md) documents step-by-step pause/resume sequences with Safe signers and expectation checks.
-- **Operator runbook.** [`docs/operations/operator-runbook.md`](operations/operator-runbook.md) captures release checklists, CI evidence logging, review expectations, and post-merge announcement templates.
-- **Design dossiers.** [`docs/design/core-contracts.md`](design/core-contracts.md) and ADRs in [`docs/adr/`](adr/) trace architectural reasoning and invariant coverage.
-
----
-
-## Continuous verification mesh
-
-```mermaid
-flowchart LR
-    subgraph StaticGuards["🔒 Static Assurance"]
-        Lint[Solhint Linting\n`npm run lint:sol`]
-        Compile[Truffle Compile\n`npm run compile`]
-        GovAudit[Governance Matrix\n`npm run ci:governance`]
-    end
-    subgraph DynamicTrials["🚀 Dynamic Trials"]
-        TruffleTest[Truffle Spec\n`npm run test:truffle:ci`]
-        HardhatTest[Hardhat Spec\n`npm run test:hardhat`]
-        FoundryTest[Foundry Spec\n`npm run test:foundry`]
-    end
-    subgraph SecurityWave["🛡️ Security Wave"]
-        Slither[Slither Static\n`slither .`]
-        Mythril[Mythril Symbolic]
-    end
-    Lint --> Compile --> GovAudit
-    GovAudit --> TruffleTest --> HardhatTest --> FoundryTest
-    Compile --> Slither --> Mythril
-    classDef StaticGuards fill:#14213d,stroke:#fca311,color:#f1faee;
-    classDef DynamicTrials fill:#1b4332,stroke:#2d6a4f,color:#f1faee;
-    classDef SecurityWave fill:#3a0ca3,stroke:#4cc9f0,color:#ffffff;
-    class Lint,Compile,GovAudit StaticGuards;
-    class TruffleTest,HardhatTest,FoundryTest DynamicTrials;
-    class Slither,Mythril SecurityWave;
-```
-
-- **`Sovereign Compile`.** [.github/workflows/ci.yml](../.github/workflows/ci.yml) enforces linting, compilation, and governance audits on every push and pull request targeting `main`, `develop`, or release branches.
-- **`Branch Gatekeeper`.** [.github/workflows/branch-checks.yml](../.github/workflows/branch-checks.yml) blocks non-compliant branch names and surfaces feedback immediately in PR checks.
-- **`Security Scans`.** [.github/workflows/security.yml](../.github/workflows/security.yml) runs Foundry builds, Slither static analysis, and Mythril symbolic execution with SARIF uploads for vulnerability management.
-- **Local mirroring.** `npm run test:ci` executes the same dynamic matrix locally; `npm run ci:governance` validates Safe reachability, pause lattice wiring, and `$AGIALPHA` bindings before any deployment.
-
----
-
-## CI enforcement & branch protection
-
-1. **Require passing checks.** Protect `main` and `develop` in GitHub → Settings → Branches with mandatory status checks: `Sovereign Compile`, `Branch Gatekeeper`, and `Security Scans`. Enable "Require branches to be up to date" and "Require linear history".
-2. **Mandatory reviews.** Demand at least one code-owner review for changes touching `contracts/`, `docs/`, `deploy/`, or CI manifests, pairing with Safe approval policies before on-chain execution.
-3. **Signed provenance.** Encourage signed commits or organization-wide `SSO` enforcement; store workflow artifacts for ≥30 days so auditors can replay compile outputs and SARIF reports.
-4. **Secret hygiene.** Keep private keys, RPC endpoints, and Mythril API keys inside GitHub secrets or reusable environments; never commit `.env` files.
-
----
-
-## Launch & compliance checklist
-
-1. **Install toolchain.**
-   ```bash
-   npm ci --omit=optional --no-audit --no-fund
-   forge install
-   ```
-2. **Compile & lint.**
-   ```bash
-   npm run lint:sol
-   npm run compile
-   ```
-3. **Verify governance health.**
-   ```bash
-   npm run ci:governance
-   ```
-4. **Execute full spec suite.**
-   ```bash
-   npm run test:ci
-   ```
-5. **Archive evidence.** Capture `build/contracts` artifacts, GitHub Action summaries, SARIF reports, and Safe transaction hashes for the compliance vault prior to mainnet promotion.
-
-Every step is copy/paste friendly for non-technical operators; the manifests in [`docs/operations/`](operations/) ensure deterministic outcomes.
-
----
-
-## Deployment autopilots
-
-| Network mode | Command | Notes |
+| Capability | Entry point | Owner leverage |
 | --- | --- | --- |
-| Truffle mainnet | `npm run deploy:truffle:mainnet` | Uses [`migrations/`](../migrations) and manifest guards from [`scripts/deploy/load-config.js`](../scripts/deploy/load-config.js). |
-| Hardhat mainnet | `npm run deploy:hardhat:mainnet` | Executes [`hardhat/scripts/deploy-mainnet.js`](../hardhat/scripts/deploy-mainnet.js) with governance checks before broadcasting. |
-| Foundry mainnet | `npm run deploy:foundry:mainnet` | Calls [`foundry/script/DeployMainnet.s.sol`](../foundry/script/DeployMainnet.s.sol) while enforcing `$AGIALPHA` bindings through `Constants`. |
-
-All autopilots expect RPC URLs and signer secrets supplied via secure environment variables; they emit Safe-ready calldata payloads for review before broadcasting.
-
----
-
-## Telemetry vault protocol
-
-1. **Manifest archive.** Store governance manifests and action reports under `manifests/` or your compliance repository so every parameter mutation is versioned.
-2. **Event capture.** Subscribe to `ModulesUpdated`, `GovernanceCallExecuted`, `TemperatureUpdated`, and module-specific events from [`StakeManager`](../contracts/StakeManager.sol#L523-L623), [`SystemPause`](../contracts/SystemPause.sol#L253-L314), and [`Thermostat`](../contracts/Thermostat.sol#L86-L121).
-3. **CI mirroring.** After on-chain governance, rerun `npm run ci:governance`, `npm run test:truffle:ci`, `npm run test:hardhat`, and `npm run test:foundry` to confirm deterministic parity.
-4. **Evidence vault.** Consolidate Safe transaction hashes, CLI logs, and workflow URLs (`Sovereign Compile`, `Security Scans`) into an auditor-facing vault for continuous compliance.
+| Batch governance | [`contracts/admin/OwnerConfigurator.sol`](../contracts/admin/OwnerConfigurator.sol) | Stream multiple Safe-approved calls, emit auditable logs, orchestrate migrations without bespoke scripts. |
+| Global pause lattice | [`contracts/SystemPause.sol`](../contracts/SystemPause.sol) | `setModules`, `refreshPausers`, `pauseAll`, `unpauseAll`, plus passthrough governance for module-specific setters. |
+| Staking & rewards | [`contracts/StakeManager.sol`](../contracts/StakeManager.sol), [`contracts/FeePool.sol`](../contracts/FeePool.sol) | Adjust stake minima, slash splits, Hamiltonian feeds, treasury routing, auto-stake toggles. |
+| Job lifecycle | [`contracts/JobRegistry.sol`](../contracts/JobRegistry.sol) | Rebind validation/dispute modules, enforce certificates, tune fees, manage platform registrations. |
+| Validation mesh | [`contracts/ValidationModule.sol`](../contracts/ValidationModule.sol) | Configure quorum, penalties, validator rosters, jail windows. |
+| Reputation | [`contracts/ReputationEngine.sol`](../contracts/ReputationEngine.sol) | Set weighting curves, authorized updaters, integration points. |
+| Disputes & arbitration | [`contracts/modules/DisputeModule.sol`](../contracts/modules/DisputeModule.sol), [`contracts/ArbitratorCommittee.sol`](../contracts/ArbitratorCommittee.sol) | Curate committees, escalation paths, dispute fees, pause delegates. |
+| Tax & compliance | [`contracts/TaxPolicy.sol`](../contracts/TaxPolicy.sol) | Publish policy URIs, rotate acknowledgment requirements, manage authorizers. |
+| Identity spine | [`contracts/IdentityRegistry.sol`](../contracts/IdentityRegistry.sol), [`contracts/AttestationRegistry.sol`](../contracts/AttestationRegistry.sol) | Refresh ENS/name-wrapper roots, maintain attester allowlists, enforce node/operator ownership including `*.alpha.node.agi.eth`. |
 
 ---
 
-## Repository atlas
+## $AGIALPHA Canon
 
-| Path | Role |
-| --- | --- |
-| [`contracts/`](../contracts) | Solidity contracts, interfaces, utilities, and test scaffolding. |
-| [`deploy/`](../deploy) | Network manifests and deployment parameters. |
-| [`foundry/`](../foundry) | Foundry configuration, scripts, and tests. |
-| [`hardhat/`](../hardhat) | Hardhat tasks, configuration, and deployment scripts. |
-| [`migrations/`](../migrations) | Truffle migration scripts. |
-| [`scripts/`](../scripts) | Shared governance, verification, and deployment utilities. |
-| [`docs/`](./) | Design dossiers, operations manuals, and ADRs. |
-| [`demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/`](../demo/Meta-Agentic-ALPHA-AGI-Jobs-v0) | Hands-on demo scaffolding with config, scripts, and data placeholders for workshops. |
-| [`truffle/`](../truffle) | Truffle-specific configuration helpers. |
-| [`.github/workflows/`](../.github/workflows) | CI/CD orchestrations enforcing lint, compile, security, and branch policies. |
+- **Canonical binding.** `$AGIALPHA` resolves to `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` (18 decimals) through [`contracts/Constants.sol`](../contracts/Constants.sol).
+- **Runtime enforcement.** Constructors and setters in [`StakeManager`](../contracts/StakeManager.sol), [`FeePool`](../contracts/FeePool.sol), [`JobRegistry`](../contracts/JobRegistry.sol), and integration scripts refuse mismatched ERC-20 metadata.
+- **Operational guardrails.** Deployment loaders such as [`scripts/deploy/load-config.js`](../scripts/deploy/load-config.js) and CI scripts validate the token address before broadcasting, guaranteeing platform, staking, and job payouts remain on the canonical asset.
 
 ---
 
-## Governance chronology
+## Continuous Verification Fabric
 
 ```mermaid
-timeline
-    title Owner-dominant lifecycle
-    section Genesis
-        Mainnet seeding : Truffle migrations bootstrap `$AGIALPHA` bindings and treasury routes
-    section Calibration
-        Ongoing tuning : OwnerConfigurator batches adjust validators, treasuries, dispute policy
-    section Resilience
-        Emergency posture : Guardian Safe rehearses `pauseAll`/`unpauseAll` with manifest drills
-    section Oversight
-        Continuous audit : Security Scans SARIF + governance manifests archived for compliance
+flowchart TB
+    Checkout([Checkout & cache]) --> Lint
+    Lint([Solhint lint]) --> Compile
+    Compile([Truffle compile + artifact verification]) --> Governance[Governance matrix audit]
+    Compile --> Tests[Truffle + Hardhat + Foundry tests]
+    Tests --> Summary[[Step summaries]]
+    Checkout --> Actionlint
+    classDef stage fill:#111827,stroke:#38bdf8,color:#e0f2fe;
+    class Checkout,Lint,Compile,Governance,Tests,Summary,Actionlint stage;
 ```
 
-The codex keeps the owner in complete control—able to pause, reconfigure, and retune incentives within one transaction—while every guardian and operator navigates deterministic, rehearsed procedures reinforced by the continuous verification mesh.
+- **Workflows.** GitHub Actions defined in [`ci.yml`](../.github/workflows/ci.yml), [`security.yml`](../.github/workflows/security.yml), and [`branch-checks.yml`](../.github/workflows/branch-checks.yml) lint Solidity, compile once for all test harnesses, run Truffle/Hardhat/Foundry suites, actionlint the workflows, and run dual static analysis (Slither + Mythril).
+- **Branch protection.** [`settings.yml`](../.github/settings.yml) enforces green checks, linear history, PR reviews, and last-push approval on `main` and `develop`. Force pushes and branch deletions are blocked; admins obey the same rules.
+- **Badge transparency.** Badges above surface live status for compile, security, and naming gatekeepers so contributors and auditors see pipeline health instantly.
+
+---
+
+## Launch & Deployment Autopilots
+
+- **One-command devnet rehearsal.** Use `npm ci` followed by `npm run compile` and `npm run test:ci` to reproduce the CI pipeline locally. Foundry, Hardhat, and Truffle remain in lockstep with the shared `build/contracts` artifacts.
+- **Mainnet handover.** Scripts in [`deploy/`](../deploy) and [`scripts/`](../scripts) ensure ENS roots, module addresses, and `$AGIALPHA` bindings align before transactions broadcast. Ownership transfers to the designated Safe immediately after deployment per migration files.
+- **Operator runbooks.** [`docs/operations/owner-control.md`](operations/owner-control.md), [`docs/operations/emergency-pause.md`](operations/emergency-pause.md), and [`docs/operations/validator-onboarding.md`](operations/validator-onboarding.md) provide non-technical operators with checklist-driven procedures for activation, staking, pausing, and guardian rehearsal.
+
+---
+
+## Telemetry & Compliance Vault
+
+- **Ledger-grade logging.** Application, validation, and governance events are mirrored to JSONL logs under `/logs` (see runbook guidance) while Truffle/Hardhat traces persist under `build/` for audits.
+- **Compliance scoring.** [`docs/design/`](design/) details the compliance reporting surfaces, linking stake exposure, validator policies, and tax acknowledgements defined in [`TaxPolicy`](../contracts/TaxPolicy.sol).
+- **Observability.** Telemetry hooks in scripts and operations docs route metrics to Prometheus-compatible collectors, ensuring guardians can watch ROI, slash events, and heartbeat cadence.
+
+---
+
+## Governance Chronicle
+
+- **Migrations.** [`migrations/`](../migrations) sequence deployments, Safe ownership transfers, and module registrations so historical replay shows every governance decision.
+- **ADR index.** [`docs/adr/`](adr/) records architecture decisions with rationale, supersessions, and operational constraints for auditors.
+- **Release notes.** [`CHANGELOG.md`](../CHANGELOG.md) tracks feature deltas, ensuring Safe signers know exactly what changed before approving upgrades.
+
+---
+
+### Quick Start
+
+```bash
+npm ci --omit=optional --no-audit --no-fund
+npm run compile
+npm run test:ci
+```
+
+When all lights stay green, the owner can stake, activate, and orchestrate the labor mesh confident that every module obeys the codified will.
