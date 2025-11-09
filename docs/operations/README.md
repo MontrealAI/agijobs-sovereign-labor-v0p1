@@ -14,8 +14,9 @@
 1. [Operator command map](#operator-command-map)
 2. [Non-technical control loops](#non-technical-control-loops)
 3. [Owner playbooks](#owner-playbooks)
-4. [Telemetry capture](#telemetry-capture)
-5. [Evidence archive schema](#evidence-archive-schema)
+4. [Release coordination runbook](#release-coordination-runbook)
+5. [Telemetry capture](#telemetry-capture)
+6. [Evidence archive schema](#evidence-archive-schema)
 
 ---
 
@@ -102,6 +103,12 @@ Every sequence mirrors CI governance checks and reuses the same `$AGIALPHA` mani
 | Rotate treasuries | [`owner-control.md`](owner-control.md#treasury-rotation) | Update StakeManager and FeePool treasuries while preserving burn splits. |
 | Update validator policy | [`owner-control.md`](owner-control.md#validator-policy-tuning) | Increase quorum, adjust job stakes, and refresh validator allowlists with step-by-step validation. |
 | Refresh identity | [`owner-control.md`](owner-control.md#identity-refresh) | Publish new ENS hashes and Merkle roots with Safe transaction templates. |
+
+---
+
+## Release coordination runbook
+
+`docs/operations/operator-runbook.md` is the mission checklist for change pilots. It bundles required local commands, CI handoff expectations, reviewer roles, and a post-merge announcement template. Reference it before opening a PR to ensure governance manifests, demo assets, and communications stay synchronized.
 
 ---
 

@@ -23,6 +23,11 @@
 ---
 
 ## Table of Contents
+- [Overview](#overview)
+- [Setup & Local Development](#setup--local-development)
+- [Governance Notes](#governance-notes)
+- [Troubleshooting](#troubleshooting)
+- [Operator Runbook](#operator-runbook)
 - [Command Deck](#command-deck)
 - [Architecture Maps](#architecture-maps)
 - [Design Intelligence Atlas](#design-intelligence-atlas)
@@ -39,6 +44,43 @@
 - [Operations Telemetry](#operations-telemetry)
 - [Operational Intelligence Vault](#operational-intelligence-vault)
 - [Quickstart Commands](#quickstart-commands)
+
+---
+
+## Overview
+
+The sovereign labor mesh is a production-ready governance lattice that coordinates job discovery, validation, staking, dispute resolution, and treasury routing around the canonical `$AGIALPHA` token. This repository packages on-chain contracts, deployment manifests, multi-runtime test harnesses, and operational playbooks so non-technical governors can orchestrate the network without touching raw calldata.
+
+The `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0` environment showcases how the contracts, scripts, and datasets snap together for workshops or dry runs. Clone the repository, explore the demo scaffolding, and reference the operator documentation below to move from simulated labor flows to sovereign mainnet control.
+
+## Setup & Local Development
+
+1. **Install prerequisites.** Use Node.js 20.x, npm 10.x, Foundry (latest stable), Truffle 5.11.x, and Hardhat 2.20.x. The repository ships with a `.nvmrc` to help pin Node versions.
+2. **Install dependencies.** Run `npm install` from the repository root. This installs shared JavaScript tooling for Hardhat, Truffle, linting, and helper scripts.
+3. **Compile contracts.** Execute `npm run compile` to confirm the Truffle artifact build completes. Hardhat and Foundry builds are wired into CI, but the Truffle compile ensures solc 0.8.30 is locally configured.
+4. **Run the multi-runtime suite.** Use `npm run test:hardhat`, `npm run test:truffle:ci`, and `npm run test:foundry` to mirror CI execution. Each runtime validates ownership surfaces, pauser routing, and emission economics.
+5. **Explore the demo.** `cd demo/Meta-Agentic-ALPHA-AGI-Jobs-v0` and review the `config/`, `scripts/`, and `data/` directories. The placeholders document where to add agent orchestration, curated datasets, and reproducible walkthrough scripts.
+6. **Keep governance artifacts synced.** After making changes, update manifests under `deploy/` or `manifests/` as needed and rerun `npm run ci:governance` to verify privileged routes remain intact.
+
+## Governance Notes
+
+- **Owner Safe supremacy.** `SystemPause` enforces that every privileged setter, module registration, and emergency pause flows through the Safe-controlled `TimelockController`. Guardians retain a direct pause hook, but configuration remains owner-gated.
+- **Deterministic token canon.** `$AGIALPHA` lives at `0xa61a3b3a130a9c20768eebf97e21515a6046a1fa` with 18 decimals. Contracts, migrations, and runtime scripts reject alternate addresses.
+- **Configuration telemetry.** `OwnerConfigurator` batches Safe-approved transactions and emits `GovernanceCallExecuted` so auditors can diff configuration deltas. Operators should archive these manifests under `manifests/governance/` alongside CI runs.
+- **Thermal tuning.** `Thermostat` supplies PID adjustments and module-specific overrides, allowing emission pressure and backlog cadence to adjust without redeploying the mesh.
+
+## Troubleshooting
+
+| Symptom | Diagnosis | Resolution |
+| --- | --- | --- |
+| `npm run compile` fails with solc mismatch | Local solc does not align with 0.8.30. | Install Foundry `forge` and run `forge install` or install `solc-select` and pin `0.8.30`; rerun compile. |
+| Governance tests revert with `TokenMismatch` | `$AGIALPHA` address overridden in env or scripts. | Reset environment variables, ensure `contracts/Constants.sol` is untouched, and reload manifests via `scripts/deploy/load-config.js`. |
+| `npm run test:foundry` cannot find Foundry | Foundry is not on the PATH. | Install Foundry from <https://book.getfoundry.sh/getting-started/installation> and ensure `foundryup` adds binaries to your shell PATH. |
+| Hardhat test snapshot failures | Local chain fork/cache stale. | Delete the `.hardhat-node` directory or restart the Hardhat network; rerun `npm run test:hardhat`. |
+
+## Operator Runbook
+
+Operational teams should start with [`docs/operations/operator-runbook.md`](docs/operations/operator-runbook.md). It consolidates Safe transaction manifests, CI verification commands, review coordination checklists, and a post-merge announcement template so network guardians can execute upgrades and communicate launches without guesswork.
 
 ---
 

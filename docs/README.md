@@ -166,6 +166,7 @@ sequenceDiagram
 - **Operations atlas.** [`docs/operations/README.md`](operations/README.md) visualizes end-to-end Safe flows for pausing, treasury rotation, validator reconfiguration, and telemetry capture.
 - **Owner command primers.** [`docs/operations/owner-control.md`](operations/owner-control.md) provides copy-ready transaction manifests for guardians, treasurers, and compliance officers.
 - **Emergency drills.** [`docs/operations/emergency-pause.md`](operations/emergency-pause.md) documents step-by-step pause/resume sequences with Safe signers and expectation checks.
+- **Operator runbook.** [`docs/operations/operator-runbook.md`](operations/operator-runbook.md) captures release checklists, CI evidence logging, review expectations, and post-merge announcement templates.
 - **Design dossiers.** [`docs/design/core-contracts.md`](design/core-contracts.md) and ADRs in [`docs/adr/`](adr/) trace architectural reasoning and invariant coverage.
 
 ---
@@ -273,6 +274,7 @@ All autopilots expect RPC URLs and signer secrets supplied via secure environmen
 | [`migrations/`](../migrations) | Truffle migration scripts. |
 | [`scripts/`](../scripts) | Shared governance, verification, and deployment utilities. |
 | [`docs/`](./) | Design dossiers, operations manuals, and ADRs. |
+| [`demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/`](../demo/Meta-Agentic-ALPHA-AGI-Jobs-v0) | Hands-on demo scaffolding with config, scripts, and data placeholders for workshops. |
 | [`truffle/`](../truffle) | Truffle-specific configuration helpers. |
 | [`.github/workflows/`](../.github/workflows) | CI/CD orchestrations enforcing lint, compile, security, and branch policies. |
 
