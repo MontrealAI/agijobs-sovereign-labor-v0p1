@@ -8,4 +8,4 @@ This directory contains the initial scaffolding for the Meta-Agentic ALPHA AGI J
 - `scripts/` – Placeholder for orchestration or data preparation scripts.
 - `data/` – Placeholder for example datasets or fixtures.
 
-Each folder contains a `.gitkeep` file so the empty directories remain tracked until populated with real content.
+Each folder currently includes a short README placeholder so the empty directories remain tracked until populated with real content and so future contributors know where to drop their files.
