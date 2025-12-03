@@ -36,7 +36,7 @@ error InsufficientValidators();
 error StakeManagerNotSet();
 error OnlyJobRegistry();
 error JobNotSubmitted();
-error ValidatorPoolTooSmall();
+    error ValidatorPoolTooSmall();
 error BlacklistedValidator();
 error NotValidator();
 error UnauthorizedValidator();
@@ -161,6 +161,23 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         uint256 committeeSize;
         uint64 earlyFinalizeEligibleAt;
         bool earlyFinalized;
+    }
+
+    struct SelectionContext {
+        uint256 round;
+        uint256 targetBlock;
+        uint256 randaoValue;
+        bytes32 bhash;
+        uint256 rcRand;
+        bytes32 seed;
+        uint256 randomSeed;
+        uint256 poolSize;
+        uint256 sampleSize;
+        uint256 committeeSize;
+        address[] candidates;
+        uint256[] candidateStakes;
+        uint256 candidateCount;
+        uint256 totalStake;
     }
 
     struct FailoverState {
@@ -841,6 +858,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         whenNotPaused
         returns (address[] memory selected)
     {
+        SelectionContext memory ctx;
         Round storage r = rounds[jobId];
         IJobRegistry registry = jobRegistry;
         address registryAddr = address(registry);
@@ -875,15 +893,15 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
         // Before the target block is mined, allow additional parties to
         // contribute entropy. Each contribution is mixed into the pool via XOR.
-        uint256 round = entropyRound[jobId];
-        uint256 targetBlock = selectionBlock[jobId];
+        ctx.round = entropyRound[jobId];
+        ctx.targetBlock = selectionBlock[jobId];
 
-        if (block.number <= targetBlock) {
+        if (block.number <= ctx.targetBlock) {
             pendingEntropy[jobId] ^= uint256(
                 keccak256(abi.encodePacked(msg.sender, entropy))
             );
-            if (!entropyContributed[jobId][round][msg.sender]) {
-                entropyContributed[jobId][round][msg.sender] = true;
+            if (!entropyContributed[jobId][ctx.round][msg.sender]) {
+                entropyContributed[jobId][ctx.round][msg.sender] = true;
                 unchecked {
                     entropyContributorCount[jobId] += 1;
                 }
@@ -894,45 +912,45 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         // Finalization path using the stored entropy and future blockhash.
         if (
             entropyContributorCount[jobId] < MIN_ENTROPY_CONTRIBUTORS &&
-            !entropyContributed[jobId][round][msg.sender]
+            !entropyContributed[jobId][ctx.round][msg.sender]
         ) {
             pendingEntropy[jobId] ^= uint256(
                 keccak256(abi.encodePacked(msg.sender, entropy))
             );
-            entropyContributed[jobId][round][msg.sender] = true;
+            entropyContributed[jobId][ctx.round][msg.sender] = true;
             unchecked {
                 entropyContributorCount[jobId] += 1;
             }
         }
         if (entropyContributorCount[jobId] < MIN_ENTROPY_CONTRIBUTORS) {
-            round += 1;
-            entropyRound[jobId] = round;
+            ctx.round += 1;
+            entropyRound[jobId] = ctx.round;
             pendingEntropy[jobId] = uint256(
                 keccak256(abi.encodePacked(msg.sender, entropy))
             );
             entropyContributorCount[jobId] = 1;
-            entropyContributed[jobId][round][msg.sender] = true;
+            entropyContributed[jobId][ctx.round][msg.sender] = true;
             selectionBlock[jobId] = block.number + 1;
             emit SelectionReset(jobId);
             return selected;
         }
-        bytes32 bhash = blockhash(targetBlock);
+        bytes32 bhash = blockhash(ctx.targetBlock);
         if (bhash == bytes32(0)) {
-            round += 1;
-            entropyRound[jobId] = round;
+            ctx.round += 1;
+            entropyRound[jobId] = ctx.round;
             pendingEntropy[jobId] = uint256(
                 keccak256(abi.encodePacked(msg.sender, entropy))
             );
             entropyContributorCount[jobId] = 1;
-            entropyContributed[jobId][round][msg.sender] = true;
+            entropyContributed[jobId][ctx.round][msg.sender] = true;
             selectionBlock[jobId] = block.number + 1;
             emit SelectionReset(jobId);
             return selected;
         }
 
-        uint256 randaoValue = uint256(block.prevrandao);
-        if (randaoValue == 0) {
-            randaoValue = uint256(
+        ctx.randaoValue = uint256(block.prevrandao);
+        if (ctx.randaoValue == 0) {
+            ctx.randaoValue = uint256(
                 keccak256(
                     abi.encodePacked(
                         blockhash(block.number - 1),
@@ -947,10 +965,9 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             jobNonce[jobId] += 1;
         }
 
-        uint256 rcRand;
         if (address(randaoCoordinator) != address(0)) {
             // RandaoCoordinator.random already mixes its seed with `block.prevrandao`
-            rcRand = randaoCoordinator.random(bytes32(jobId));
+            ctx.rcRand = randaoCoordinator.random(bytes32(jobId));
         }
 
         bytes32 seed = keccak256(
@@ -958,49 +975,48 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                 jobId,
                 jobNonce[jobId],
                 pendingEntropy[jobId],
-                randaoValue,
+                ctx.randaoValue,
                 bhash,
                 address(this),
-                rcRand
+                ctx.rcRand
             )
         );
         selectionSeeds[jobId] = seed;
         emit SelectionSeedRecorded(jobId, seed);
-        uint256 randomSeed = uint256(seed);
+        ctx.seed = seed;
+        ctx.randomSeed = uint256(seed);
 
-        uint256 n = validatorPool.length;
-        if (n == 0) revert InsufficientValidators();
-        if (n > maxValidatorPoolSize) revert PoolLimitExceeded();
+        ctx.poolSize = validatorPool.length;
+        if (ctx.poolSize == 0) revert InsufficientValidators();
+        if (ctx.poolSize > maxValidatorPoolSize) revert PoolLimitExceeded();
         if (address(stakeManager) == address(0)) revert StakeManagerNotSet();
 
-        uint256 sample = validatorPoolSampleSize;
-        if (sample > n) sample = n;
+        ctx.sampleSize = validatorPoolSampleSize;
+        if (ctx.sampleSize > ctx.poolSize) ctx.sampleSize = ctx.poolSize;
 
-        uint256 size = r.committeeSize;
-        if (size == 0) {
-            size = validatorsPerJob;
-            r.committeeSize = size;
+        ctx.committeeSize = r.committeeSize;
+        if (ctx.committeeSize == 0) {
+            ctx.committeeSize = validatorsPerJob;
+            r.committeeSize = ctx.committeeSize;
         }
-        if (size > maxValidatorsPerJob) size = maxValidatorsPerJob;
-        if (sample < size) revert SampleSizeTooSmall();
+        if (ctx.committeeSize > maxValidatorsPerJob) ctx.committeeSize = maxValidatorsPerJob;
+        if (ctx.sampleSize < ctx.committeeSize) revert SampleSizeTooSmall();
 
-        selected = new address[](size);
-        uint256[] memory stakes = new uint256[](size);
+        selected = new address[](ctx.committeeSize);
+        uint256[] memory stakes = new uint256[](ctx.committeeSize);
 
-        address[] memory candidates = new address[](sample);
-        uint256[] memory candidateStakes = new uint256[](sample);
-        uint256 candidateCount;
-        uint256 totalStake;
+        ctx.candidates = new address[](ctx.sampleSize);
+        ctx.candidateStakes = new uint256[](ctx.sampleSize);
 
         if (selectionStrategy == IValidationModule.SelectionStrategy.Rotating) {
             uint256 rotationStart = validatorPoolRotation;
             uint256 offset = uint256(
-                keccak256(abi.encodePacked(randaoValue, bhash))
-            ) % n;
-            rotationStart = (rotationStart + offset) % n;
+                keccak256(abi.encodePacked(ctx.randaoValue, bhash))
+            ) % ctx.poolSize;
+            rotationStart = (rotationStart + offset) % ctx.poolSize;
             uint256 i;
-            for (; i < n && candidateCount < sample;) {
-                uint256 idx = (rotationStart + i) % n;
+            for (; i < ctx.poolSize && ctx.candidateCount < ctx.sampleSize;) {
+                uint256 idx = (rotationStart + i) % ctx.poolSize;
                 address candidate = validatorPool[idx];
 
                 if (validatorBanUntil[candidate] > block.number) {
@@ -1071,19 +1087,19 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                     continue;
                 }
 
-                candidates[candidateCount] = candidate;
-                candidateStakes[candidateCount] = stake;
-                totalStake += stake;
+                ctx.candidates[ctx.candidateCount] = candidate;
+                ctx.candidateStakes[ctx.candidateCount] = stake;
+                ctx.totalStake += stake;
                 unchecked {
-                    ++candidateCount;
+                    ++ctx.candidateCount;
                     ++i;
                 }
             }
-            validatorPoolRotation = (rotationStart + i) % n;
+            validatorPoolRotation = (rotationStart + i) % ctx.poolSize;
             emit ValidatorPoolRotationUpdated(validatorPoolRotation);
         } else {
             uint256 eligible;
-            for (uint256 i; i < n;) {
+            for (uint256 i; i < ctx.poolSize;) {
                 address candidate = validatorPool[i];
 
                 if (validatorBanUntil[candidate] > block.number) {
@@ -1158,21 +1174,23 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                     ++eligible;
                 }
 
-                if (candidateCount < sample) {
-                    candidates[candidateCount] = candidate;
-                    candidateStakes[candidateCount] = stake;
-                    totalStake += stake;
+                if (ctx.candidateCount < ctx.sampleSize) {
+                    ctx.candidates[ctx.candidateCount] = candidate;
+                    ctx.candidateStakes[ctx.candidateCount] = stake;
+                    ctx.totalStake += stake;
                     unchecked {
-                        ++candidateCount;
+                        ++ctx.candidateCount;
                     }
                 } else {
-                    randomSeed = uint256(keccak256(abi.encode(randomSeed, i)));
-                    uint256 j = randomSeed % eligible;
-                    if (j < sample) {
-                        totalStake =
-                            totalStake - candidateStakes[j] + stake;
-                        candidates[j] = candidate;
-                        candidateStakes[j] = stake;
+                    ctx.randomSeed = uint256(
+                        keccak256(abi.encode(ctx.randomSeed, i))
+                    );
+                    uint256 j = ctx.randomSeed % eligible;
+                    if (j < ctx.sampleSize) {
+                        ctx.totalStake =
+                            ctx.totalStake - ctx.candidateStakes[j] + stake;
+                        ctx.candidates[j] = candidate;
+                        ctx.candidateStakes[j] = stake;
                     }
                 }
 
@@ -1182,15 +1200,17 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             }
         }
 
-        if (candidateCount < size) revert InsufficientValidators();
+        if (ctx.candidateCount < ctx.committeeSize) revert InsufficientValidators();
 
-        for (uint256 i; i < size;) {
-            randomSeed = uint256(keccak256(abi.encode(randomSeed, i)));
-            uint256 pick = randomSeed % totalStake;
+        for (uint256 i; i < ctx.committeeSize;) {
+            ctx.randomSeed = uint256(
+                keccak256(abi.encode(ctx.randomSeed, i))
+            );
+            uint256 pick = ctx.randomSeed % ctx.totalStake;
             uint256 cumulative;
             uint256 chosen;
-            for (uint256 j; j < candidateCount;) {
-                cumulative += candidateStakes[j];
+            for (uint256 j; j < ctx.candidateCount;) {
+                cumulative += ctx.candidateStakes[j];
                 if (pick < cumulative) {
                     chosen = j;
                     break;
@@ -1200,30 +1220,21 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                 }
             }
 
-            address val = candidates[chosen];
+            address val = ctx.candidates[chosen];
             selected[i] = val;
-            stakes[i] = candidateStakes[chosen];
+            stakes[i] = ctx.candidateStakes[chosen];
 
-            totalStake -= candidateStakes[chosen];
-            candidateCount -= 1;
-            candidates[chosen] = candidates[candidateCount];
-            candidateStakes[chosen] = candidateStakes[candidateCount];
+            ctx.totalStake -= ctx.candidateStakes[chosen];
+            ctx.candidateCount -= 1;
+            ctx.candidates[chosen] = ctx.candidates[ctx.candidateCount];
+            ctx.candidateStakes[chosen] = ctx.candidateStakes[ctx.candidateCount];
 
             unchecked {
                 ++i;
             }
         }
 
-        for (uint256 i; i < size;) {
-            address val = selected[i];
-            uint256 stakeAmount = stakes[i];
-            validatorStakes[jobId][val] = stakeAmount;
-            validatorStakeLocks[jobId][val] = stakeAmount;
-            _validatorLookup[jobId][val] = true;
-            unchecked {
-                ++i;
-            }
-        }
+        _recordValidatorSelections(jobId, selected, stakes, ctx.committeeSize);
 
         r.validators = selected;
         r.commitDeadline = block.timestamp + commitWindow;
@@ -1233,14 +1244,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         if (lockDuration > type(uint64).max) revert InvalidWindows();
         uint64 lockTime = uint64(lockDuration);
 
-        for (uint256 i; i < size;) {
-            address val = selected[i];
-            uint256 stakeAmount = validatorStakeLocks[jobId][val];
-            stakeManager.lockValidatorStake(jobId, val, stakeAmount, lockTime);
-            unchecked {
-                ++i;
-            }
-        }
+        _lockSelectedStakes(jobId, selected, ctx.committeeSize, lockTime);
 
         // Clear stored entropy and target block after finalization.
         delete pendingEntropy[jobId];
@@ -1248,6 +1252,40 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
         emit ValidatorsSelected(jobId, selected);
         return selected;
+    }
+
+    function _recordValidatorSelections(
+        uint256 jobId,
+        address[] memory selected,
+        uint256[] memory stakes,
+        uint256 committeeSize
+    ) internal {
+        for (uint256 i; i < committeeSize;) {
+            address val = selected[i];
+            uint256 stakeAmount = stakes[i];
+            validatorStakes[jobId][val] = stakeAmount;
+            validatorStakeLocks[jobId][val] = stakeAmount;
+            _validatorLookup[jobId][val] = true;
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    function _lockSelectedStakes(
+        uint256 jobId,
+        address[] memory selected,
+        uint256 committeeSize,
+        uint64 lockTime
+    ) internal {
+        for (uint256 i; i < committeeSize;) {
+            address val = selected[i];
+            uint256 stakeAmount = validatorStakeLocks[jobId][val];
+            stakeManager.lockValidatorStake(jobId, val, stakeAmount, lockTime);
+            unchecked {
+                ++i;
+            }
+        }
     }
 
     /// @inheritdoc IValidationModule

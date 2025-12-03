@@ -1,7 +1,15 @@
 require('dotenv').config();
 const HDWalletProvider = require('@truffle/hdwallet-provider');
 
-const { MAINNET_RPC, SEPOLIA_RPC, DEPLOYER_PK, ETHERSCAN_API_KEY, SOLC_VIA_IR } = process.env;
+const {
+  MAINNET_RPC,
+  SEPOLIA_RPC,
+  DEPLOYER_PK,
+  ETHERSCAN_API_KEY,
+  SOLC_VIA_IR,
+  SOLC_OPTIMIZER,
+  SOLC_OPTIMIZER_RUNS
+} = process.env;
 
 const boolFromEnv = (value, defaultValue) => {
   if (value === undefined || value === null || value === "") {
@@ -12,6 +20,8 @@ const boolFromEnv = (value, defaultValue) => {
 };
 
 const useViaIR = boolFromEnv(SOLC_VIA_IR, true);
+const optimizerEnabled = boolFromEnv(SOLC_OPTIMIZER, useViaIR);
+const optimizerRuns = Number(SOLC_OPTIMIZER_RUNS || 5);
 
 module.exports = {
   contracts_build_directory: "./build/contracts",
@@ -31,8 +41,8 @@ module.exports = {
       version: "0.8.30",
       settings: {
         optimizer: {
-          enabled: true,
-          runs: 5
+          enabled: optimizerEnabled,
+          runs: optimizerRuns
         },
         // Enable the IR pipeline to avoid stack-too-deep errors in complex
         // identity/alias verification flows.
