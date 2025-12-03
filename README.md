@@ -179,6 +179,9 @@ npm ci --omit=optional --no-audit --no-fund
 
 # Compile contracts with Truffle (disable analytics prompts)
 TRUFFLE_TELEMETRY_DISABLED=1 npm run compile
+# The compiler always runs with viaIR + optimizer because disabling IR
+# triggers stack-too-deep errors in `ValidationModule`. Expect the first
+# compile to take a few minutes; cached artifacts keep later runs quick.
 
 # Execute Truffle tests using cached build artifacts
 npm run test:truffle:ci
