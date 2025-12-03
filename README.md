@@ -189,7 +189,7 @@ npm run test:hardhat
 # Execute Foundry tests (requires forge)
 npm run test:foundry
 
-# The Truffle build artifacts now persist under `truffle/build/contracts`,
+# The Truffle build artifacts now persist under `build/contracts`,
 # so `npm test` compiles once and subsequent runs reuse the cached output via
 # `--compile-none`. If you need a clean slate (e.g., after editing compiler
 # settings), delete that directory before rerunning the suite.
