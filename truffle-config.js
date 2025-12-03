@@ -19,9 +19,13 @@ const boolFromEnv = (value, defaultValue) => {
   return ["true", "1", true].includes(value?.toString().toLowerCase());
 };
 
-const useViaIR = boolFromEnv(SOLC_VIA_IR, true);
-const optimizerEnabled = boolFromEnv(SOLC_OPTIMIZER, useViaIR);
-const optimizerRuns = Number(SOLC_OPTIMIZER_RUNS || 5);
+// Truffle compilation was timing out when IR was enabled by default. To keep
+// local/CI builds responsive we now default to the standard pipeline with the
+// optimizer disabled; teams that need the IR path can opt in via the
+// environment.
+const useViaIR = boolFromEnv(SOLC_VIA_IR, false);
+const optimizerEnabled = boolFromEnv(SOLC_OPTIMIZER, false);
+const optimizerRuns = Number(SOLC_OPTIMIZER_RUNS || 200);
 
 module.exports = {
   contracts_build_directory: "./build/contracts",

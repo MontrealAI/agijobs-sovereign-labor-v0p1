@@ -7,12 +7,12 @@
     "demo/*"
   ],
   "scripts": {
-    "compile": "truffle compile",
+    "compile": "hardhat compile",
     "verify:mainnet": "truffle run verify IdentityRegistry JobRegistry PlatformRegistry StakeManager SystemPause ValidationModule --network mainnet --force-license MIT",
     "lint:branch": "node scripts/check-branch-name.mjs",
     "lint:sol": "solhint --max-warnings=0 'contracts/**/*.sol'",
     "ci:governance": "node scripts/check-governance-matrix.mjs",
-    "test": "npm run compile && npm run test:truffle:ci",
+    "test": "npm run compile && npm run test:hardhat",
     "test:truffle:ci": "truffle test --migrate-none --compile-none",
     "test:hardhat": "hardhat test",
     "test:foundry": "scripts/test-foundry.sh",
