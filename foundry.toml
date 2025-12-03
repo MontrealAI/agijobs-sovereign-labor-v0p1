@@ -9,6 +9,7 @@ auto_detect_solc = false
 optimizer = true
 optimizer_runs = 5
 via_ir = true
+# Override via FOUNDRY_VIA_IR or SOLC_VIA_IR env vars to speed up local runs when IR is unnecessary.
 evm_version = 'paris'
 bytecode_hash = 'none'
 remappings = [
