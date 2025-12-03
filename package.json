@@ -15,7 +15,7 @@
     "test": "npm run compile && npm run test:truffle:ci",
     "test:truffle:ci": "truffle test --migrate-none --compile-none",
     "test:hardhat": "hardhat test",
-    "test:foundry": "forge test",
+    "test:foundry": "scripts/test-foundry.sh",
     "test:ci": "npm test && npm run test:hardhat && npm run test:foundry",
     "deploy:truffle:mainnet": "truffle migrate --network mainnet --compile-all",
     "deploy:hardhat:mainnet": "hardhat run hardhat/scripts/deploy-mainnet.js --network mainnet",
