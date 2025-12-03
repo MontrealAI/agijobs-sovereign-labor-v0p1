@@ -1131,47 +1131,59 @@ contract IdentityRegistry is CoreOwnable2Step {
         ) {
             return (false, bytes32(0), false, false);
         }
-        bytes32 labelHash = keccak256(bytes(subdomain));
-        if (agentRootNode != bytes32(0)) {
-            node = keccak256(abi.encodePacked(agentRootNode, labelHash));
-        }
-        if (additionalAgents[claimant]) {
-            ok = true;
-        } else if (address(attestationRegistry) != address(0)) {
-            if (
-                node != bytes32(0) &&
-                attestationRegistry.isAttested(
-                    node,
-                    AttestationRegistry.Role.Agent,
-                    claimant
-                )
-            ) {
-                ok = true;
-            } else {
-                uint256 aliasLen = agentRootNodeAliases.length;
-                for (uint256 i; i < aliasLen; i++) {
-                    bytes32 aliasRoot = agentRootNodeAliases[i];
-                    bytes32 aliasNode = keccak256(
-                        abi.encodePacked(aliasRoot, labelHash)
-                    );
-                    if (
-                        attestationRegistry.isAttested(
-                            aliasNode,
-                            AttestationRegistry.Role.Agent,
-                            claimant
-                        )
-                    ) {
-                        node = aliasNode;
-                        ok = true;
-                        break;
-                    }
-                }
-            }
-        }
+        (ok, node) = _verifyAgentAttestations(claimant, subdomain);
+
         if (!ok) {
             (ok, node, viaWrapper, viaMerkle) =
                 _verifyAgentENSOwnership(claimant, subdomain, proof);
         }
+    }
+
+    function _verifyAgentAttestations(
+        address claimant,
+        string calldata subdomain
+    ) internal view returns (bool ok, bytes32 node) {
+        bytes32 labelHash = keccak256(bytes(subdomain));
+        if (agentRootNode != bytes32(0)) {
+            node = keccak256(abi.encodePacked(agentRootNode, labelHash));
+        }
+
+        if (additionalAgents[claimant]) {
+            return (true, node);
+        }
+
+        if (address(attestationRegistry) == address(0)) {
+            return (false, node);
+        }
+
+        if (
+            node != bytes32(0) &&
+            attestationRegistry.isAttested(
+                node,
+                AttestationRegistry.Role.Agent,
+                claimant
+            )
+        ) {
+            return (true, node);
+        }
+
+        uint256 aliasLen = agentRootNodeAliases.length;
+        for (uint256 i; i < aliasLen; i++) {
+            bytes32 aliasNode = keccak256(
+                abi.encodePacked(agentRootNodeAliases[i], labelHash)
+            );
+            if (
+                attestationRegistry.isAttested(
+                    aliasNode,
+                    AttestationRegistry.Role.Agent,
+                    claimant
+                )
+            ) {
+                return (true, aliasNode);
+            }
+        }
+
+        return (false, node);
     }
 
     function verifyAgent(
@@ -1227,43 +1239,12 @@ contract IdentityRegistry is CoreOwnable2Step {
             return (false, bytes32(0), false, false);
         }
 
-        bytes32 labelHash = keccak256(bytes(subdomain));
-        bytes32 derivedNode = _deriveNodeFromLabel(
-            nodeRootNode,
-            nodeRootNodeAliases,
-            labelHash
+        (bool attestationOk, bytes32 attestedNode) = _verifyNodeAttestations(
+            claimant,
+            subdomain
         );
-
-        if (additionalNodeOperators[claimant]) {
-            emit AdditionalNodeOperatorUsed(claimant, subdomain);
-            emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
-            return (true, derivedNode, false, false);
-        }
-
-        if (address(attestationRegistry) != address(0)) {
-            if (
-                derivedNode != bytes32(0) &&
-                attestationRegistry.isAttested(
-                    derivedNode,
-                    AttestationRegistry.Role.Node,
-                    claimant
-                )
-            ) {
-                emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
-                return (true, derivedNode, false, false);
-            }
-
-            (bool aliasOk, bytes32 aliasNode) = _resolveAliasAttestation(
-                labelHash,
-                nodeRootNodeAliases,
-                AttestationRegistry.Role.Node,
-                claimant
-            );
-
-            if (aliasOk) {
-                emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
-                return (true, aliasNode, false, false);
-            }
+        if (attestationOk) {
+            return (true, attestedNode, false, false);
         }
 
         (ok, node, viaWrapper, viaMerkle) = _verifyNodeENSOwnership(
@@ -1276,6 +1257,52 @@ contract IdentityRegistry is CoreOwnable2Step {
         }
 
         return (ok, node, viaWrapper, viaMerkle);
+    }
+
+    function _verifyNodeAttestations(
+        address claimant,
+        string calldata subdomain
+    ) internal returns (bool ok, bytes32 node) {
+        bytes32 labelHash = keccak256(bytes(subdomain));
+        bytes32 derivedNode = _deriveNodeFromLabel(
+            nodeRootNode,
+            nodeRootNodeAliases,
+            labelHash
+        );
+
+        if (additionalNodeOperators[claimant]) {
+            emit AdditionalNodeOperatorUsed(claimant, subdomain);
+            emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
+            return (true, derivedNode);
+        }
+
+        if (address(attestationRegistry) != address(0)) {
+            if (
+                derivedNode != bytes32(0) &&
+                attestationRegistry.isAttested(
+                    derivedNode,
+                    AttestationRegistry.Role.Node,
+                    claimant
+                )
+            ) {
+                emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
+                return (true, derivedNode);
+            }
+
+            (bool aliasOk, bytes32 aliasNode) = _resolveAliasAttestation(
+                labelHash,
+                nodeRootNodeAliases,
+                AttestationRegistry.Role.Node,
+                claimant
+            );
+
+            if (aliasOk) {
+                emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
+                return (true, aliasNode);
+            }
+        }
+
+        return (false, bytes32(0));
     }
 
     function verifyValidator(
