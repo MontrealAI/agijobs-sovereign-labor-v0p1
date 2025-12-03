@@ -396,14 +396,30 @@ contract IdentityRegistry is CoreOwnable2Step {
             _setValidatorMerkleRoot(config.validatorMerkleRoot);
         }
 
-        uint256 agentLen = _applyAgentUpdates(agentUpdates);
-        uint256 validatorLen = _applyValidatorUpdates(validatorUpdates);
-        uint256 nodeLen = _applyNodeOperatorUpdates(nodeUpdates);
+        _applyAgentUpdates(agentUpdates);
+        _applyValidatorUpdates(validatorUpdates);
+        _applyNodeOperatorUpdates(nodeUpdates);
         _applyAgentRootAliasUpdates(agentRootAliasUpdates);
         _applyClubRootAliasUpdates(clubRootAliasUpdates);
         _applyNodeRootAliasUpdates(nodeRootAliasUpdates);
-        uint256 agentTypeLen = _applyAgentTypeUpdates(agentTypeUpdates);
+        _applyAgentTypeUpdates(agentTypeUpdates);
 
+        _emitConfigurationApplied(
+            config,
+            agentUpdates.length,
+            validatorUpdates.length,
+            nodeUpdates.length,
+            agentTypeUpdates.length
+        );
+    }
+
+    function _emitConfigurationApplied(
+        ConfigUpdate calldata config,
+        uint256 agentLen,
+        uint256 validatorLen,
+        uint256 nodeLen,
+        uint256 agentTypeLen
+    ) private {
         emit ConfigurationApplied(
             msg.sender,
             config.setENS,
@@ -422,31 +438,28 @@ contract IdentityRegistry is CoreOwnable2Step {
         );
     }
 
-    function _applyAgentUpdates(AdditionalAgentConfig[] calldata updates) private returns (uint256) {
+    function _applyAgentUpdates(AdditionalAgentConfig[] calldata updates) private {
         uint256 len = updates.length;
         for (uint256 i; i < len; i++) {
             AdditionalAgentConfig calldata update = updates[i];
             _setAdditionalAgent(update.agent, update.allowed);
         }
-        return len;
     }
 
-    function _applyValidatorUpdates(AdditionalValidatorConfig[] calldata updates) private returns (uint256) {
+    function _applyValidatorUpdates(AdditionalValidatorConfig[] calldata updates) private {
         uint256 len = updates.length;
         for (uint256 i; i < len; i++) {
             AdditionalValidatorConfig calldata update = updates[i];
             _setAdditionalValidator(update.validator, update.allowed);
         }
-        return len;
     }
 
-    function _applyNodeOperatorUpdates(AdditionalNodeOperatorConfig[] calldata updates) private returns (uint256) {
+    function _applyNodeOperatorUpdates(AdditionalNodeOperatorConfig[] calldata updates) private {
         uint256 len = updates.length;
         for (uint256 i; i < len; i++) {
             AdditionalNodeOperatorConfig calldata nodeUpdate = updates[i];
             _setAdditionalNodeOperator(nodeUpdate.nodeOperator, nodeUpdate.allowed);
         }
-        return len;
     }
 
     function _applyAgentRootAliasUpdates(RootNodeAliasConfig[] calldata updates) private {
@@ -485,13 +498,33 @@ contract IdentityRegistry is CoreOwnable2Step {
         }
     }
 
-    function _applyAgentTypeUpdates(AgentTypeConfig[] calldata updates) private returns (uint256) {
+    function _applyAgentTypeUpdates(AgentTypeConfig[] calldata updates) private {
         uint256 len = updates.length;
         for (uint256 i; i < len; i++) {
             AgentTypeConfig calldata update = updates[i];
             _setAgentType(update.agent, update.agentType);
         }
-        return len;
+    }
+
+    function _resolveAliasAttestation(
+        bytes32 labelHash,
+        bytes32[] storage aliasRoots,
+        AttestationRegistry.Role role,
+        address claimant
+    ) private view returns (bool ok, bytes32 aliasNode) {
+        uint256 aliasLen = aliasRoots.length;
+        for (uint256 i; i < aliasLen; i++) {
+            aliasNode = keccak256(abi.encodePacked(aliasRoots[i], labelHash));
+            if (
+                attestationRegistry.isAttested(
+                    aliasNode,
+                    role,
+                    claimant
+                )
+            ) {
+                return (true, aliasNode);
+            }
+        }
     }
 
     function _setENS(address ensAddr) internal {
@@ -1220,25 +1253,16 @@ contract IdentityRegistry is CoreOwnable2Step {
                 return (true, derivedNode, false, false);
             }
 
-            uint256 aliasLen = nodeRootNodeAliases.length;
-            for (uint256 i; i < aliasLen; i++) {
-                bytes32 aliasRoot = nodeRootNodeAliases[i];
-                bytes32 aliasNode = keccak256(
-                    abi.encodePacked(aliasRoot, labelHash)
-                );
-                if (
-                    attestationRegistry.isAttested(
-                        aliasNode,
-                        AttestationRegistry.Role.Node,
-                        claimant
-                    )
-                ) {
-                    emit ENSIdentityVerifier.OwnershipVerified(
-                        claimant,
-                        subdomain
-                    );
-                    return (true, aliasNode, false, false);
-                }
+            (bool aliasOk, bytes32 aliasNode) = _resolveAliasAttestation(
+                labelHash,
+                nodeRootNodeAliases,
+                AttestationRegistry.Role.Node,
+                claimant
+            );
+
+            if (aliasOk) {
+                emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
+                return (true, aliasNode, false, false);
             }
         }
 
@@ -1293,27 +1317,18 @@ contract IdentityRegistry is CoreOwnable2Step {
                 node = validatorNode;
                 ok = true;
             } else {
-                uint256 aliasLen = clubRootNodeAliases.length;
-                for (uint256 i; i < aliasLen; i++) {
-                    bytes32 aliasRoot = clubRootNodeAliases[i];
-                    bytes32 aliasNode = keccak256(
-                        abi.encodePacked(aliasRoot, labelHash)
+                (ok, node) = _resolveAliasAttestation(
+                    labelHash,
+                    clubRootNodeAliases,
+                    AttestationRegistry.Role.Validator,
+                    claimant
+                );
+
+                if (ok) {
+                    emit ENSIdentityVerifier.OwnershipVerified(
+                        claimant,
+                        subdomain
                     );
-                    if (
-                        attestationRegistry.isAttested(
-                            aliasNode,
-                            AttestationRegistry.Role.Validator,
-                            claimant
-                        )
-                    ) {
-                        emit ENSIdentityVerifier.OwnershipVerified(
-                            claimant,
-                            subdomain
-                        );
-                        node = aliasNode;
-                        ok = true;
-                        break;
-                    }
                 }
             }
         }

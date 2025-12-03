@@ -13,6 +13,8 @@ module.exports = {
         enabled: true,
         runs: 5
       },
+      // Enable the IR pipeline to avoid stack-too-deep errors in complex
+      // identity/alias verification flows.
       viaIR: true,
       metadata: {
         bytecodeHash: "none"
