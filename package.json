@@ -13,7 +13,7 @@
     "lint:sol": "solhint --max-warnings=0 'contracts/**/*.sol'",
     "ci:governance": "node scripts/check-governance-matrix.mjs",
     "test": "npm run compile && npm run test:truffle:ci",
-    "test:truffle:ci": "truffle test --migrate-none --compile-none",
+    "test:truffle:ci": "node scripts/run-truffle-tests.js",
     "test:hardhat": "hardhat test",
     "test:foundry": "scripts/test-foundry.sh",
     "test:ci": "npm test && npm run test:hardhat && npm run test:foundry",
@@ -36,6 +36,7 @@
     "hardhat": "^2.20.1",
     "solhint": "^6.0.1",
     "truffle": "^5.11.5",
-    "truffle-plugin-verify": "^0.6.7"
+    "truffle-plugin-verify": "^0.6.7",
+    "web3": "^4.16.0"
   }
 }
