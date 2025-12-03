@@ -4,6 +4,7 @@ const HDWalletProvider = require('@truffle/hdwallet-provider');
 const { MAINNET_RPC, SEPOLIA_RPC, DEPLOYER_PK, ETHERSCAN_API_KEY } = process.env;
 
 module.exports = {
+  test_directory: "./truffle/test",
   networks: {
     mainnet: {
       provider: () => new HDWalletProvider({ privateKeys: [DEPLOYER_PK], providerOrUrl: MAINNET_RPC }),
