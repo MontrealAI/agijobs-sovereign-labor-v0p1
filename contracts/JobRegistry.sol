@@ -117,6 +117,16 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         uint64 assignedAt;
     }
 
+    struct JobCreationParams {
+        uint96 stake;
+        uint32 feePctSnapshot;
+        uint64 deadline;
+        uint8 agentTypes;
+        uint256 reward;
+        bytes32 specHash;
+        string uri;
+    }
+
     uint256 private constant _STATE_OFFSET = 0;
     uint256 private constant _SUCCESS_OFFSET = 3;
     uint256 private constant _BURN_CONFIRMED_OFFSET = 4;
@@ -147,8 +157,45 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             (uint256(metadata.agentTypes) << _AGENT_TYPES_OFFSET) |
             (uint256(metadata.feePct) << _FEE_PCT_OFFSET) |
             (uint256(metadata.agentPct) << _AGENT_PCT_OFFSET) |
-            (uint256(metadata.deadline) << _DEADLINE_OFFSET) |
-            (uint256(metadata.assignedAt) << _ASSIGNED_AT_OFFSET);
+              (uint256(metadata.deadline) << _DEADLINE_OFFSET) |
+              (uint256(metadata.assignedAt) << _ASSIGNED_AT_OFFSET);
+    }
+
+    function _encodeJobMetadata(
+        uint8 agentTypes,
+        uint32 feePctSnapshot,
+        uint64 deadline
+    ) private pure returns (uint256) {
+        JobMetadata memory metadata = JobMetadata({
+            state: State.Created,
+            success: false,
+            burnConfirmed: false,
+            agentTypes: agentTypes,
+            feePct: feePctSnapshot,
+            agentPct: 100,
+            deadline: deadline,
+            assignedAt: 0
+        });
+
+        return _encodeMetadata(metadata);
+    }
+
+    function _storeJob(uint256 jobId, JobCreationParams memory params) private {
+        jobs[jobId] = Job({
+            employer: msg.sender,
+            agent: address(0),
+            reward: uint128(params.reward),
+            stake: params.stake,
+            burnReceiptAmount: 0,
+            uriHash: keccak256(bytes(params.uri)),
+            resultHash: bytes32(0),
+            specHash: params.specHash,
+            packedMetadata: _encodeJobMetadata(
+                params.agentTypes,
+                params.feePctSnapshot,
+                params.deadline
+            )
+        });
     }
 
     function _decodeMetadata(uint256 packed)
@@ -798,12 +845,18 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
     event AgentRootNodeUpdated(bytes32 node);
     event AgentMerkleRootUpdated(bytes32 root);
-    event ValidatorRootNodeUpdated(bytes32 node);
-    event ReputationProcessingMarked(uint256 indexed jobId);
-    event ValidatorMerkleRootUpdated(bytes32 root);
-    event AgentAuthCacheUpdated(address indexed agent, bool authorized);
-    event AgentAuthCacheDurationUpdated(uint256 duration);
-    event AgentAuthCacheVersionBumped(uint256 version);
+      event ValidatorRootNodeUpdated(bytes32 node);
+      event ReputationProcessingMarked(uint256 indexed jobId);
+      event ValidatorMerkleRootUpdated(bytes32 root);
+      event AgentAuthCacheUpdated(address indexed agent, bool authorized);
+      event AgentAuthCacheDurationUpdated(uint256 duration);
+      event AgentAuthCacheVersionBumped(uint256 version);
+      event ConfigurationAppliedPacked(
+          address indexed caller,
+          uint256 flagsBitmap,
+          uint256 acknowledgerUpdates,
+          uint256 ackModulesAdded
+      );
     /// @notice Emitted when an agent's ENS identity is verified during a job action.
     event AgentIdentityVerified(
         address indexed agent,
@@ -919,6 +972,37 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         bool setAgentAuthCacheDuration;
         uint256 agentAuthCacheDuration;
         bool bumpAgentAuthCacheVersion;
+    }
+
+    struct ConfigUpdateFlags {
+        bool pauserUpdated;
+        bool modulesUpdated;
+        bool pauserManagerUpdated;
+        bool identityRegistryUpdated;
+        bool disputeModuleUpdated;
+        bool validationModuleUpdated;
+        bool stakeManagerUpdated;
+        bool reputationModuleUpdated;
+        bool certificateNFTUpdated;
+        bool auditModuleUpdated;
+        bool feePoolUpdated;
+        bool taxPolicyUpdated;
+        bool treasuryUpdated;
+        bool jobStakeUpdated;
+        bool minAgentStakeUpdated;
+        bool feePctUpdated;
+        bool validatorRewardPctUpdated;
+        bool maxJobRewardUpdated;
+        bool maxJobDurationUpdated;
+        bool maxActiveJobsUpdated;
+        bool expirationGracePeriodUpdated;
+        bool agentRootUpdated;
+        bool agentMerkleUpdated;
+        bool validatorRootUpdated;
+        bool validatorMerkleUpdated;
+        bool agentAuthCacheDurationUpdated;
+        bool agentAuthCacheVersionBumped;
+        uint256 ackModulesAdded;
     }
 
     struct AcknowledgerUpdate {
@@ -1375,45 +1459,17 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             }
         }
 
-        bool pauserUpdated;
-        bool modulesUpdated;
-        bool pauserManagerUpdated;
-        bool identityRegistryUpdated;
-        bool disputeModuleUpdated;
-        bool validationModuleUpdated;
-        bool stakeManagerUpdated;
-        bool reputationModuleUpdated;
-        bool certificateNFTUpdated;
-        bool auditModuleUpdated;
-        bool feePoolUpdated;
-        bool taxPolicyUpdated;
-        bool treasuryUpdated;
-        bool jobStakeUpdated;
-        bool minAgentStakeUpdated;
-        bool feePctUpdated;
-        bool validatorRewardPctUpdated;
-        bool maxJobRewardUpdated;
-        bool maxJobDurationUpdated;
-        bool maxActiveJobsUpdated;
-        bool expirationGracePeriodUpdated;
-        bool agentRootUpdated;
-        bool agentMerkleUpdated;
-        bool validatorRootUpdated;
-        bool validatorMerkleUpdated;
-        bool agentAuthCacheDurationUpdated;
-        bool agentAuthCacheVersionBumped;
-
-        uint256 ackModulesAdded;
+        ConfigUpdateFlags memory flags;
 
         if (config.setPauser) {
             _setPauser(config.pauser);
-            pauserUpdated = true;
+            flags.pauserUpdated = true;
         }
 
         if (config.setPauserManager) {
             pauserManager = config.pauserManager;
             emit PauserManagerUpdated(config.pauserManager);
-            pauserManagerUpdated = true;
+            flags.pauserManagerUpdated = true;
         }
 
         if (config.setModuleBundle) {
@@ -1426,14 +1482,14 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                 bool feeChanged,
                 uint256 ackCount
             ) = _applyModuleBundle(config.modules, ackModules);
-            modulesUpdated = true;
-            validationModuleUpdated = validationChanged;
-            stakeManagerUpdated = stakeChanged;
-            reputationModuleUpdated = reputationChanged;
-            disputeModuleUpdated = disputeChanged;
-            certificateNFTUpdated = certificateChanged;
-            feePoolUpdated = feeChanged;
-            ackModulesAdded = ackCount;
+            flags.modulesUpdated = true;
+            flags.validationModuleUpdated = validationChanged;
+            flags.stakeManagerUpdated = stakeChanged;
+            flags.reputationModuleUpdated = reputationChanged;
+            flags.disputeModuleUpdated = disputeChanged;
+            flags.certificateNFTUpdated = certificateChanged;
+            flags.feePoolUpdated = feeChanged;
+            flags.ackModulesAdded = ackCount;
         } else if (ackModules.length > 0) {
             uint256 ackLen = ackModules.length;
             for (uint256 i; i < ackLen;) {
@@ -1442,129 +1498,129 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                     ++i;
                 }
             }
-            ackModulesAdded = ackLen;
-            modulesUpdated = true;
+            flags.ackModulesAdded = ackLen;
+            flags.modulesUpdated = true;
         }
 
         if (config.setIdentityRegistry) {
             _setIdentityRegistry(IIdentityRegistry(config.identityRegistry));
-            identityRegistryUpdated = true;
-            agentAuthCacheVersionBumped = true;
-            modulesUpdated = true;
+            flags.identityRegistryUpdated = true;
+            flags.agentAuthCacheVersionBumped = true;
+            flags.modulesUpdated = true;
         }
 
         if (config.setDisputeModule) {
             _setDisputeModule(IDisputeModule(config.disputeModule));
-            disputeModuleUpdated = true;
-            modulesUpdated = true;
+            flags.disputeModuleUpdated = true;
+            flags.modulesUpdated = true;
         }
 
         if (config.setValidationModule) {
             _setValidationModule(IValidationModule(config.validationModule));
-            validationModuleUpdated = true;
-            modulesUpdated = true;
+            flags.validationModuleUpdated = true;
+            flags.modulesUpdated = true;
         }
 
         if (config.setAuditModule) {
             _setAuditModule(IAuditModule(config.auditModule));
-            auditModuleUpdated = true;
-            modulesUpdated = true;
+            flags.auditModuleUpdated = true;
+            flags.modulesUpdated = true;
         }
 
         if (config.setStakeManager) {
             _setStakeManager(IStakeManager(config.stakeManager));
-            stakeManagerUpdated = true;
-            modulesUpdated = true;
+            flags.stakeManagerUpdated = true;
+            flags.modulesUpdated = true;
         }
 
         if (config.setReputationModule) {
             _setReputationEngine(IReputationEngine(config.reputationModule));
-            reputationModuleUpdated = true;
-            modulesUpdated = true;
+            flags.reputationModuleUpdated = true;
+            flags.modulesUpdated = true;
         }
 
         if (config.setCertificateNFT) {
             _setCertificateNFT(ICertificateNFT(config.certificateNFT));
-            certificateNFTUpdated = true;
-            modulesUpdated = true;
+            flags.certificateNFTUpdated = true;
+            flags.modulesUpdated = true;
         }
 
         if (config.setFeePool) {
             _setFeePool(IFeePool(config.feePool));
-            feePoolUpdated = true;
-            modulesUpdated = true;
+            flags.feePoolUpdated = true;
+            flags.modulesUpdated = true;
         }
 
         if (config.setTaxPolicy) {
             _setTaxPolicy(ITaxPolicy(config.taxPolicy));
-            taxPolicyUpdated = true;
+            flags.taxPolicyUpdated = true;
         }
 
         if (config.setTreasury) {
             _setTreasury(config.treasury);
-            treasuryUpdated = true;
+            flags.treasuryUpdated = true;
         }
 
         if (config.setJobStake) {
             _setJobStake(config.jobStake);
-            jobStakeUpdated = true;
+            flags.jobStakeUpdated = true;
         }
 
         if (config.setMinAgentStake) {
             _setMinAgentStake(config.minAgentStake);
-            minAgentStakeUpdated = true;
+            flags.minAgentStakeUpdated = true;
         }
 
         if (config.setMaxJobReward) {
             _setMaxJobReward(config.maxJobReward);
-            maxJobRewardUpdated = true;
+            flags.maxJobRewardUpdated = true;
         }
 
         if (config.setJobDurationLimit) {
             _setJobDurationLimit(config.jobDurationLimit);
-            maxJobDurationUpdated = true;
+            flags.maxJobDurationUpdated = true;
         }
 
         if (config.setMaxActiveJobsPerAgent) {
             _setMaxActiveJobsPerAgent(config.maxActiveJobsPerAgent);
-            maxActiveJobsUpdated = true;
+            flags.maxActiveJobsUpdated = true;
         }
 
         if (config.setExpirationGracePeriod) {
             _setExpirationGracePeriod(config.expirationGracePeriod);
-            expirationGracePeriodUpdated = true;
+            flags.expirationGracePeriodUpdated = true;
         }
 
         if (config.setAgentRootNode) {
             _setAgentRootNode(config.agentRootNode);
-            agentRootUpdated = true;
-            agentAuthCacheVersionBumped = true;
+            flags.agentRootUpdated = true;
+            flags.agentAuthCacheVersionBumped = true;
         }
 
         if (config.setAgentMerkleRoot) {
             _setAgentMerkleRoot(config.agentMerkleRoot);
-            agentMerkleUpdated = true;
-            agentAuthCacheVersionBumped = true;
+            flags.agentMerkleUpdated = true;
+            flags.agentAuthCacheVersionBumped = true;
         }
 
         if (config.setValidatorRootNode) {
             _setValidatorRootNode(config.validatorRootNode);
-            validatorRootUpdated = true;
+            flags.validatorRootUpdated = true;
         }
 
         if (config.setValidatorMerkleRoot) {
             _setValidatorMerkleRoot(config.validatorMerkleRoot);
-            validatorMerkleUpdated = true;
+            flags.validatorMerkleUpdated = true;
         }
 
         if (config.setAgentAuthCacheDuration) {
             _setAgentAuthCacheDuration(config.agentAuthCacheDuration);
-            agentAuthCacheDurationUpdated = true;
+            flags.agentAuthCacheDurationUpdated = true;
         }
 
         if (config.bumpAgentAuthCacheVersion) {
             _bumpAgentAuthCacheVersionInternal();
-            agentAuthCacheVersionBumped = true;
+            flags.agentAuthCacheVersionBumped = true;
         }
 
         if (config.setFeePct || config.setValidatorRewardPct) {
@@ -1577,42 +1633,48 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                 config.setFeePct,
                 config.setValidatorRewardPct
             );
-            if (feeChanged) feePctUpdated = true;
-            if (validatorChanged) validatorRewardPctUpdated = true;
+            if (feeChanged) flags.feePctUpdated = true;
+            if (validatorChanged) flags.validatorRewardPctUpdated = true;
         }
 
-        emit ConfigurationApplied(
-            msg.sender,
-            pauserUpdated,
-            pauserManagerUpdated,
-            modulesUpdated,
-            identityRegistryUpdated,
-            disputeModuleUpdated,
-            validationModuleUpdated,
-            stakeManagerUpdated,
-            reputationModuleUpdated,
-            certificateNFTUpdated,
-            auditModuleUpdated,
-            feePoolUpdated,
-            taxPolicyUpdated,
-            treasuryUpdated,
-            jobStakeUpdated,
-            minAgentStakeUpdated,
-            feePctUpdated,
-            validatorRewardPctUpdated,
-            maxJobRewardUpdated,
-            maxJobDurationUpdated,
-            maxActiveJobsUpdated,
-            expirationGracePeriodUpdated,
-            agentRootUpdated,
-            agentMerkleUpdated,
-            validatorRootUpdated,
-            validatorMerkleUpdated,
-            agentAuthCacheDurationUpdated,
-            agentAuthCacheVersionBumped,
-            ackUpdateLen,
-            ackModulesAdded
-        );
+        _emitConfigurationApplied(flags, ackUpdateLen);
+    }
+
+    function _emitConfigurationApplied(ConfigUpdateFlags memory flags, uint256 ackUpdateLen)
+        internal
+    {
+        uint256 flagsBitmap = _packConfigFlags(flags);
+        emit ConfigurationAppliedPacked(msg.sender, flagsBitmap, ackUpdateLen, flags.ackModulesAdded);
+    }
+
+    function _packConfigFlags(ConfigUpdateFlags memory flags) private pure returns (uint256 bitmap) {
+        bitmap |= flags.pauserUpdated ? 1 << 0 : 0;
+        bitmap |= flags.modulesUpdated ? 1 << 1 : 0;
+        bitmap |= flags.pauserManagerUpdated ? 1 << 2 : 0;
+        bitmap |= flags.identityRegistryUpdated ? 1 << 3 : 0;
+        bitmap |= flags.disputeModuleUpdated ? 1 << 4 : 0;
+        bitmap |= flags.validationModuleUpdated ? 1 << 5 : 0;
+        bitmap |= flags.stakeManagerUpdated ? 1 << 6 : 0;
+        bitmap |= flags.reputationModuleUpdated ? 1 << 7 : 0;
+        bitmap |= flags.certificateNFTUpdated ? 1 << 8 : 0;
+        bitmap |= flags.auditModuleUpdated ? 1 << 9 : 0;
+        bitmap |= flags.feePoolUpdated ? 1 << 10 : 0;
+        bitmap |= flags.taxPolicyUpdated ? 1 << 11 : 0;
+        bitmap |= flags.treasuryUpdated ? 1 << 12 : 0;
+        bitmap |= flags.jobStakeUpdated ? 1 << 13 : 0;
+        bitmap |= flags.minAgentStakeUpdated ? 1 << 14 : 0;
+        bitmap |= flags.feePctUpdated ? 1 << 15 : 0;
+        bitmap |= flags.validatorRewardPctUpdated ? 1 << 16 : 0;
+        bitmap |= flags.maxJobRewardUpdated ? 1 << 17 : 0;
+        bitmap |= flags.maxJobDurationUpdated ? 1 << 18 : 0;
+        bitmap |= flags.maxActiveJobsUpdated ? 1 << 19 : 0;
+        bitmap |= flags.expirationGracePeriodUpdated ? 1 << 20 : 0;
+        bitmap |= flags.agentRootUpdated ? 1 << 21 : 0;
+        bitmap |= flags.agentMerkleUpdated ? 1 << 22 : 0;
+        bitmap |= flags.validatorRootUpdated ? 1 << 23 : 0;
+        bitmap |= flags.validatorMerkleUpdated ? 1 << 24 : 0;
+        bitmap |= flags.agentAuthCacheDurationUpdated ? 1 << 25 : 0;
+        bitmap |= flags.agentAuthCacheVersionBumped ? 1 << 26 : 0;
     }
 
     // ---------------------------------------------------------------------
@@ -1658,44 +1720,44 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             nextJobId++;
         }
         jobId = nextJobId;
-        uint32 feePctSnapshot = uint32(feePct);
-        bytes32 uriHash = keccak256(bytes(uri));
-        JobMetadata memory metadata = JobMetadata({
-            state: State.Created,
-            success: false,
-            burnConfirmed: false,
-            agentTypes: agentTypes,
-            feePct: feePctSnapshot,
-            agentPct: 100,
-            deadline: deadline,
-            assignedAt: 0
-        });
-        jobs[jobId] = Job({
-            employer: msg.sender,
-            agent: address(0),
-            reward: uint128(reward),
+        JobCreationParams memory params = JobCreationParams({
             stake: jobStake,
-            burnReceiptAmount: 0,
-            uriHash: uriHash,
-            resultHash: bytes32(0),
+            feePctSnapshot: uint32(feePct),
+            deadline: deadline,
+            agentTypes: agentTypes,
+            reward: reward,
             specHash: specHash,
-            packedMetadata: _encodeMetadata(metadata)
+            uri: uri
         });
-        uint256 fee;
-        if (address(stakeManager) != address(0) && reward > 0) {
-            fee = (reward * feePctSnapshot) / 100;
-            stakeManager.lockReward(bytes32(jobId), msg.sender, reward + fee);
-            emit JobFunded(jobId, msg.sender, reward, fee);
+        _storeJob(jobId, params);
+        uint256 fee = _fundJob(jobId, params);
+        _emitJobCreated(jobId, fee, params);
+    }
+
+    function _fundJob(uint256 jobId, JobCreationParams memory params) private returns (uint256 fee) {
+        if (address(stakeManager) == address(0) || params.reward == 0) {
+            return 0;
         }
+
+        fee = (params.reward * params.feePctSnapshot) / 100;
+        stakeManager.lockReward(bytes32(jobId), msg.sender, params.reward + fee);
+        emit JobFunded(jobId, msg.sender, params.reward, fee);
+    }
+
+    function _emitJobCreated(
+        uint256 jobId,
+        uint256 fee,
+        JobCreationParams memory params
+    ) private {
         emit JobCreated(
             jobId,
             msg.sender,
             address(0),
-            reward,
-            uint256(jobStake),
+            params.reward,
+            uint256(params.stake),
             fee,
-            specHash,
-            uri
+            params.specHash,
+            params.uri
         );
     }
 
@@ -1769,54 +1831,27 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         }
         if (bytes(subdomain).length == 0) revert EmptySubdomain();
         if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
-        bool authorized =
-            agentAuthCache[msg.sender] &&
-            agentAuthExpiry[msg.sender] > block.timestamp &&
-            agentAuthVersion[msg.sender] == agentAuthCacheVersion;
-        string memory cachedSubdomain = agentSubdomains[msg.sender];
-        bool hasCached = bytes(cachedSubdomain).length != 0;
-        bytes32 providedHash = keccak256(bytes(subdomain));
-        bytes32 cachedHash;
-        if (hasCached) {
-            cachedHash = keccak256(bytes(cachedSubdomain));
-        }
-        bool cachedMatches = hasCached && cachedHash == providedHash;
-        if (authorized && !cachedMatches) {
-            authorized = false;
-        }
-        bytes32 node;
-        bool viaWrapper;
-        bool viaMerkle;
-        if (!authorized) {
-            (authorized, node, viaWrapper, viaMerkle) = identityRegistry
-                .verifyAgent(msg.sender, subdomain, proof);
-            if (authorized) {
-                emit AgentIdentityVerified(
-                    msg.sender,
-                    node,
-                    subdomain,
-                    viaWrapper,
-                    viaMerkle
-                );
-                agentAuthCache[msg.sender] = true;
-                agentAuthExpiry[msg.sender] =
-                    block.timestamp + agentAuthCacheDuration;
-                agentAuthVersion[msg.sender] = agentAuthCacheVersion;
-                if (!cachedMatches) {
-                    agentSubdomains[msg.sender] = subdomain;
-                    emit AgentSubdomainUpdated(msg.sender, subdomain);
-                    cachedMatches = true;
-                }
-            }
-        }
-        if (!authorized) revert NotAuthorizedAgent();
+        if (!_ensureAgentAuthorization(subdomain, proof)) revert NotAuthorizedAgent();
+        _finalizeApplication(jobId, job, subdomain);
+    }
+
+    function applyForJob(
+        uint256 jobId,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) external nonReentrant {
+        _applyForJob(jobId, subdomain, proof);
+    }
+
+    function _finalizeApplication(
+        uint256 jobId,
+        Job storage job,
+        string calldata subdomain
+    ) private {
         uint8 agentTypes = _getAgentTypes(job);
         if (agentTypes > 0) {
-            IIdentityRegistry.AgentType aType = identityRegistry.getAgentType(
-                msg.sender
-            );
-            if ((agentTypes & (1 << uint8(aType))) == 0)
-                revert AgentTypeNotAllowed();
+            IIdentityRegistry.AgentType aType = identityRegistry.getAgentType(msg.sender);
+            if ((agentTypes & (1 << uint8(aType))) == 0) revert AgentTypeNotAllowed();
         }
         if (address(reputationEngine) != address(0)) {
             reputationEngine.onApply(msg.sender);
@@ -1858,14 +1893,6 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         activeJobs[msg.sender] = active + 1;
         emit AgentAssigned(jobId, msg.sender, subdomain);
         emit JobApplied(jobId, msg.sender, subdomain);
-    }
-
-    function applyForJob(
-        uint256 jobId,
-        string calldata subdomain,
-        bytes32[] calldata proof
-    ) external nonReentrant {
-        _applyForJob(jobId, subdomain, proof);
     }
 
 
@@ -1942,62 +1969,9 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         }
         if (bytes(subdomain).length == 0) revert EmptySubdomain();
         if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
-        string memory cachedSubdomain = agentSubdomains[msg.sender];
-        bool hasCached = bytes(cachedSubdomain).length != 0;
-        bytes32 cachedHash;
-        if (hasCached) {
-            cachedHash = keccak256(bytes(cachedSubdomain));
-        }
-        bytes32 providedHash = keccak256(bytes(subdomain));
-        bool cachedMatches = hasCached && cachedHash == providedHash;
-        (bool authorized, bytes32 node, bool viaWrapper, bool viaMerkle) =
-            identityRegistry.verifyAgent(msg.sender, subdomain, proof);
-        if (!authorized) revert NotAuthorizedAgent();
-        emit AgentIdentityVerified(
-            msg.sender,
-            node,
-            subdomain,
-            viaWrapper,
-            viaMerkle
-        );
-        if (!cachedMatches) {
-            agentSubdomains[msg.sender] = subdomain;
-            emit AgentSubdomainUpdated(msg.sender, subdomain);
-        }
-        uint8 agentTypes = _getAgentTypes(job);
-        if (agentTypes > 0) {
-            IIdentityRegistry.AgentType aType = identityRegistry.getAgentType(
-                msg.sender
-            );
-            if ((agentTypes & (1 << uint8(aType))) == 0)
-                revert AgentTypeNotAllowed();
-        }
-        job.resultHash = resultHash;
-        _setState(job, State.Submitted);
-        emit ResultSubmitted(jobId, msg.sender, resultHash, resultURI, subdomain);
-        emit JobSubmitted(jobId, msg.sender, resultHash, resultURI, subdomain);
-        if (address(validationModule) != address(0)) {
-            uint256 entropy = uint256(
-                keccak256(
-                    abi.encodePacked(
-                        jobId,
-                        msg.sender,
-                        resultHash,
-                        block.timestamp,
-                        block.prevrandao,
-                        blockhash(block.number - 1)
-                    )
-                )
-            );
-            (bool burnRequired, bool burnSatisfied) = burnEvidenceStatus(jobId);
-            if (burnRequired && !burnSatisfied) {
-                pendingValidationEntropy[jobId] = entropy;
-                validationStartPending[jobId] = true;
-                emit ValidationStartPending(jobId);
-            } else {
-                _startValidation(jobId, entropy);
-            }
-        }
+        _verifyAndCacheAgent(subdomain, proof);
+        _enforceAgentType(job);
+        _recordSubmission(jobId, job, resultHash, resultURI, subdomain);
     }
 
     /// @notice Acknowledge the tax policy and submit work in one call.
@@ -2010,6 +1984,115 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     ) external {
         _acknowledge(msg.sender);
         submit(jobId, resultHash, resultURI, subdomain, proof);
+    }
+
+    function _verifyAndCacheAgent(string calldata subdomain, bytes32[] calldata proof) internal {
+        (bool authorized, bytes32 node, bool viaWrapper, bool viaMerkle) =
+            identityRegistry.verifyAgent(msg.sender, subdomain, proof);
+        if (!authorized) revert NotAuthorizedAgent();
+
+        emit AgentIdentityVerified(msg.sender, node, subdomain, viaWrapper, viaMerkle);
+
+        string memory cachedSubdomain = agentSubdomains[msg.sender];
+        if (
+            bytes(cachedSubdomain).length == 0
+                || keccak256(bytes(cachedSubdomain)) != keccak256(bytes(subdomain))
+        ) {
+            agentSubdomains[msg.sender] = subdomain;
+            emit AgentSubdomainUpdated(msg.sender, subdomain);
+        }
+    }
+
+    function _cachedSubdomainMatch(string calldata subdomain)
+        private
+        view
+        returns (bool hasCached, bool matches)
+    {
+        string memory cachedSubdomain = agentSubdomains[msg.sender];
+        if (bytes(cachedSubdomain).length == 0) {
+            return (false, false);
+        }
+
+        hasCached = true;
+        matches = keccak256(bytes(cachedSubdomain)) == keccak256(bytes(subdomain));
+    }
+
+    function _ensureAgentAuthorization(string calldata subdomain, bytes32[] calldata proof)
+        private
+        returns (bool authorized)
+    {
+        authorized =
+            agentAuthCache[msg.sender] &&
+            agentAuthExpiry[msg.sender] > block.timestamp &&
+            agentAuthVersion[msg.sender] == agentAuthCacheVersion;
+
+        (, bool cachedMatches) = _cachedSubdomainMatch(subdomain);
+        if (authorized && !cachedMatches) {
+            authorized = false;
+        }
+        if (!authorized) {
+            (bool verified, bytes32 node, bool viaWrapper, bool viaMerkle) = identityRegistry
+                .verifyAgent(msg.sender, subdomain, proof);
+            if (!verified) return false;
+
+            emit AgentIdentityVerified(msg.sender, node, subdomain, viaWrapper, viaMerkle);
+            agentAuthCache[msg.sender] = true;
+            agentAuthExpiry[msg.sender] = block.timestamp + agentAuthCacheDuration;
+            agentAuthVersion[msg.sender] = agentAuthCacheVersion;
+
+            if (!cachedMatches) {
+                agentSubdomains[msg.sender] = subdomain;
+                emit AgentSubdomainUpdated(msg.sender, subdomain);
+            }
+
+            authorized = true;
+        }
+    }
+
+    function _enforceAgentType(Job storage job) internal view {
+        uint8 agentTypes = _getAgentTypes(job);
+        if (agentTypes == 0) return;
+
+        IIdentityRegistry.AgentType aType = identityRegistry.getAgentType(msg.sender);
+        if ((agentTypes & (1 << uint8(aType))) == 0) revert AgentTypeNotAllowed();
+    }
+
+    function _recordSubmission(
+        uint256 jobId,
+        Job storage job,
+        bytes32 resultHash,
+        string calldata resultURI,
+        string calldata subdomain
+    ) internal {
+        job.resultHash = resultHash;
+        _setState(job, State.Submitted);
+        emit ResultSubmitted(jobId, msg.sender, resultHash, resultURI, subdomain);
+        emit JobSubmitted(jobId, msg.sender, resultHash, resultURI, subdomain);
+
+        if (address(validationModule) == address(0)) {
+            return;
+        }
+
+        uint256 entropy = uint256(
+            keccak256(
+                abi.encodePacked(
+                    jobId,
+                    msg.sender,
+                    resultHash,
+                    block.timestamp,
+                    block.prevrandao,
+                    blockhash(block.number - 1)
+                )
+            )
+        );
+        (bool burnRequired, bool burnSatisfied) = burnEvidenceStatus(jobId);
+        if (burnRequired && !burnSatisfied) {
+            pendingValidationEntropy[jobId] = entropy;
+            validationStartPending[jobId] = true;
+            emit ValidationStartPending(jobId);
+        } else {
+            _startValidation(jobId, entropy);
+        }
     }
 
     /// @notice Record job outcome after validation.
