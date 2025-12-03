@@ -19,9 +19,20 @@ const boolFromEnv = (value, defaultValue) => {
   return ["true", "1", true].includes(value?.toString().toLowerCase());
 };
 
-const useViaIR = boolFromEnv(SOLC_VIA_IR, true);
-const optimizerEnabled = boolFromEnv(SOLC_OPTIMIZER, useViaIR);
+let useViaIR = boolFromEnv(SOLC_VIA_IR, true);
+let optimizerEnabled = boolFromEnv(SOLC_OPTIMIZER, useViaIR);
 const optimizerRuns = Number(SOLC_OPTIMIZER_RUNS || 5);
+
+if (!useViaIR) {
+  console.warn(
+    "SOLC_VIA_IR=false produces stack-too-deep errors in ValidationModule; forcing viaIR on for reliable builds."
+  );
+  useViaIR = true;
+  if (!optimizerEnabled) {
+    optimizerEnabled = true;
+    console.warn("Solc optimizer enabled to keep viaIR stable.");
+  }
+}
 
 module.exports = {
   contracts_build_directory: "./build/contracts",
