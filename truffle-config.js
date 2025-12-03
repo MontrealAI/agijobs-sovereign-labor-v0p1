@@ -1,4 +1,5 @@
 require('dotenv').config();
+const ganache = require('ganache');
 const HDWalletProvider = require('@truffle/hdwallet-provider');
 
 const {
@@ -27,6 +28,32 @@ module.exports = {
   contracts_build_directory: "./build/contracts",
   test_directory: "./truffle/test",
   networks: {
+    development: {
+      provider: () => ganache.provider({
+        logging: { quiet: true },
+        chain: { chainId: 1337, networkId: 1337 },
+        wallet: {
+          mnemonic: "test test test test test test test test test test test junk",
+          totalAccounts: 10,
+          defaultBalance: 1000
+        }
+      }),
+      network_id: 1337,
+      from: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+    },
+    test: {
+      provider: () => ganache.provider({
+        logging: { quiet: true },
+        chain: { chainId: 1337, networkId: 1337 },
+        wallet: {
+          mnemonic: "test test test test test test test test test test test junk",
+          totalAccounts: 10,
+          defaultBalance: 1000
+        }
+      }),
+      network_id: 1337,
+      from: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+    },
     mainnet: {
       provider: () => new HDWalletProvider({ privateKeys: [DEPLOYER_PK], providerOrUrl: MAINNET_RPC }),
       network_id: 1, confirmations: 2, timeoutBlocks: 500, skipDryRun: true
