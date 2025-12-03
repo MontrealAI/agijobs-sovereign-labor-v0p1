@@ -39,6 +39,7 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
     error BaseURIUnset();
     error BaseURIAlreadyLocked();
     error EtherNotAccepted();
+    error StakeManagerNotConfigured();
 
     address public jobRegistry;
     mapping(uint256 => bytes32) public tokenHashes;
@@ -73,6 +74,13 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
 
     modifier onlyJobRegistry() {
         if (msg.sender != jobRegistry) revert NotJobRegistry(msg.sender);
+        _;
+    }
+
+    modifier whenStakeManagerConfigured() {
+        if (address(stakeManager) == address(0) || address(stakeManager).code.length == 0) {
+            revert StakeManagerNotConfigured();
+        }
         _;
     }
 
@@ -169,7 +177,11 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
         return string.concat(_baseTokenURI, tokenId.toString());
     }
 
-    function list(uint256 tokenId, uint256 price) external whenNotPaused {
+    function list(uint256 tokenId, uint256 price)
+        external
+        whenNotPaused
+        whenStakeManagerConfigured
+    {
         address tokenOwner = ownerOf(tokenId);
         if (tokenOwner != msg.sender) revert NotTokenOwner();
         if (price == 0) revert InvalidPrice();
@@ -185,7 +197,12 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
     }
 
     /// @notice Purchase a listed certificate using 18‑decimal $AGIALPHA tokens.
-    function purchase(uint256 tokenId) external nonReentrant whenNotPaused {
+    function purchase(uint256 tokenId)
+        external
+        nonReentrant
+        whenNotPaused
+        whenStakeManagerConfigured
+    {
         Listing storage listing = listings[tokenId];
         if (!listing.active) revert NotListed();
         address seller = listing.seller;
