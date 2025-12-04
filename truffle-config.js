@@ -1,5 +1,6 @@
 require('dotenv').config();
 const HDWalletProvider = require('@truffle/hdwallet-provider');
+const ganache = require('ganache');
 
 const {
   MAINNET_RPC,
@@ -10,6 +11,8 @@ const {
   SOLC_OPTIMIZER,
   SOLC_OPTIMIZER_RUNS
 } = process.env;
+
+const GANACHE_CHAIN_ID = Number(process.env.GANACHE_NETWORK_ID || 1337);
 
 const boolFromEnv = (value, defaultValue) => {
   if (value === undefined || value === null || value === "") {
@@ -34,6 +37,18 @@ module.exports = {
   contracts_build_directory: "./build/contracts",
   test_directory: "./truffle/test",
   networks: {
+    development: {
+      provider: () => ganache.provider({
+        logging: { quiet: true },
+        wallet: { deterministic: true },
+        chain: {
+          chainId: GANACHE_CHAIN_ID,
+          networkId: GANACHE_CHAIN_ID,
+          blockGasLimit: 12_000_000
+        }
+      }),
+      network_id: GANACHE_CHAIN_ID
+    },
     mainnet: {
       provider: () => new HDWalletProvider({ privateKeys: [DEPLOYER_PK], providerOrUrl: MAINNET_RPC }),
       network_id: 1, confirmations: 2, timeoutBlocks: 500, skipDryRun: true
