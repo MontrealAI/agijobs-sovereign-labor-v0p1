@@ -6,7 +6,7 @@
 [![PRs ➜ Checks Required](https://img.shields.io/badge/PR%20Gate-All%20Checks%20Required-ff7b72?style=for-the-badge&logo=githubactions)](#continuous-integration--branch-enforcement)
 ![Node 20 LTS](https://img.shields.io/badge/Node.js-20.x-43853d?logo=node.js&style=for-the-badge)
 ![Truffle 5.11](https://img.shields.io/badge/Truffle-5.11.x-5e464d?logo=truffle&style=for-the-badge)
-![Solidity 0.8.30](https://img.shields.io/badge/Solidity-0.8.30-363636?logo=solidity&style=for-the-badge)
+![Solidity 0.8.25](https://img.shields.io/badge/Solidity-0.8.25-363636?logo=solidity&style=for-the-badge)
 ![MIT Licensed](https://img.shields.io/badge/License-MIT-0A7CA5?style=for-the-badge)
 
 > This codex is the ignition key for the Sovereign Labor lattice—the field manual for the machine that bends labour markets around its operator with clinical precision.
@@ -95,7 +95,7 @@ Every module orbits the owner’s Safe. Configuration, pausing, treasury routing
 | [`deploy/README.md`](./README.md) | This deployment codex—keep it versioned with every release. |
 | [`scripts/`](../scripts) | Automation utilities (`verify-artifacts.js`, `check-governance-matrix.mjs`, `write-compile-summary.js`, `owner-set-treasury.js`). |
 | [`manifests/`](../manifests) | Deployment evidence (addresses, transactions, toolchain digests). |
-| [`truffle-config.js`](../truffle-config.js) | Compiler, optimizer, and network configuration (Solidity 0.8.30 viaIR, Node 20, HD wallet provider). |
+| [`truffle-config.js`](../truffle-config.js) | Compiler, optimizer, and network configuration (Solidity 0.8.25 viaIR, Node 20, HD wallet provider). |
 | [`.github/workflows/`](../.github/workflows) | GitHub Actions (`Sovereign Compile`, `Branch Gatekeeper`) enforcing lint, compile, governance, and workflow hygiene. |
 | [`truffle/util/`](../truffle/util) | Shared helpers for CLI ergonomics and manifest management. |
 

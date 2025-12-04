@@ -4,7 +4,7 @@
 [![Branch Gatekeeper](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml/badge.svg?branch=main)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml)
 [![Node.js 20.x](https://img.shields.io/badge/Node.js-20.x-339933?logo=node.js&logoColor=white&style=for-the-badge)](https://nodejs.org/)
 [![Truffle Suite](https://img.shields.io/badge/Truffle-5.11-5E464D?logo=truffle&logoColor=white&style=for-the-badge)](https://trufflesuite.com/)
-[![Solidity 0.8.30](https://img.shields.io/badge/Solidity-0.8.30-363636?logo=solidity&logoColor=white&style=for-the-badge)](https://docs.soliditylang.org/)
+[![Solidity 0.8.25](https://img.shields.io/badge/Solidity-0.8.25-363636?logo=solidity&logoColor=white&style=for-the-badge)](https://docs.soliditylang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-0aa6d6?style=for-the-badge)](../LICENSE)
 [![$AGIALPHA Core](https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-5522aa?style=for-the-badge)](https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa)
 
@@ -89,7 +89,7 @@ npm run test:foundry
 | Script | Surface | Guarantees | Usage |
 | --- | --- | --- | --- |
 | [`check-branch-name.mjs`](check-branch-name.mjs) | Branch hygiene | Enforces `main`, `develop`, or `<type>/<descriptor>` with curated types (`feature`, `release`, `docs`, `dependabot`, `renovate`, `codex`, …). Writes GitHub Step Summaries and fails fast on invalid characters. | `node scripts/check-branch-name.mjs "feature/treasury-upgrade"` |
-| [`verify-artifacts.js`](verify-artifacts.js) | Compile surface | Confirms Truffle artifacts exist for production contracts, contain non-empty bytecode, were compiled with `solc 0.8.30`, and are fresher than their Solidity sources. Emits a Markdown size table for gas analysts. | `node scripts/verify-artifacts.js` |
+| [`verify-artifacts.js`](verify-artifacts.js) | Compile surface | Confirms Truffle artifacts exist for production contracts, contain non-empty bytecode, were compiled with `solc 0.8.25`, and are fresher than their Solidity sources. Emits a Markdown size table for gas analysts. | `node scripts/verify-artifacts.js` |
 | [`write-compile-summary.js`](write-compile-summary.js) | Toolchain telemetry | Captures Node.js, npm, Truffle, and Solidity versions plus the evaluated branch and runner OS. Appends the information to the job summary for audit trails. | `node scripts/write-compile-summary.js` *(executed automatically in CI)* |
 | [`check-governance-matrix.mjs`](check-governance-matrix.mjs) | Governance lattice | Parses `build/contracts` ABIs to ensure every owner + pauser function remains available on `SystemPause`, `StakeManager`, `JobRegistry`, `ValidationModule`, `DisputeModule`, `PlatformRegistry`, `FeePool`, `ReputationEngine`, and `ArbitratorCommittee`. Verifies `$AGIALPHA` constants and decimals (`18`) match [`contracts/Constants.sol`](../contracts/Constants.sol) and [`deploy/config.mainnet.json`](../deploy/config.mainnet.json). | `node scripts/check-governance-matrix.mjs` *(after `npm run compile`)* |
 | [`deploy/load-config.js`](deploy/load-config.js) | Deployment invariants | Shared loader used by Hardhat and Foundry autopilots. Validates chain ID, `$AGIALPHA` metadata, basis-point math, ENS hashes, and identity/treasury wiring before any transactions broadcast. | Reused automatically by `npm run deploy:hardhat:mainnet` |

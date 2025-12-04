@@ -4,7 +4,7 @@
 [![Branch Gatekeeper](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml/badge.svg?branch=main&style=for-the-badge&label=Branch%20Gatekeeper)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml)
 ![Node.js 20 LTS](https://img.shields.io/badge/Node.js-20.x-43853d?logo=node.js&style=for-the-badge)
 ![Truffle 5.11.5](https://img.shields.io/badge/Truffle-5.11.5-5e464d?logo=truffle&style=for-the-badge)
-![Solidity 0.8.30](https://img.shields.io/badge/Solidity-0.8.30-363636?logo=solidity&style=for-the-badge)
+![Solidity 0.8.25](https://img.shields.io/badge/Solidity-0.8.25-363636?logo=solidity&style=for-the-badge)
 [![\$AGIALPHA Spine](https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-5522aa?style=for-the-badge)](https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa)
 [![MIT Licensed](https://img.shields.io/badge/License-MIT-0A7CA5?style=for-the-badge)](../LICENSE)
 
@@ -84,7 +84,7 @@ graph TD
     classDef vault fill:#ffba08,color:#000;
 ```
 
-Networks are resolved from [`truffle-config.js`](../truffle-config.js) and mirror the CI toolchain: Solidity 0.8.30 with `viaIR`, optimizer runs set to 5, metadata hash stripped, HD wallet provider sourced from `.env`.
+Networks are resolved from [`truffle-config.js`](../truffle-config.js) and mirror the CI toolchain: Solidity 0.8.25 with `viaIR`, optimizer runs set to 5, metadata hash stripped, HD wallet provider sourced from `.env`.
 
 ---
 
@@ -95,7 +95,7 @@ Networks are resolved from [`truffle-config.js`](../truffle-config.js) and mirro
 | Node.js | 20.x LTS (`actions/setup-node@v4`) | Matches CI runners and ensures deterministic `npm ci`.
 | npm | 10.x (bundled with Node 20) | Required for lockfile fidelity.
 | Truffle | 5.11.5 | Locked in CI (`package-lock.json`) and surfaced in `node scripts/write-compile-summary.js`.
-| Solidity | 0.8.30 (`viaIR`, optimizer runs 5) | Defined in [`truffle-config.js`](../truffle-config.js) to balance bytecode size with deterministic output.
+| Solidity | 0.8.25 (`viaIR`, optimizer runs 5) | Defined in [`truffle-config.js`](../truffle-config.js) to balance bytecode size with deterministic output.
 | Solhint | 6.x | Enforces zero-warning lint policy through `npm run lint:sol`.
 | HD Wallet Provider | `@truffle/hdwallet-provider` | Loads `DEPLOYER_PK` against `MAINNET_RPC` / `SEPOLIA_RPC` without leaking secrets.
 

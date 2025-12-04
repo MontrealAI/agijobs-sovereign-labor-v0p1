@@ -638,7 +638,7 @@ Maintain an immutable dossier for each release:
 - Store artifacts in cold storage plus an encrypted vault accessible to owner and guardian signers.
 
 ## Appendix
-- [`foundry.toml`](../foundry.toml) – Shared compiler configuration (Solidity 0.8.30, viaIR enabled).
+- [`foundry.toml`](../foundry.toml) – Shared compiler configuration (Solidity 0.8.25, viaIR enabled).
 - [`foundry/script/DeployMainnet.s.sol`](script/DeployMainnet.s.sol) – Forge deployment autopilot (mirrors Truffle).
 - [`foundry/test`](test) – Governance invariants, fuzz harnesses, scenario scripts.
 - [`docs/operations/owner-control.md`](../docs/operations/owner-control.md) – Exhaustive matrix of setter authority.

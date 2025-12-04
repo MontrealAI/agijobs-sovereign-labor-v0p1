@@ -7,7 +7,7 @@
 [![AGIALPHA Spine](https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-5522aa?style=for-the-badge)](https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa)
 ![Node 20 LTS](https://img.shields.io/badge/Node.js-20.x-43853d?logo=node.js&style=for-the-badge)
 ![Truffle 5.11](https://img.shields.io/badge/Truffle-5.11.x-5e464d?logo=truffle&style=for-the-badge)
-![Solidity 0.8.30](https://img.shields.io/badge/Solidity-0.8.30-363636?logo=solidity&style=for-the-badge)
+![Solidity 0.8.25](https://img.shields.io/badge/Solidity-0.8.25-363636?logo=solidity&style=for-the-badge)
 ![MIT Licensed](https://img.shields.io/badge/License-MIT-0A7CA5?style=for-the-badge)
 
 > This codex is the owner’s flight deck for the Sovereign Labor lattice—the operational choreography that lets one Safe govern staking, disputes, attestations, and treasury with the calm certainty of an unstoppable machine.
@@ -108,7 +108,7 @@ Everything flows through the owner’s Safe: migrations only complete when every
 | Requirement | Why | Verification |
 | --- | --- | --- |
 | Node 20.x & npm 10.x | Matches GitHub Actions and `package-lock.json`. | `node --version`, `npm --version` |
-| Truffle 5.11.x | Aligns with `truffle-config.js` (`solc 0.8.30`, viaIR, optimizer runs = 5). | `npx truffle version` |
+| Truffle 5.11.x | Aligns with `truffle-config.js` (`solc 0.8.25`, viaIR, optimizer runs = 5). | `npx truffle version` |
 | Network access | `MAINNET_RPC` & `SEPOLIA_RPC` endpoints for deployments and dry-runs. | `cast chain --rpc $MAINNET_RPC` |
 | Deployer key | `DEPLOYER_PK` exported with gas budget to execute all migrations. | `cast balance $DEPLOYER --rpc $MAINNET_RPC` |
 | Etherscan API | Optional but required for `npm run verify:mainnet`. | `echo $ETHERSCAN_API_KEY | wc -c` |
