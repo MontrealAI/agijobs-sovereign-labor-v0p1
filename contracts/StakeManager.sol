@@ -2668,127 +2668,171 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     // slashing logic
     // ---------------------------------------------------------------
 
+    struct SlashContext {
+        uint256 staked;
+        uint256 newStake;
+        uint256 validatorTarget;
+        uint256 employerShare;
+        uint256 treasuryShare;
+        uint256 operatorShare;
+        uint256 burnShare;
+    }
+
     /// @dev internal slashing routine used by dispute and job slashing
     function _slash(address user, Role role, uint256 amount, address recipient, address[] memory validators) internal {
         if (role > Role.Platform) revert InvalidRole();
         if (validators.length > MAX_VALIDATORS) revert TooManyValidators();
-        uint256 staked = stakes[user][role];
-        if (staked < amount) revert InsufficientStake();
+
+        SlashContext memory ctx;
+        ctx.staked = stakes[user][role];
+        if (ctx.staked < amount) revert InsufficientStake();
+
         _validateSlashConfig();
-
         (
-            uint256 validatorTarget,
-            uint256 employerShare,
-            uint256 treasuryShare,
-            uint256 operatorShare,
-            uint256 burnShare
+            ctx.validatorTarget,
+            ctx.employerShare,
+            ctx.treasuryShare,
+            ctx.operatorShare,
+            ctx.burnShare
         ) = _splitSlashAmount(amount);
+        ctx.newStake = ctx.staked - amount;
 
-        uint256 newStake = staked - amount;
+        _updateUnbondOnSlash(user, amount, ctx);
+        _refreshStakeAccounting(user, role, amount, ctx);
+        _handleLockedStake(user, amount, role);
 
-        Unbond storage u = unbonds[user];
-        if (u.amt != 0) {
-            uint256 updated;
-            if (staked <= amount) {
-                updated = 0;
-            } else {
-                uint256 reduction = (u.amt * amount) / staked;
-                if (reduction >= u.amt) {
-                    updated = 0;
-                } else {
-                    updated = u.amt - reduction;
-                    if (updated > newStake) {
-                        updated = newStake;
-                    }
-                }
-            }
+        uint256 validatorShare = _dispatchValidatorRewards(validators, ctx);
+        _distributeSlashShares(user, role, recipient, ctx);
 
-            if (updated == 0) {
-                delete unbonds[user];
-            } else {
-                u.amt = updated;
-                u.unlockAt = uint64(block.timestamp + unbondingPeriod);
-                u.jailed = false;
-            }
-        }
-
-        uint256 pct = getTotalPayoutPct(user);
-        uint256 newBoosted = (newStake * pct) / 100;
-        uint256 oldBoosted = boostedStake[user][role];
-        boostedStake[user][role] = newBoosted;
-        totalBoostedStakes[role] = totalBoostedStakes[role] + newBoosted - oldBoosted;
-        stakes[user][role] = newStake;
-        totalStakes[role] -= amount;
-
-        uint256 locked = lockedStakes[user];
-        if (locked > 0) {
-            if (amount >= locked) {
-                lockedStakes[user] = 0;
-                unlockTime[user] = 0;
-                if (jobRegistryLockedStake[user] != 0) {
-                    jobRegistryLockedStake[user] = 0;
-                }
-                if (validatorModuleLockedStake[user] != 0) {
-                    validatorModuleLockedStake[user] = 0;
-                }
-                emit StakeUnlocked(user, locked);
-            } else {
-                lockedStakes[user] = locked - amount;
-                _deductLockShares(user, amount, role == Role.Validator);
-            }
-        }
-
-        (uint256 validatorShare, uint256 validatorRemainder) =
-            _payValidatorSlashRewards(validators, validatorTarget, bytes32(0));
-        if (validatorRemainder > 0) {
-            if (treasury != address(0)) {
-                treasuryShare += validatorRemainder;
-            } else {
-                burnShare += validatorRemainder;
-            }
-        }
-
-        if (employerShare > 0) {
-            if (recipient == address(0)) revert InvalidRecipient();
-            if (recipient == address(feePool) && address(feePool) != address(0)) {
-                token.safeTransfer(address(feePool), employerShare);
-                feePool.depositFee(employerShare);
-            } else {
-                token.safeTransfer(recipient, employerShare);
-            }
-        }
-        if (treasuryShare > 0) {
-            if (treasury != address(0)) {
-                token.safeTransfer(treasury, treasuryShare);
-            } else {
-                burnShare += treasuryShare;
-                treasuryShare = 0;
-            }
-        }
-        if (operatorShare > 0) {
-            operatorRewardPool += operatorShare;
-            emit RewardPoolUpdated(operatorRewardPool);
-            emit OperatorSlashShareAllocated(user, role, operatorShare);
-        }
-        if (burnShare > 0) {
-            // Burned stake originates from the slashed participant, not employer funds.
-            _burnToken(bytes32(0), burnShare);
-        }
-        uint256 redistributed = employerShare + treasuryShare + operatorShare + validatorShare;
-        uint256 ratio = redistributed > 0 ? (burnShare * TOKEN_SCALE) / redistributed : 0;
+        uint256 redistributed = ctx.employerShare + ctx.treasuryShare + ctx.operatorShare + validatorShare;
+        uint256 ratio = redistributed > 0 ? (ctx.burnShare * TOKEN_SCALE) / redistributed : 0;
         emit Slash(user, amount, validators.length > 0 ? validators[0] : recipient);
         emit StakeSlashed(
             user,
             role,
             recipient,
             treasury,
-            employerShare,
-            treasuryShare,
-            operatorShare,
+            ctx.employerShare,
+            ctx.treasuryShare,
+            ctx.operatorShare,
             validatorShare,
-            burnShare
+            ctx.burnShare
         );
-        emit SlashingStats(block.timestamp, 0, burnShare, redistributed, ratio);
+        emit SlashingStats(block.timestamp, 0, ctx.burnShare, redistributed, ratio);
+    }
+
+    function _updateUnbondOnSlash(address user, uint256 amount, SlashContext memory ctx) internal {
+        Unbond storage u = unbonds[user];
+        if (u.amt == 0) {
+            return;
+        }
+
+        uint256 updated;
+        if (ctx.staked <= amount) {
+            updated = 0;
+        } else {
+            uint256 reduction = (u.amt * amount) / ctx.staked;
+            if (reduction >= u.amt) {
+                updated = 0;
+            } else {
+                updated = u.amt - reduction;
+                if (updated > ctx.newStake) {
+                    updated = ctx.newStake;
+                }
+            }
+        }
+
+        if (updated == 0) {
+            delete unbonds[user];
+        } else {
+            u.amt = updated;
+            u.unlockAt = uint64(block.timestamp + unbondingPeriod);
+            u.jailed = false;
+        }
+    }
+
+    function _refreshStakeAccounting(address user, Role role, uint256 amount, SlashContext memory ctx) internal {
+        uint256 pct = getTotalPayoutPct(user);
+        uint256 newBoosted = (ctx.newStake * pct) / 100;
+        uint256 oldBoosted = boostedStake[user][role];
+        boostedStake[user][role] = newBoosted;
+        totalBoostedStakes[role] = totalBoostedStakes[role] + newBoosted - oldBoosted;
+        stakes[user][role] = ctx.newStake;
+        totalStakes[role] -= amount;
+    }
+
+    function _handleLockedStake(address user, uint256 amount, Role role) internal {
+        uint256 locked = lockedStakes[user];
+        if (locked == 0) {
+            return;
+        }
+
+        if (amount >= locked) {
+            lockedStakes[user] = 0;
+            unlockTime[user] = 0;
+            if (jobRegistryLockedStake[user] != 0) {
+                jobRegistryLockedStake[user] = 0;
+            }
+            if (validatorModuleLockedStake[user] != 0) {
+                validatorModuleLockedStake[user] = 0;
+            }
+            emit StakeUnlocked(user, locked);
+        } else {
+            lockedStakes[user] = locked - amount;
+            _deductLockShares(user, amount, role == Role.Validator);
+        }
+    }
+
+    function _dispatchValidatorRewards(address[] memory validators, SlashContext memory ctx)
+        internal
+        returns (uint256 validatorShare)
+    {
+        uint256 validatorRemainder;
+        (validatorShare, validatorRemainder) =
+            _payValidatorSlashRewards(validators, ctx.validatorTarget, bytes32(0));
+        if (validatorRemainder > 0) {
+            if (treasury != address(0)) {
+                ctx.treasuryShare += validatorRemainder;
+            } else {
+                ctx.burnShare += validatorRemainder;
+            }
+        }
+    }
+
+    function _distributeSlashShares(
+        address user,
+        Role role,
+        address recipient,
+        SlashContext memory ctx
+    ) internal {
+        if (ctx.employerShare > 0) {
+            if (recipient == address(0)) revert InvalidRecipient();
+            if (recipient == address(feePool) && address(feePool) != address(0)) {
+                token.safeTransfer(address(feePool), ctx.employerShare);
+                feePool.depositFee(ctx.employerShare);
+            } else {
+                token.safeTransfer(recipient, ctx.employerShare);
+            }
+        }
+
+        if (ctx.treasuryShare > 0) {
+            if (treasury != address(0)) {
+                token.safeTransfer(treasury, ctx.treasuryShare);
+            } else {
+                ctx.burnShare += ctx.treasuryShare;
+                ctx.treasuryShare = 0;
+            }
+        }
+
+        if (ctx.operatorShare > 0) {
+            operatorRewardPool += ctx.operatorShare;
+            emit RewardPoolUpdated(operatorRewardPool);
+            emit OperatorSlashShareAllocated(user, role, ctx.operatorShare);
+        }
+
+        if (ctx.burnShare > 0) {
+            _burnToken(bytes32(0), ctx.burnShare);
+        }
     }
 
     /// @dev helper to process validator lists exceeding MAX_VALIDATORS
