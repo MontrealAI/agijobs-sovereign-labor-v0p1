@@ -1,6 +1,6 @@
 # Sovereign Labor Contract Codex
 
-[![Solidity 0.8.30](https://img.shields.io/badge/Solidity-0.8.30-363636?logo=solidity&style=for-the-badge)](https://docs.soliditylang.org/en/v0.8.30/)
+[![Solidity 0.8.25](https://img.shields.io/badge/Solidity-0.8.25-363636?logo=solidity&style=for-the-badge)](https://docs.soliditylang.org/en/v0.8.25/)
 [![Sovereign Compile](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml/badge.svg?branch=main&label=Sovereign%20Compile)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/ci.yml)
 [![Branch Gatekeeper](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml/badge.svg?branch=main&label=Branch%20Gatekeeper)](https://github.com/MontrealAI/agijobs-sovereign-labor-v0p1/actions/workflows/branch-checks.yml)
 [![AGIALPHA Spine](https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-5522aa?style=for-the-badge)](https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa)

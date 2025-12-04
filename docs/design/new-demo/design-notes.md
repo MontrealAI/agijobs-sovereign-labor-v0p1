@@ -5,7 +5,7 @@
 ### Owner CLI Surface
 - `scripts/owner-set-treasury.js` is the operator entry point; it loads deployed `OwnerConfigurator`, `StakeManager`, and `SystemPause` instances, then relays a `SystemPause.executeGovernanceCall` that retargets the staking treasury while emitting `ParameterUpdated` telemetry for the owner console.
 - `package.json` exposes the owner guardrails as npm scripts (`ci:governance`, multi-runtime tests, targeted deploy commands) so the CLI stays aligned with CI enforcement.
-- Runtime configuration for CLI-connected toolchains is centralized in `hardhat.config.js`, `truffle-config.js`, and `foundry.toml`, each pinning `solc 0.8.30`, enabling via-IR, and wiring Safe-controlled network accounts through environment variables.
+- Runtime configuration for CLI-connected toolchains is centralized in `hardhat.config.js`, `truffle-config.js`, and `foundry.toml`, each pinning `solc 0.8.25`, enabling via-IR, and wiring Safe-controlled network accounts through environment variables.
 
 ### Job Lifecycle Pipeline
 - `migrations/1_deploy_kernel.js` composes the kernel: deploying Job/Stake/Validation/Dispute modules, wiring identity + treasury pointers, and enforcing `$AGIALPHA` metadata before Safe ownership is accepted. Follow-on scripts (`2_register_pause.js`, `3_mainnet_finalize.js`) snapshot guardianship and validate final wiring.
@@ -14,7 +14,7 @@
 
 ### Telemetry & Governance Glue
 - `scripts/check-governance-matrix.mjs` parses Truffle artifacts to assert that every privileged setter/pauser/event remains reachable through `SystemPause` and the module surface area, blocking drift before owners sign payloads.
-- `scripts/verify-artifacts.js` guarantees compile artifacts exist, match `solc 0.8.30`, and remain fresher than their Solidity sources while emitting Markdown summaries for evidence archives.
+- `scripts/verify-artifacts.js` guarantees compile artifacts exist, match `solc 0.8.25`, and remain fresher than their Solidity sources while emitting Markdown summaries for evidence archives.
 - `scripts/write-compile-summary.js` captures Node/npm/Truffle/Solidity fingerprints into `$GITHUB_STEP_SUMMARY`, ensuring telemetry parity between local runs and CI.
 
 ## v0p1 Kernel Cross-Reference
@@ -29,7 +29,7 @@
 | --- | --- | --- |
 | Owner CLI (`scripts/owner-set-treasury.js`) | Safe-friendly helper to rotate treasuries and emit operator telemetry. | `OwnerConfigurator.configure` → `SystemPause.executeGovernanceCall` → `StakeManager.setTreasury` with `ParameterUpdated` events for auditing. |
 | Governance guard (`scripts/check-governance-matrix.mjs`) | Ensures privileged setters, pausers, and events stay exposed before signing. | Compare ABI of `SystemPause`, `JobRegistry`, `StakeManager`, `ValidationModule`, `DisputeModule`, `PlatformRegistry`, `FeePool`, `ReputationEngine`, and `ArbitratorCommittee` against expected selectors/events. |
-| Artifact verifier (`scripts/verify-artifacts.js`) | Validates Truffle build outputs and surfaces size telemetry. | Truffle artifacts generated from `contracts/` canon; enforcement keeps `solc 0.8.30` parity and feeds evidence vaults. |
+| Artifact verifier (`scripts/verify-artifacts.js`) | Validates Truffle build outputs and surfaces size telemetry. | Truffle artifacts generated from `contracts/` canon; enforcement keeps `solc 0.8.25` parity and feeds evidence vaults. |
 | Compile telemetry (`scripts/write-compile-summary.js`) | Captures toolchain fingerprints for CI + operator parity. | Step summary appended to governance workflows consuming `package.json` npm scripts. |
 | Lifecycle migrations (`migrations/*.js`) | Deploy kernel, register pause lattice, finalize ownership & `$AGIALPHA` invariants. | Module constructors + governance hand-off in `SystemPause`, `OwnerConfigurator`, `StakeManager`, `JobRegistry`, `ValidationModule`, `DisputeModule`, `FeePool`, `ReputationEngine`, `PlatformRegistry`, `IdentityRegistry`, `AttestationRegistry`, `CertificateNFT`, `TaxPolicy`, `ArbitratorCommittee`. |
 | Config manifest (`deploy/config.mainnet.json`) | Declarative Safe, treasury, ENS, staking, and tax configuration. | Parsed by `scripts/deploy/load-config.js`, feeding deployments and ensuring `$AGIALPHA` address/decimals correctness. |

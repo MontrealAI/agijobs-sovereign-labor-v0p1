@@ -49,7 +49,7 @@ for (const contract of REQUIRED_CONTRACTS) {
   assert(artifact.deployedBytecode && artifact.deployedBytecode !== '0x', `Empty deployed bytecode for ${contract}`);
   assert(artifact.compiler && artifact.compiler.name === 'solc', `Unexpected compiler for ${contract}`);
   assert(
-    artifact.compiler.version && artifact.compiler.version.startsWith('0.8.30'),
+    artifact.compiler.version && artifact.compiler.version.startsWith('0.8.25'),
     `Unexpected compiler version for ${contract}: ${artifact.compiler && artifact.compiler.version}`
   );
 

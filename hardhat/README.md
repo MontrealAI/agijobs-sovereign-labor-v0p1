@@ -9,7 +9,7 @@
   <img src="https://img.shields.io/badge/Hardhat-2.20.1-f7c52a?style=for-the-badge&logo=ethereum" alt="Hardhat 2.20.1" />
   <img src="https://img.shields.io/badge/Foundry-stable-ff6f00?style=for-the-badge" alt="Foundry stable" />
   <img src="https://img.shields.io/badge/Truffle-5.11-5E464D?style=for-the-badge&logo=truffle" alt="Truffle 5.11" />
-  <img src="https://img.shields.io/badge/Solidity-0.8.30-363636?style=for-the-badge&logo=solidity" alt="Solidity 0.8.30" />
+  <img src="https://img.shields.io/badge/Solidity-0.8.25-363636?style=for-the-badge&logo=solidity" alt="Solidity 0.8.25" />
   <img src="https://img.shields.io/badge/Node.js-%3E%3D20.11-43853d?style=for-the-badge&logo=node.js" alt="Node.js >= 20.11" />
   <a href="https://etherscan.io/token/0xa61a3b3a130a9c20768eebf97e21515a6046a1fa"><img src="https://img.shields.io/badge/$AGIALPHA-0xa61a3b3a130a9c20768eebf97e21515a6046a1fa-5522aa?style=for-the-badge" alt="$AGIALPHA token" /></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-0a0a0a?style=for-the-badge" alt="MIT license" /></a>
@@ -85,9 +85,9 @@ sequenceDiagram
 ├── migrations/              # Truffle golden-path migrations and finalizers
 ├── scripts/                 # Automation utilities + governance checks
 ├── truffle/                 # Deployment manifests, ABIs, operational outputs
-├── hardhat.config.js        # Hardhat entrypoint (solc 0.8.30, viaIR, optimizer)
+├── hardhat.config.js        # Hardhat entrypoint (solc 0.8.25, viaIR, optimizer)
 ├── truffle-config.js        # Truffle network map and compiler discipline
-├── foundry.toml             # Forge configuration synced with solc 0.8.30
+├── foundry.toml             # Forge configuration synced with solc 0.8.25
 ├── package.json             # Unified npm task surface for CI and operators
 └── slither.config.json      # Static analysis configuration
 ```
@@ -187,7 +187,7 @@ flowchart LR
 
 | Layer | Tooling | Key configuration | Location |
 | --- | --- | --- | --- |
-| Solidity compiler | `solc 0.8.30` via IR | Optimizer enabled (runs = 5), metadata hash stripped, revert strings stripped for deterministic bytecode | [`hardhat.config.js`](../hardhat.config.js) / [`foundry.toml`](../foundry.toml) |
+| Solidity compiler | `solc 0.8.25` via IR | Optimizer enabled (runs = 5), metadata hash stripped, revert strings stripped for deterministic bytecode | [`hardhat.config.js`](../hardhat.config.js) / [`foundry.toml`](../foundry.toml) |
 | Hardhat runtime | `hardhat@2.20.1` | Shares `contracts/`, caches under `hardhat/`, exposes custom scripts under `hardhat/scripts/` | [`hardhat/`](./) |
 | Truffle suite | `truffle@5.11.5` | Golden-path migrations, artifact emission to `build/contracts` | [`migrations/`](../migrations) |
 | Foundry | `forge` stable | Fuzzing, invariants, broadcast scripts mirroring Hardhat deployments | [`foundry/`](../foundry) |
