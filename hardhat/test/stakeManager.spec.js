@@ -52,6 +52,52 @@ async function deployStakeManagerFixture() {
   return { owner, user, other, token, timelock, timelockSigner, stakeManager, disputeModule };
 }
 
+async function deployStakeManagerWithTrackerFixture() {
+  const [owner, user, other] = await ethers.getSigners();
+
+  const tokenArtifact = await artifacts.readArtifact("MockAGIAlpha");
+  await network.provider.send("hardhat_setCode", [AGIALPHA, tokenArtifact.deployedBytecode]);
+  const token = await ethers.getContractAt("MockAGIAlpha", AGIALPHA);
+
+  const Timelock = await ethers.getContractFactory("TimelockController");
+  const timelock = await Timelock.deploy(0, [owner.address], [owner.address], owner.address);
+  await timelock.waitForDeployment();
+
+  const TaxPolicy = await ethers.getContractFactory("TaxPolicy");
+  const policy = await TaxPolicy.deploy("ipfs://policy", "acknowledgement");
+  await policy.waitForDeployment();
+
+  const TrackingJobRegistry = await ethers.getContractFactory("TrackingJobRegistry");
+  const jobRegistry = await TrackingJobRegistry.deploy(await policy.getAddress());
+  await jobRegistry.waitForDeployment();
+  await policy.setAcknowledger(await jobRegistry.getAddress(), true);
+
+  const DisputeModule = await ethers.getContractFactory("MockDisputeModule");
+  const disputeModule = await DisputeModule.deploy();
+  await disputeModule.waitForDeployment();
+
+  const StakeManager = await ethers.getContractFactory("StakeManagerHarness");
+  const stakeManager = await StakeManager.deploy(
+    0,
+    50,
+    50,
+    ethers.ZeroAddress,
+    await jobRegistry.getAddress(),
+    await disputeModule.getAddress(),
+    await timelock.getAddress()
+  );
+  await stakeManager.waitForDeployment();
+
+  const timelockSigner = await impersonate(await timelock.getAddress());
+  await stakeManager
+    .connect(timelockSigner)
+    .setModules(await jobRegistry.getAddress(), await disputeModule.getAddress());
+  await stakeManager.connect(timelockSigner).setPauserManager(await timelock.getAddress());
+  await stakeManager.connect(timelockSigner).setPauser(await timelock.getAddress());
+
+  return { owner, user, other, token, timelockSigner, stakeManager, policy, jobRegistry };
+}
+
 describe("StakeManager governance surface", function () {
   let owner;
   let user;
@@ -150,5 +196,40 @@ describe("StakeManager governance surface", function () {
 
     const expectedIncrease = initialMin + (initialMin * 10n) / 100n;
     expect(await stakeManager.minStake()).to.equal(expectedIncrease);
+  });
+});
+
+describe("StakeManager tax acknowledgement flow", function () {
+  let owner;
+  let user;
+  let other;
+  let token;
+  let timelockSigner;
+  let stakeManager;
+  let policy;
+  let jobRegistry;
+
+  beforeEach(async function () {
+    ({ owner, user, other, token, timelockSigner, stakeManager, policy, jobRegistry } =
+      await deployStakeManagerWithTrackerFixture());
+  });
+
+  it("does not record acknowledgements when validation fails for acknowledgeAndDeposit", async function () {
+    await expect(stakeManager.connect(user).acknowledgeAndDeposit(0, 0)).to.be.revertedWithCustomError(
+      stakeManager,
+      "InvalidAmount"
+    );
+
+    expect(await jobRegistry.acknowledgeCount()).to.equal(0);
+    expect(await policy.hasAcknowledged(user.address)).to.equal(false);
+  });
+
+  it("does not record acknowledgements when validation fails for acknowledgeAndDepositFor", async function () {
+    await expect(
+      stakeManager.connect(owner).acknowledgeAndDepositFor(other.address, 0, 0)
+    ).to.be.revertedWithCustomError(stakeManager, "InvalidAmount");
+
+    expect(await jobRegistry.acknowledgeCount()).to.equal(0);
+    expect(await policy.hasAcknowledged(other.address)).to.equal(false);
   });
 });
