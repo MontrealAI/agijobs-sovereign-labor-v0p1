@@ -62,6 +62,7 @@ error TokenNotBurnable();
 error Unauthorized();
 error NotGovernanceOrPauserManager();
 error TooManyValidators();
+error InvalidHamiltonianFeed();
 
 /// @title StakeManager
 /// @notice Handles staking balances, job escrows and slashing logic.
@@ -561,6 +562,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     }
 
     function _setHamiltonianFeed(address _feed) internal {
+        if (_feed == address(0) || _feed.code.length == 0) revert InvalidHamiltonianFeed();
         hamiltonianFeed = IHamiltonian(_feed);
         emit HamiltonianFeedUpdated(_feed);
     }
