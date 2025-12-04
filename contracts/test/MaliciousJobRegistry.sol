@@ -49,10 +49,7 @@ contract MaliciousJobRegistry is IJobRegistryTax, IJobRegistryAck {
                 revert ReentrancyUnexpectedlySucceeded();
             } catch (bytes memory data) {
                 if (data.length < 4) revert UnexpectedRevert(bytes4(0));
-                bytes4 selector;
-                assembly {
-                    selector := mload(add(data, 0x20))
-                }
+                bytes4 selector = bytes4(data);
                 if (selector != ReentrancyGuardReentrantCall.selector) {
                     revert UnexpectedRevert(selector);
                 }
