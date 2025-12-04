@@ -1694,6 +1694,12 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         return pctCount;
     }
 
+    struct ValidationSnapshot {
+        address[] committee;
+        bool[] revealedStates;
+        bool[] voteStates;
+    }
+
     function _finalize(uint256 jobId) internal returns (bool success) {
         Round storage r = rounds[jobId];
         if (r.tallied) revert AlreadyTallied();
@@ -1710,18 +1716,12 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             ? validatorsPerJob
             : r.committeeSize;
         if (size > maxValidatorsPerJob) size = maxValidatorsPerJob;
-        uint256 quorumTarget = _quorumTarget(size);
-        bool quorum = quorumTarget == 0 || r.revealedCount >= quorumTarget;
-        uint256 approvalCount;
         uint256 vlen = r.validators.length;
         if (vlen > maxValidatorsPerJob) vlen = maxValidatorsPerJob;
-        for (uint256 i; i < vlen;) {
-            address v = r.validators[i];
-            if (revealed[jobId][v] && votes[jobId][v]) {
-                unchecked { ++approvalCount; }
-            }
-            unchecked { ++i; }
-        }
+        uint256 quorumTarget = _quorumTarget(size);
+        bool quorum = quorumTarget == 0 || r.revealedCount >= quorumTarget;
+        uint256 approvalCount = _countApprovals(jobId, r, vlen);
+
         if (!quorum && quorumTarget > 0) {
             emit ValidationQuorumFailed(jobId, r.revealedCount, quorumTarget);
         }
@@ -1733,55 +1733,101 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         } else {
             success = false;
         }
+
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
-        address[] memory committee = new address[](vlen);
-        bool[] memory revealedStates = new bool[](vlen);
-        bool[] memory voteStates = new bool[](vlen);
+        ValidationSnapshot memory snapshot = _buildSnapshot(jobId, r, vlen);
+
+        if (address(reputationEngine) != address(0)) {
+            _updateReputation(jobId, job, success, snapshot);
+        }
+
+        _applyValidatorPenalties(jobId, job, r, success, vlen);
+
+        r.tallied = true;
+        emit ValidationTallied(jobId, success, r.approvals, r.rejections);
+        emit ValidationResult(jobId, success);
+
+        jobRegistry.onValidationResult(jobId, success, r.validators);
+        _cleanup(jobId);
+        return success;
+    }
+
+    function _countApprovals(uint256 jobId, Round storage r, uint256 vlen) internal view returns (uint256 approvalCount) {
+        for (uint256 i; i < vlen;) {
+            address v = r.validators[i];
+            if (revealed[jobId][v] && votes[jobId][v]) {
+                unchecked { ++approvalCount; }
+            }
+            unchecked { ++i; }
+        }
+    }
+
+    function _buildSnapshot(uint256 jobId, Round storage r, uint256 vlen)
+        internal
+        view
+        returns (ValidationSnapshot memory snapshot)
+    {
+        snapshot.committee = new address[](vlen);
+        snapshot.revealedStates = new bool[](vlen);
+        snapshot.voteStates = new bool[](vlen);
         for (uint256 i; i < vlen;) {
             address validator = r.validators[i];
-            committee[i] = validator;
-            revealedStates[i] = revealed[jobId][validator];
-            voteStates[i] = votes[jobId][validator];
+            snapshot.committee[i] = validator;
+            snapshot.revealedStates[i] = revealed[jobId][validator];
+            snapshot.voteStates[i] = votes[jobId][validator];
             unchecked {
                 ++i;
             }
         }
+    }
 
-        if (address(reputationEngine) != address(0)) {
-            uint256 payout;
-            uint256 duration;
-            if (success) {
-                IJobRegistry.JobMetadata memory metadata = jobRegistry.decodeJobMetadata(
-                    job.packedMetadata
-                );
-                uint256 validatorPct = jobRegistry.validatorRewardPct();
-                uint256 rewardAfterValidator = uint256(job.reward);
-                if (committee.length > 0 && validatorPct > 0) {
-                    uint256 validatorReward = (uint256(job.reward) * validatorPct) / 100;
-                    rewardAfterValidator -= validatorReward;
-                }
-                uint256 agentPctRaw = metadata.agentPct;
-                uint256 agentPct = agentPctRaw == 0 ? 100 : agentPctRaw;
-                uint256 agentAmount = (rewardAfterValidator * agentPct) / 100;
-                payout = agentAmount * 1e12;
-                if (metadata.assignedAt != 0 && block.timestamp > metadata.assignedAt) {
-                    duration = block.timestamp - uint256(metadata.assignedAt);
-                }
-            }
-
-            reputationEngine.updateScores(
-                jobId,
-                job.agent,
-                committee,
-                success,
-                revealedStates,
-                voteStates,
-                payout,
-                duration
+    function _updateReputation(
+        uint256 jobId,
+        IJobRegistry.Job memory job,
+        bool success,
+        ValidationSnapshot memory snapshot
+    ) internal {
+        uint256 payout;
+        uint256 duration;
+        if (success) {
+            IJobRegistry.JobMetadata memory metadata = jobRegistry.decodeJobMetadata(
+                job.packedMetadata
             );
-            jobRegistry.markReputationProcessed(jobId);
+            uint256 validatorPct = jobRegistry.validatorRewardPct();
+            uint256 rewardAfterValidator = uint256(job.reward);
+            if (snapshot.committee.length > 0 && validatorPct > 0) {
+                uint256 validatorReward = (uint256(job.reward) * validatorPct) / 100;
+                rewardAfterValidator -= validatorReward;
+            }
+            uint256 agentPctRaw = metadata.agentPct;
+            uint256 agentPct = agentPctRaw == 0 ? 100 : agentPctRaw;
+            uint256 agentAmount = (rewardAfterValidator * agentPct) / 100;
+            payout = agentAmount * 1e12;
+            if (metadata.assignedAt != 0 && block.timestamp > metadata.assignedAt) {
+                duration = block.timestamp - uint256(metadata.assignedAt);
+            }
         }
 
+        reputationEngine.updateScores(
+            jobId,
+            job.agent,
+            snapshot.committee,
+            success,
+            snapshot.revealedStates,
+            snapshot.voteStates,
+            payout,
+            duration
+        );
+        jobRegistry.markReputationProcessed(jobId);
+    }
+
+    function _applyValidatorPenalties(
+        uint256 jobId,
+        IJobRegistry.Job memory job,
+        Round storage r,
+        bool success,
+        uint256 vlen
+    ) internal {
         for (uint256 i; i < vlen;) {
             address val = r.validators[i];
             uint256 stake = validatorStakes[jobId][val];
@@ -1815,14 +1861,6 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             }
             unchecked { ++i; }
         }
-
-        r.tallied = true;
-        emit ValidationTallied(jobId, success, r.approvals, r.rejections);
-        emit ValidationResult(jobId, success);
-
-        jobRegistry.onValidationResult(jobId, success, r.validators);
-        _cleanup(jobId);
-        return success;
     }
 
     function _reduceValidatorLock(uint256 jobId, address val, uint256 amount) internal {

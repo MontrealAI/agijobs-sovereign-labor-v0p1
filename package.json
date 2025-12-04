@@ -34,6 +34,7 @@
     "eth-ens-namehash": "^2.0.8",
     "ethers": "^6.13.0",
     "hardhat": "^2.20.1",
+    "solc": "^0.8.30",
     "solhint": "^6.0.1",
     "truffle": "^5.11.5",
     "truffle-plugin-verify": "^0.6.7"
