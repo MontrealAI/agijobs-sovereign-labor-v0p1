@@ -270,12 +270,8 @@ contract SystemPause is Governable, ReentrancyGuard {
 
         (bool success, bytes memory response) = target.call(data);
         if (!success) {
-            if (response.length > 0) {
-                assembly {
-                    revert(add(response, 0x20), mload(response))
-                }
-            }
-            revert GovernanceCallFailed(target, data);
+            // Surface the revert data so governance can inspect the failure on-chain.
+            revert GovernanceCallFailed(target, response.length > 0 ? response : data);
         }
 
         uint32 rawSelector =

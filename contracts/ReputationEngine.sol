@@ -3,6 +3,7 @@ pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IReputationEngineV2} from "./interfaces/IReputationEngineV2.sol";
 import {TOKEN_SCALE} from "./Constants.sol";
@@ -340,27 +341,7 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
 
     /// @notice Log base 2 implementation from v1.
     function log2(uint256 x) public pure returns (uint256 y) {
-        assembly {
-            let arg := x
-            x := sub(x, 1)
-            x := or(x, div(x, 0x02))
-            x := or(x, div(x, 0x04))
-            x := or(x, div(x, 0x10))
-            x := or(x, div(x, 0x100))
-            x := or(x, div(x, 0x10000))
-            x := or(x, div(x, 0x100000000))
-            x := or(x, div(x, 0x10000000000000000))
-            x := or(x, div(x, 0x100000000000000000000000000000000))
-            x := add(x, 1)
-            y := 0
-            for { let shift := 128 } gt(shift, 0) { shift := div(shift, 2) } {
-                let temp := shr(shift, x)
-                if gt(temp, 0) {
-                    x := temp
-                    y := add(y, shift)
-                }
-            }
-        }
+        return Math.log2(x);
     }
 
     /// @notice Apply diminishing returns and cap to reputation growth using v1 formula.

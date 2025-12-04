@@ -42,7 +42,12 @@ module.exports = {
       settings: {
         optimizer: {
           enabled: optimizerEnabled,
-          runs: optimizerRuns
+          runs: optimizerRuns,
+          details: {
+            // Disable the Yul optimizer when the IR pipeline is turned off to
+            // reduce stack pressure on large functions.
+            yul: useViaIR
+          }
         },
         // Enable the IR pipeline to avoid stack-too-deep errors in complex
         // identity/alias verification flows.
