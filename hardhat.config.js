@@ -22,11 +22,7 @@ const boolFromEnv = (value, defaultValue) => {
   return ["true", "1", true].includes(value?.toString().toLowerCase());
 };
 
-let useViaIR = boolFromEnv(SOLC_VIA_IR, true);
-if (!useViaIR) {
-  console.warn("SOLC_VIA_IR=false is not supported; forcing viaIR to avoid stack depth errors.");
-  useViaIR = true;
-}
+const useViaIR = boolFromEnv(SOLC_VIA_IR, true);
 // Keep the optimizer on by default even when skipping the IR pipeline. This
 // avoids stack-too-deep errors during local fast builds where developers set
 // SOLC_VIA_IR=false.
@@ -35,7 +31,7 @@ const optimizerRuns = Number(SOLC_OPTIMIZER_RUNS || (useViaIR ? 5 : 200));
 
 module.exports = {
   solidity: {
-    version: "0.8.30",
+    version: "0.8.25",
     settings: {
       optimizer: {
         enabled: optimizerEnabled,
