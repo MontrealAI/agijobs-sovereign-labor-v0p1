@@ -13,7 +13,7 @@
     "lint:sol": "solhint --max-warnings=0 'contracts/**/*.sol'",
     "ci:governance": "node scripts/check-governance-matrix.mjs",
     "test": "npm run compile && npm run test:truffle:ci",
-    "test:truffle:ci": "node scripts/ensure-truffle-build.mjs && truffle test --migrate-none --compile-none",
+    "test:truffle:ci": "node scripts/run-truffle-tests.mjs",
     "test:hardhat": "hardhat test",
     "test:foundry": "scripts/test-foundry.sh",
     "test:ci": "npm test && npm run test:hardhat && npm run test:foundry",

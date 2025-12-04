@@ -1,5 +1,7 @@
 require('dotenv').config();
 const HDWalletProvider = require('@truffle/hdwallet-provider');
+const ganache = require('ganache');
+const ganacheOptions = require('./scripts/ganache-options');
 
 const {
   MAINNET_RPC,
@@ -30,6 +32,14 @@ module.exports = {
   contracts_build_directory: "./build/contracts",
   test_directory: "./truffle/test",
   networks: {
+    development: {
+      provider: () => ganache.provider(ganacheOptions),
+      network_id: ganacheOptions.chain.networkId,
+      gas: Number(ganacheOptions.miner.blockGasLimit - 1n),
+      gasPrice: 0,
+      networkCheckTimeout: 100000,
+      skipDryRun: true
+    },
     mainnet: {
       provider: () => new HDWalletProvider({ privateKeys: [DEPLOYER_PK], providerOrUrl: MAINNET_RPC }),
       network_id: 1, confirmations: 2, timeoutBlocks: 500, skipDryRun: true
