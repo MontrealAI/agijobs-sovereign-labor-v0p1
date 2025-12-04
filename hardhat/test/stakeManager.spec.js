@@ -115,6 +115,17 @@ describe("StakeManager governance surface", function () {
     );
   });
 
+  it("rejects invalid Hamiltonian feeds", async function () {
+    await expect(
+      stakeManager.connect(timelockSigner).setHamiltonianFeed(ethers.ZeroAddress)
+    ).to.be.revertedWithCustomError(stakeManager, "InvalidHamiltonianFeed");
+
+    await expect(stakeManager.connect(timelockSigner).setHamiltonianFeed(owner.address)).to.be.revertedWithCustomError(
+      stakeManager,
+      "InvalidHamiltonianFeed"
+    );
+  });
+
   it("raises stakes when the Hamiltonian feed exceeds the configured threshold", async function () {
     const MockHamiltonian = await ethers.getContractFactory("MockHamiltonian");
     const hFeed = await MockHamiltonian.deploy();
