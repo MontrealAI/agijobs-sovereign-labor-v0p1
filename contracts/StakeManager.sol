@@ -2045,6 +2045,11 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         return ITaxPolicy(address(0));
     }
 
+    function _validateStakeRequest(Role role, uint256 amount) internal pure {
+        if (role > Role.Platform) revert InvalidRole();
+        if (amount == 0) revert InvalidAmount();
+    }
+
     /// @notice deposit stake on behalf of a user for a specific role; use
     ///         `depositStake` when staking for the caller.
     /// @dev Use `depositStake` when the caller is staking for themselves.
@@ -2061,8 +2066,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         nonReentrant
     {
         if (user == address(0)) revert InvalidUser();
-        if (role > Role.Platform) revert InvalidRole();
-        if (amount == 0) revert InvalidAmount();
+        _validateStakeRequest(role, amount);
 
         _deposit(user, role, amount);
     }
@@ -2076,8 +2080,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         requiresTaxAcknowledgement(_policy(), msg.sender, owner(), address(0), address(0))
         nonReentrant
     {
-        if (role > Role.Platform) revert InvalidRole();
-        if (amount == 0) revert InvalidAmount();
+        _validateStakeRequest(role, amount);
         if (jobRegistry == address(0)) revert JobRegistryNotSet();
         _deposit(msg.sender, role, amount);
     }
@@ -2091,6 +2094,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
      * @param amount Stake amount in $AGIALPHA with 18 decimals.
      */
     function acknowledgeAndDeposit(Role role, uint256 amount) external whenNotPaused nonReentrant {
+        _validateStakeRequest(role, amount);
         address registry = jobRegistry;
         if (registry == address(0)) revert JobRegistryNotSet();
         IJobRegistryAck(registry).acknowledgeFor(msg.sender);
@@ -2102,8 +2106,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         internal
         requiresTaxAcknowledgement(_policy(), msg.sender, owner(), address(0), address(0))
     {
-        if (role > Role.Platform) revert InvalidRole();
-        if (amount == 0) revert InvalidAmount();
+        _validateStakeRequest(role, amount);
         _deposit(msg.sender, role, amount);
     }
 
@@ -2111,8 +2114,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         internal
         requiresTaxAcknowledgement(_policyFor(user), user, owner(), address(0), address(0))
     {
-        if (role > Role.Platform) revert InvalidRole();
-        if (amount == 0) revert InvalidAmount();
+        _validateStakeRequest(role, amount);
         _deposit(user, role, amount);
     }
 
@@ -2128,6 +2130,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
      */
     function acknowledgeAndDepositFor(address user, Role role, uint256 amount) external whenNotPaused nonReentrant {
         if (user == address(0)) revert InvalidUser();
+        _validateStakeRequest(role, amount);
         address registry = jobRegistry;
         if (registry == address(0)) revert JobRegistryNotSet();
         IJobRegistryAck(registry).acknowledgeFor(user);
