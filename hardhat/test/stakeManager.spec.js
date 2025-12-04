@@ -1,6 +1,8 @@
 const { expect } = require("chai");
 const { ethers, network, artifacts } = require("hardhat");
 
+const { time } = require("@nomicfoundation/hardhat-network-helpers");
+
 const AGIALPHA = "0xa61a3b3a130a9c20768eebf97e21515a6046a1fa";
 
 async function impersonate(address) {
@@ -111,5 +113,31 @@ describe("StakeManager governance surface", function () {
       stakeManager,
       "StakeDeposited"
     );
+  });
+
+  it("raises stakes when the Hamiltonian feed exceeds the configured threshold", async function () {
+    const MockHamiltonian = await ethers.getContractFactory("MockHamiltonian");
+    const hFeed = await MockHamiltonian.deploy();
+    await hFeed.waitForDeployment();
+
+    await stakeManager
+      .connect(timelockSigner)
+      .configureAutoStake(0, 10, 5, 1, 0, 0, 0, 10, 0, 0, 1);
+    await stakeManager.connect(timelockSigner).autoTuneStakes(true);
+    await stakeManager.connect(timelockSigner).setHamiltonianFeed(await hFeed.getAddress());
+
+    const initialMin = await stakeManager.minStake();
+
+    await hFeed.setHamiltonian(5);
+    await time.increase(2);
+    await stakeManager.connect(owner).checkpointStake();
+    expect(await stakeManager.minStake()).to.equal(initialMin);
+
+    await hFeed.setHamiltonian(15);
+    await time.increase(2);
+    await stakeManager.connect(owner).checkpointStake();
+
+    const expectedIncrease = initialMin + (initialMin * 10n) / 100n;
+    expect(await stakeManager.minStake()).to.equal(expectedIncrease);
   });
 });
