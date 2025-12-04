@@ -19,8 +19,15 @@ const boolFromEnv = (value, defaultValue) => {
   return ["true", "1", true].includes(value?.toString().toLowerCase());
 };
 
-const useViaIR = boolFromEnv(SOLC_VIA_IR, true);
-const optimizerEnabled = boolFromEnv(SOLC_OPTIMIZER, useViaIR);
+let useViaIR = boolFromEnv(SOLC_VIA_IR, true);
+if (!useViaIR) {
+  console.warn("SOLC_VIA_IR=false is not supported; forcing viaIR to avoid stack depth errors.");
+  useViaIR = true;
+}
+// Default to enabling the optimizer even when the IR pipeline is disabled so
+// local builds don't hit stack-too-deep errors when developers try
+// `SOLC_VIA_IR=false` for faster iterations.
+const optimizerEnabled = boolFromEnv(SOLC_OPTIMIZER, true);
 const optimizerRuns = Number(SOLC_OPTIMIZER_RUNS || (useViaIR ? 5 : 200));
 
 module.exports = {

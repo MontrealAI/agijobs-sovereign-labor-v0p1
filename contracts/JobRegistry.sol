@@ -117,6 +117,14 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         uint64 assignedAt;
     }
 
+    struct FinalizeAmounts {
+        uint256 validatorReward;
+        uint256 rewardAfterValidator;
+        uint256 fee;
+        uint256 agentPct;
+        uint256 agentAmount;
+    }
+
     uint256 private constant _STATE_OFFSET = 0;
     uint256 private constant _SUCCESS_OFFSET = 3;
     uint256 private constant _BURN_CONFIRMED_OFFSET = 4;
@@ -2433,22 +2441,21 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         FinalizeContext memory ctx
     ) internal returns (bool fundsRedirected) {
         IFeePool pool = feePool;
-        uint256 validatorReward;
+        FinalizeAmounts memory amounts;
         if (ctx.validators.length > 0 && validatorRewardPct > 0) {
-            validatorReward = (uint256(job.reward) * validatorRewardPct) / 100;
+            amounts.validatorReward = (uint256(job.reward) * validatorRewardPct) / 100;
         }
 
-        uint256 rewardAfterValidator = uint256(job.reward) - validatorReward;
-        uint256 fee;
-        uint32 agentPctRaw = _getAgentPct(job);
-        uint256 agentPct = agentPctRaw == 0 ? 100 : agentPctRaw;
-        if (address(stakeManager) != address(0)) {
-            if (address(pool) != address(0) && job.reward > 0) {
-                fee = (uint256(job.reward) * _getFeePct(job)) / 100;
-            }
+        amounts.rewardAfterValidator = uint256(job.reward) - amounts.validatorReward;
+        amounts.agentPct = _getAgentPct(job);
+        if (amounts.agentPct == 0) {
+            amounts.agentPct = 100;
+        }
+        if (address(stakeManager) != address(0) && address(pool) != address(0) && job.reward > 0) {
+            amounts.fee = (uint256(job.reward) * _getFeePct(job)) / 100;
         }
 
-        uint256 agentAmount = (rewardAfterValidator * agentPct) / 100;
+        amounts.agentAmount = (amounts.rewardAfterValidator * amounts.agentPct) / 100;
         if (address(stakeManager) != address(0)) {
             address payee = job.agent;
             if (ctx.isGov && treasury != address(0) && ctx.agentBlacklisted) {
@@ -2457,33 +2464,33 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             }
 
             address employerParam = ctx.isGov ? job.employer : msg.sender;
-            stakeManager.finalizeJobFundsWithPct(
-                ctx.jobKey,
-                employerParam,
-                payee,
-                agentPct,
-                rewardAfterValidator,
-                validatorReward,
-                fee,
-                pool,
-                ctx.isGov
-            );
+                stakeManager.finalizeJobFundsWithPct(
+                    ctx.jobKey,
+                    employerParam,
+                    payee,
+                    amounts.agentPct,
+                    amounts.rewardAfterValidator,
+                    amounts.validatorReward,
+                    amounts.fee,
+                    pool,
+                    ctx.isGov
+                );
 
-            if (validatorReward > 0) {
-                if (ctx.validators.length > 0) {
-                    stakeManager.distributeValidatorRewards(
-                        ctx.jobKey,
-                        validatorReward
-                    );
-                } else {
-                    stakeManager.releaseReward(
-                        ctx.jobKey,
-                        job.employer,
-                        payee,
-                        validatorReward,
-                        true
-                    );
-                }
+                if (amounts.validatorReward > 0) {
+                    if (ctx.validators.length > 0) {
+                        stakeManager.distributeValidatorRewards(
+                            ctx.jobKey,
+                            amounts.validatorReward
+                        );
+                    } else {
+                        stakeManager.releaseReward(
+                            ctx.jobKey,
+                            job.employer,
+                            payee,
+                            amounts.validatorReward,
+                            true
+                        );
+                    }
             }
             if (job.stake > 0) {
                 if (ctx.isGov && treasury != address(0) && ctx.agentBlacklisted) {
@@ -2498,14 +2505,20 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                     stakeManager.releaseStake(job.agent, uint256(job.stake));
                 }
             }
-            _maybeAssertBurn(jobId, job, agentAmount);
+            _maybeAssertBurn(jobId, job, amounts.agentAmount);
         }
-        _applyReputationSuccess(jobId, job, ctx, agentAmount);
+        _applyReputationSuccess(jobId, job, ctx, amounts.agentAmount);
         if (address(certificateNFT) != address(0)) {
             certificateNFT.mint(job.agent, jobId, job.uriHash);
         }
-        uint256 bonus = agentAmount - rewardAfterValidator;
-        emit JobPayout(jobId, job.agent, rewardAfterValidator, bonus, fee);
+        uint256 bonus = amounts.agentAmount - amounts.rewardAfterValidator;
+        emit JobPayout(
+            jobId,
+            job.agent,
+            amounts.rewardAfterValidator,
+            bonus,
+            amounts.fee
+        );
     }
 
     function _finalizeFailure(

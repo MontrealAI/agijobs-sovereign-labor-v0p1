@@ -491,6 +491,36 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         bool unpause;
     }
 
+    struct ConfigChangeFlags {
+        bool pauserChanged;
+        bool pauserManagerChanged;
+        bool thermostatChanged;
+        bool hamiltonianChanged;
+        bool autoStakeTuningChanged;
+        bool autoStakeConfigChanged;
+        bool minStakeChanged;
+        bool roleMinimumsChanged;
+        bool slashingChanged;
+        bool treasuryChanged;
+        bool jobRegistryChanged;
+        bool disputeModuleChanged;
+        bool validationModuleChanged;
+        bool modulesChanged;
+        bool feePctChanged;
+        bool feePoolChanged;
+        bool burnPctChanged;
+        bool validatorRewardPctChanged;
+        bool unbondingPeriodChanged;
+        bool maxStakePerAddressChanged;
+        bool stakeRecommendationsChanged;
+        bool maxAGITypesChanged;
+        bool maxTotalPayoutPctChanged;
+        bool pausedChanged;
+        bool unpausedChanged;
+        bool operatorSlashPctChanged;
+        bool slashBurnPctChanged;
+    }
+
     struct TreasuryAllowlistUpdate {
         address treasury;
         bool allowed;
@@ -1382,6 +1412,25 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         }
     }
 
+    function _updatePercentages(ConfigUpdate calldata config)
+        private
+        returns (bool feeChanged, bool burnChanged, bool validatorChanged)
+    {
+        uint256 newFeePct = config.setFeePct ? config.feePct : feePct;
+        uint256 newBurnPct = config.setBurnPct ? config.burnPct : burnPct;
+        uint256 newValidatorRewardPct =
+            config.setValidatorRewardPct ? config.validatorRewardPct : validatorRewardPct;
+
+        return _applyPercentages(
+            newFeePct,
+            newBurnPct,
+            newValidatorRewardPct,
+            config.setFeePct,
+            config.setBurnPct,
+            config.setValidatorRewardPct
+        );
+    }
+
     /// @notice update protocol fee percentage
     /// @param pct percentage of released amount sent to FeePool (0-100)
     function setFeePct(uint256 pct) external onlyGovernance {
@@ -1511,82 +1560,56 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             _setTreasuryAllowlist(entry.treasury, entry.allowed);
         }
 
-        bool pauserChanged;
-        bool pauserManagerChanged;
-        bool thermostatChanged;
-        bool hamiltonianChanged;
-        bool autoStakeTuningChanged;
-        bool autoStakeConfigChanged;
-        bool minStakeChanged;
-        bool roleMinimumsChanged;
-        bool slashingChanged;
-        bool treasuryChanged;
-        bool jobRegistryChanged;
-        bool disputeModuleChanged;
-        bool validationModuleChanged;
-        bool modulesChanged;
-        bool feePctChanged;
-        bool feePoolChanged;
-        bool burnPctChanged;
-        bool validatorRewardPctChanged;
-        bool unbondingPeriodChanged;
-        bool maxStakePerAddressChanged;
-        bool stakeRecommendationsChanged;
-        bool maxAGITypesChanged;
-        bool maxTotalPayoutPctChanged;
-        bool pausedChanged;
-        bool unpausedChanged;
-        bool operatorSlashPctChanged;
-        bool slashBurnPctChanged;
+        ConfigChangeFlags memory flags;
 
         if (config.setPauser) {
             _setPauser(config.pauser);
-            pauserChanged = true;
+            flags.pauserChanged = true;
         }
 
         if (config.setPauserManager) {
             pauserManager = config.pauserManager;
             emit PauserManagerUpdated(config.pauserManager);
-            pauserManagerChanged = true;
+            flags.pauserManagerChanged = true;
         }
 
         if (config.setThermostat) {
             _setThermostat(config.thermostat);
-            thermostatChanged = true;
+            flags.thermostatChanged = true;
         }
 
         if (config.setHamiltonianFeed) {
             _setHamiltonianFeed(config.hamiltonianFeed);
-            hamiltonianChanged = true;
+            flags.hamiltonianChanged = true;
         }
 
         if (config.setAutoStakeTuning) {
             _setAutoStakeTuning(config.autoStakeEnabled);
-            autoStakeTuningChanged = true;
+            flags.autoStakeTuningChanged = true;
         }
 
         if (config.setAutoStakeSettings) {
             _configureAutoStake(config.autoStakeSettings);
-            autoStakeConfigChanged = true;
+            flags.autoStakeConfigChanged = true;
         }
 
         if (config.setStakeRecommendations) {
             _setStakeRecommendations(config.recommendedMinStake, config.recommendedMaxStake);
-            stakeRecommendationsChanged = true;
-            minStakeChanged = true;
-            maxStakePerAddressChanged = true;
+            flags.stakeRecommendationsChanged = true;
+            flags.minStakeChanged = true;
+            flags.maxStakePerAddressChanged = true;
         }
 
         if (config.setMinStake) {
             _setMinStake(config.minStake);
-            minStakeChanged = true;
+            flags.minStakeChanged = true;
         }
 
         if (config.setRoleMinimums) {
             _setRoleMinimum(Role.Agent, config.agentMinStake);
             _setRoleMinimum(Role.Validator, config.validatorMinStake);
             _setRoleMinimum(Role.Platform, config.platformMinStake);
-            roleMinimumsChanged = true;
+            flags.roleMinimumsChanged = true;
         }
 
         if (
@@ -1615,128 +1638,123 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
                 operatorPct,
                 slashBurnPctValue
             );
-            slashingChanged = true;
+            flags.slashingChanged = true;
             if (config.setOperatorSlashPct) {
-                operatorSlashPctChanged = true;
+                flags.operatorSlashPctChanged = true;
             }
             if (config.setSlashBurnPct) {
-                slashBurnPctChanged = true;
+                flags.slashBurnPctChanged = true;
             }
         }
 
         if (config.setTreasury) {
             _setTreasury(config.treasury);
-            treasuryChanged = true;
+            flags.treasuryChanged = true;
         }
 
         if (config.setModules) {
             _setModules(config.modulesJobRegistry, config.modulesDisputeModule);
-            modulesChanged = true;
-            jobRegistryChanged = true;
-            disputeModuleChanged = true;
+            flags.modulesChanged = true;
+            flags.jobRegistryChanged = true;
+            flags.disputeModuleChanged = true;
         }
 
         if (config.setJobRegistry) {
             _setJobRegistry(config.jobRegistry);
-            jobRegistryChanged = true;
+            flags.jobRegistryChanged = true;
         }
 
         if (config.setDisputeModule) {
             _setDisputeModule(config.disputeModule);
-            disputeModuleChanged = true;
+            flags.disputeModuleChanged = true;
         }
 
         if (config.setValidationModule) {
             _setValidationModule(config.validationModule);
-            validationModuleChanged = true;
+            flags.validationModuleChanged = true;
         }
 
         if (config.setFeePool) {
             _setFeePool(config.feePool);
-            feePoolChanged = true;
+            flags.feePoolChanged = true;
         }
 
         if (config.setUnbondingPeriod) {
             _setUnbondingPeriod(config.unbondingPeriod);
-            unbondingPeriodChanged = true;
+            flags.unbondingPeriodChanged = true;
         }
 
-        if (config.setMaxStakePerAddress && !stakeRecommendationsChanged) {
+        if (config.setMaxStakePerAddress && !flags.stakeRecommendationsChanged) {
             _setMaxStakePerAddress(config.maxStakePerAddress);
-            maxStakePerAddressChanged = true;
+            flags.maxStakePerAddressChanged = true;
         } else if (config.setMaxStakePerAddress) {
             // Stake recommendations already updated the max stake; override if requested.
             _setMaxStakePerAddress(config.maxStakePerAddress);
-            maxStakePerAddressChanged = true;
+            flags.maxStakePerAddressChanged = true;
         }
 
         if (config.setMaxAGITypes) {
             _setMaxAGITypes(config.maxAGITypes);
-            maxAGITypesChanged = true;
+            flags.maxAGITypesChanged = true;
         }
 
         if (config.setMaxTotalPayoutPct) {
             _setMaxTotalPayoutPct(config.maxTotalPayoutPct);
-            maxTotalPayoutPctChanged = true;
+            flags.maxTotalPayoutPctChanged = true;
         }
 
         if (config.setFeePct || config.setBurnPct || config.setValidatorRewardPct) {
-            uint256 newFeePct = config.setFeePct ? config.feePct : feePct;
-            uint256 newBurnPct = config.setBurnPct ? config.burnPct : burnPct;
-            uint256 newValidatorRewardPct =
-                config.setValidatorRewardPct ? config.validatorRewardPct : validatorRewardPct;
-            (bool feeChanged, bool burnChanged, bool validatorChanged) = _applyPercentages(
-                newFeePct,
-                newBurnPct,
-                newValidatorRewardPct,
-                config.setFeePct,
-                config.setBurnPct,
-                config.setValidatorRewardPct
+            (bool feeChanged, bool burnChanged, bool validatorChanged) = _updatePercentages(
+                config
             );
-            if (feeChanged) feePctChanged = true;
-            if (burnChanged) burnPctChanged = true;
-            if (validatorChanged) validatorRewardPctChanged = true;
+            if (feeChanged) flags.feePctChanged = true;
+            if (burnChanged) flags.burnPctChanged = true;
+            if (validatorChanged) flags.validatorRewardPctChanged = true;
         }
 
         if (config.pause && !paused()) {
             _pause();
-            pausedChanged = true;
+            flags.pausedChanged = true;
         }
 
         if (config.unpause && paused()) {
             _unpause();
-            unpausedChanged = true;
+            flags.unpausedChanged = true;
         }
 
+        _emitConfigurationApplied(flags, allowlistLen);
+    }
+
+    function _emitConfigurationApplied(ConfigChangeFlags memory flags, uint256 allowlistLen) private {
         emit ConfigurationApplied(
             msg.sender,
-            pauserChanged,
-            pauserManagerChanged,
-            thermostatChanged,
-            hamiltonianChanged,
-            autoStakeTuningChanged,
-            autoStakeConfigChanged,
-            minStakeChanged,
-            roleMinimumsChanged,
-            slashingChanged,
-            operatorSlashPctChanged,
-            slashBurnPctChanged,
-            treasuryChanged,
-            jobRegistryChanged,
-            disputeModuleChanged,
-            validationModuleChanged,
-            modulesChanged,
-            feePctChanged,
-            feePoolChanged,
-            burnPctChanged,
-            validatorRewardPctChanged,
-            unbondingPeriodChanged,
-            maxStakePerAddressChanged,
-            stakeRecommendationsChanged,
-            maxAGITypesChanged,
-            maxTotalPayoutPctChanged,
-            pausedChanged,
-            unpausedChanged,
+            flags.pauserChanged,
+            flags.pauserManagerChanged,
+            flags.thermostatChanged,
+            flags.hamiltonianChanged,
+            flags.autoStakeTuningChanged,
+            flags.autoStakeConfigChanged,
+            flags.minStakeChanged,
+            flags.roleMinimumsChanged,
+            flags.slashingChanged,
+            flags.operatorSlashPctChanged,
+            flags.slashBurnPctChanged,
+            flags.treasuryChanged,
+            flags.jobRegistryChanged,
+            flags.disputeModuleChanged,
+            flags.validationModuleChanged,
+            flags.modulesChanged,
+            flags.feePctChanged,
+            flags.feePoolChanged,
+            flags.burnPctChanged,
+            flags.validatorRewardPctChanged,
+            flags.unbondingPeriodChanged,
+            flags.maxStakePerAddressChanged,
+            flags.stakeRecommendationsChanged,
+            flags.maxAGITypesChanged,
+            flags.maxTotalPayoutPctChanged,
+            flags.pausedChanged,
+            flags.unpausedChanged,
             allowlistLen
         );
     }
@@ -2125,19 +2143,21 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     {
         if (role > Role.Platform) revert InvalidRole();
         if (amount == 0) revert InvalidAmount();
-        uint256 staked = stakes[msg.sender][role];
-        if (staked < amount) revert InsufficientStake();
-        uint256 newStake = staked - amount;
-        uint256 roleMin = _minimumStakeFor(role);
-        if (newStake != 0 && newStake < roleMin) revert BelowMinimumStake();
+        {
+            uint256 staked = stakes[msg.sender][role];
+            if (staked < amount) revert InsufficientStake();
+            uint256 newStake = staked - amount;
+            uint256 roleMin = _minimumStakeFor(role);
+            if (newStake != 0 && newStake < roleMin) revert BelowMinimumStake();
 
-        uint256 locked = lockedStakes[msg.sender];
-        uint64 unlock = unlockTime[msg.sender];
-        uint256 totalStakeUser =
-            stakes[msg.sender][Role.Agent] + stakes[msg.sender][Role.Validator] + stakes[msg.sender][Role.Platform];
-        uint256 remaining = totalStakeUser - amount;
-        if (locked > 0 && block.timestamp < unlock && remaining < locked) {
-            revert InsufficientLocked();
+            uint256 locked = lockedStakes[msg.sender];
+            uint64 unlock = unlockTime[msg.sender];
+            uint256 totalStakeUser =
+                stakes[msg.sender][Role.Agent] + stakes[msg.sender][Role.Validator] + stakes[msg.sender][Role.Platform];
+            uint256 remaining = totalStakeUser - amount;
+            if (locked > 0 && block.timestamp < unlock && remaining < locked) {
+                revert InsufficientLocked();
+            }
         }
 
         Unbond storage u = unbonds[msg.sender];
