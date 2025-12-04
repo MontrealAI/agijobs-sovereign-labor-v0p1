@@ -24,7 +24,7 @@ const boolFromEnv = (value, defaultValue) => {
 
 const useViaIR = boolFromEnv(SOLC_VIA_IR, true);
 const optimizerEnabled = boolFromEnv(SOLC_OPTIMIZER, useViaIR);
-const optimizerRuns = Number(SOLC_OPTIMIZER_RUNS || 5);
+const optimizerRuns = Number(SOLC_OPTIMIZER_RUNS || (useViaIR ? 5 : 200));
 
 module.exports = {
   solidity: {
