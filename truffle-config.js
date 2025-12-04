@@ -34,6 +34,12 @@ module.exports = {
   contracts_build_directory: "./build/contracts",
   test_directory: "./truffle/test",
   networks: {
+    development: {
+      host: "127.0.0.1",
+      port: Number(process.env.GANACHE_PORT || 8545),
+      network_id: "*",
+      gas: 30_000_000
+    },
     mainnet: {
       provider: () => new HDWalletProvider({ privateKeys: [DEPLOYER_PK], providerOrUrl: MAINNET_RPC }),
       network_id: 1, confirmations: 2, timeoutBlocks: 500, skipDryRun: true
